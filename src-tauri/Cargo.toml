@@ -1,0 +1,20 @@
+[package]
+name = "pieride"
+version = "0.1.0"
+description = "Piéride"
+repository = "https://github.com/PierideApp/Pieride"
+edition = "2024"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+# https://v2.tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

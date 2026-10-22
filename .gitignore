@@ -1,0 +1,119 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/schemas/
+*.rs.bk
+
+# pnpm uniquement : pas d'autres fichiers de verrouillage
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Caches et tests
+.cache/
+.eslintcache
+.vite/
+coverage/
+
+# Variables d'environnement et secrets
+.env
+.env.*
+!.env.example
+*.local
+secrets.json
+
+# Clés de signature (mises à jour, Windows, Apple)
+*.key
+*.pem
+*.p8
+*.p12
+*.pfx
+*.cer
+
+# Bases locales créées pendant le développement
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Éditeurs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.iml
+.fleet/
+.zed/
+.vs/
+.history/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Systèmes
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*~
+.directory
+.Trash-*
+
+# Outils d'IA
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+AGENTS.md
+.codex/
+GEMINI.md
+.gemini/
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexingignore
+.windsurf/
+.windsurfrules
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+.github/chatmodes/
+.aider*
+.continue/
+.clinerules
+.roo/
+.roomodes
+.kiro/
+.junie/
+.amazonq/
+.augment/
+.augment-guidelines
+.opencode/
+opencode.json
+.qwen/
+.goosehints
+.trae/
+.specstory/
+.serena/
+graphify-out/

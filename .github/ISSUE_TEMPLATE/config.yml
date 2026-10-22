@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Une faille de sécurité ?
+    url: https://github.com/PierideApp/Pieride/security/advisories/new
+    about: N'ouvre pas d'issue publique, signale-la en privé avec ce formulaire.

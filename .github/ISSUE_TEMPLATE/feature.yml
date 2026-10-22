@@ -1,0 +1,42 @@
+name: Idée
+description: Proposer une fonctionnalité ou une amélioration
+labels: ["enhancement"]
+
+body:
+  - type: textarea
+    attributes:
+      label: Le besoin
+      description: Ce qui te manque ou te gêne aujourd'hui
+      placeholder: Je veux voir d'un coup d'œil les devoirs à rendre avant vendredi.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Ta proposition
+      description: Comment tu l'imagines dans Piéride
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Module
+      options:
+        - Accueil
+        - Cours
+        - Tâches
+        - Notes
+        - Actualités
+        - Assiduité
+        - Paramètres
+        - Un nouveau module
+        - Toute l'application
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Pour aller plus loin
+      description: Une maquette, une capture d'une autre app, un lien. Pas obligatoire.
+    validations:
+      required: false

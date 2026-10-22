@@ -1,0 +1,86 @@
+name: Bug
+description: Quelque chose ne marche pas comme prévu
+labels: ["bug"]
+
+body:
+  - type: textarea
+    attributes:
+      label: Ce qui se passe
+      placeholder: Après la synchronisation, les notes de la semaine n'apparaissent pas.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Ce qui devrait se passer
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Pour reproduire
+      placeholder: |
+        1. Ouvrir Notes
+        2. Lancer une synchronisation (Ctrl R)
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Module
+      description: La page de la barre latérale concernée
+      options:
+        - Accueil
+        - Cours
+        - Tâches
+        - Notes
+        - Actualités
+        - Assiduité
+        - Paramètres
+        - Connexion à un compte
+        - Autre
+    validations:
+      required: true
+
+  - type: dropdown
+    attributes:
+      label: Services du compte
+      multiple: true
+      options:
+        - PRONOTE
+        - ÉcoleDirecte
+        - Skolengo
+        - APPSCHO
+        - ESUP Multi
+        - Calendrier iCal
+        - TurboSelf
+        - ARD
+        - Izly
+        - Alise
+        - Compte hors ligne
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Système et version de Piéride
+      description: La version est dans Paramètres > À propos
+      placeholder: Windows 11, Piéride 0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Journal
+      description: Paramètres > Développeur > Journal. Copie les dernières lignes, elles ne contiennent ni identifiant ni jeton.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Captures
+      description: Masque tes informations personnelles (nom, notes).
+    validations:
+      required: false
