@@ -4,7 +4,6 @@ Piéride se construit à plusieurs. Signaler un bug, proposer une idée, relire 
 
 ## Par où commencer
 
-- La [feuille de route](docs/architecture.excalidraw) (section 7) et les milestones GitHub montrent ce qui est prévu.
 - Les issues `good first issue` sont faites pour une première contribution.
 - Avant de te lancer sur une issue, dis-le en commentaire pour qu'on ne soit pas deux dessus.
 - Pour une grosse idée, ouvre d'abord une issue « Idée » : on en discute avant que tu y passes des heures.
