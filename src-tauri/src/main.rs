@@ -48,10 +48,16 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
     // `domain()` vaut None pour une adresse IP.
     // ponytail: un domaine public qui pointe vers 127.0.0.1 passe quand même (DNS rebinding) ;
     // filtrer l'adresse résolue côté plugin si ça devient un risque réel.
-    let host = url
-        .domain()
-        .ok_or("adresse IP refusée")?
-        .trim_end_matches('.');
+    let host = url.domain().ok_or("adresse IP refusée")?;
+    // Lettres, chiffres, tirets et points seulement : l'origine devient un motif d'URL
+    // du plugin, où `*` serait un joker et `+` un motif invalide qui bloque tout le réseau.
+    if host.ends_with('.')
+        || !host
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.')
+    {
+        return Err("nom de domaine invalide");
+    }
     if !host.contains('.') || host.ends_with(".localhost") || host.ends_with(".local") {
         return Err("domaine local refusé");
     }
@@ -99,6 +105,10 @@ mod tests {
             "https://pronote.localhost/",
             "https://imprimante.local/",
             "https://intranet/",
+            "https://*.*/",
+            "https://(.*).exemple.fr/",
+            "https://a+.fr/",
+            "https://pronote.exemple.fr./",
             "file:///etc/passwd",
         ] {
             assert!(
