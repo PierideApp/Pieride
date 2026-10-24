@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "packageManager": "pnpm@10.34.6",
+  "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": ">=22"
   },
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/plugin-http": "^2.8.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

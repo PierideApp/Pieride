@@ -1,3 +1,6 @@
+// En premier : remplace fetch avant que toute bibliothèque ne le lise.
+import "@/lib/http";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 

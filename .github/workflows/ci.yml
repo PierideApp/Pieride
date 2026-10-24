@@ -27,7 +27,7 @@ jobs:
       - run: pnpm test
 
   rust:
-    name: Rust (fmt, clippy)
+    name: Rust (fmt, clippy, tests)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -44,6 +44,8 @@ jobs:
       - run: cargo fmt --check
         working-directory: src-tauri
       - run: cargo clippy -- -D warnings
+        working-directory: src-tauri
+      - run: cargo test
         working-directory: src-tauri
 
   build:
