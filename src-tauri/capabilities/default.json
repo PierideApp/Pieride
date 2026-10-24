@@ -3,5 +3,13 @@
   "identifier": "default",
   "description": "Permissions de la fenêtre principale",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "allow-allow-instance",
+    {
+      "identifier": "http:default",
+      "allow": [],
+      "deny": [{ "url": "http://*" }]
+    }
+  ]
 }
