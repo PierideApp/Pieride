@@ -24,10 +24,16 @@ const isExternal = (url: URL) =>
 
 async function externalFetch(
   input: RequestInfo | URL,
-  init?: RequestInit & { maxRedirections?: number }
+  init?: RequestInit
 ): Promise<Response> {
+  // Le plugin ignore `redirect` : « manual » s'écrit maxRedirections = 0.
+  const redirect =
+    init?.redirect ?? (input instanceof Request ? input.redirect : "follow");
   try {
-    return await pluginFetch(input, init);
+    return await pluginFetch(input, {
+      ...init,
+      maxRedirections: redirect === "manual" ? 0 : undefined,
+    });
   } catch (error) {
     // Les erreurs du plugin recopient l'URL complète : on garde la raison, pas l'URL.
     const reason = String(error).replace(
@@ -61,13 +67,7 @@ export type Fetcher = (request: {
 }) => Promise<{ status: number; content: string; headers: Headers }>;
 
 function createFetcher(userAgent?: string): Fetcher {
-  return async ({
-    url,
-    method = "GET",
-    content,
-    headers,
-    redirect = "follow",
-  }) => {
+  return async ({ url, method = "GET", content, headers, redirect }) => {
     const finalHeaders = new Headers(headers);
     if (userAgent) {
       finalHeaders.set("User-Agent", userAgent);
@@ -76,8 +76,7 @@ function createFetcher(userAgent?: string): Fetcher {
       method,
       headers: finalHeaders,
       body: method === "GET" ? undefined : content,
-      // Le plugin ignore `redirect` : « manual » s'écrit maxRedirections = 0.
-      maxRedirections: redirect === "manual" ? 0 : undefined,
+      redirect,
     });
     return {
       status: response.status,

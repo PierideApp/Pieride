@@ -44,6 +44,17 @@ describe("fetch global", () => {
     }
   );
 
+  it("traduit redirect manual, en option ou dans la Request", async () => {
+    await fetch("https://exemple.fr/", { redirect: "manual" });
+    await fetch(new Request("https://exemple.fr/", { redirect: "manual" }));
+    await fetch("https://exemple.fr/");
+    expect(plugin.mock.calls.map(([, init]) => init?.maxRedirections)).toEqual([
+      0,
+      0,
+      undefined,
+    ]);
+  });
+
   it("ne recopie pas l'URL dans l'erreur", async () => {
     plugin.mockRejectedValue(
       "url not allowed on the configured scope: https://pirate.example/vol?jeton=abc123"
