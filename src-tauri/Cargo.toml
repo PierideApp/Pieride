@@ -9,10 +9,13 @@ edition = "2024"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+keyring = "4"
 serde_json = "1"
+sqlx = { version = "0.8", default-features = false, features = ["sqlite"] }
 tauri = { version = "2", features = [] }
 # Sans la fonctionnalité `cookies` : elle écrit les cookies de session en clair sur le disque.
 tauri-plugin-http = { version = "2", default-features = false, features = ["rustls-tls", "http2", "charset", "system-proxy"] }
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 
 # https://v2.tauri.app/concept/size/#cargo-configuration
 [profile.release]
