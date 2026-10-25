@@ -6,6 +6,12 @@
   "permissions": [
     "core:default",
     "allow-allow-instance",
+    "allow-secret-get",
+    "allow-secret-set",
+    "allow-secret-delete",
+    "allow-sql-batch",
+    "sql:allow-select",
+    "sql:allow-execute",
     {
       "identifier": "http:default",
       "allow": [],

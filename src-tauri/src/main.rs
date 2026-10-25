@@ -1,6 +1,9 @@
 // Évite d'ouvrir une console en plus sous Windows en release, ne pas retirer.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod database;
+mod secrets;
+
 use std::{collections::HashSet, sync::Mutex};
 
 use tauri::{AppHandle, Manager, State, Url, ipc::CapabilityBuilder};
@@ -67,8 +70,15 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_sql::Builder::new().build())
         .manage(AllowedInstances::default())
-        .invoke_handler(tauri::generate_handler![allow_instance])
+        .invoke_handler(tauri::generate_handler![
+            allow_instance,
+            secrets::secret_get,
+            secrets::secret_set,
+            secrets::secret_delete,
+            database::sql_batch
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

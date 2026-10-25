@@ -36,6 +36,9 @@
   "plugins": {
     "http": {
       "scopeRedirects": true
+    },
+    "sql": {
+      "preload": ["sqlite:pieride.db"]
     }
   }
 }
