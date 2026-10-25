@@ -1,10 +1,14 @@
 {
+  "app": {
+    "loading": "Chargement…"
+  },
   "errors": {
     "database": "Impossible d'ouvrir tes données. Redémarre Piéride, et si ça continue, signale-le.",
     "AuthenticationError": "Reconnecte-toi à ce service.",
     "ServiceUnavailable": "Service injoignable pour l'instant : tu vois les dernières données enregistrées.",
     "SecurityChallenge": "Ce service demande une vérification.",
     "Unknown": "Une erreur inattendue est survenue.",
-    "keyring_unavailable": "Le trousseau de ton système est inaccessible : impossible d'enregistrer tes identifiants."
+    "keyring_unavailable": "Le trousseau de ton système est inaccessible : impossible d'enregistrer tes identifiants.",
+    "UnsupportedService": "Ce service n'est pas encore pris en charge par Piéride."
   }
 }

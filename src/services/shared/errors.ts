@@ -11,6 +11,11 @@ export class ServiceUnavailable extends Error {
   name = "ServiceUnavailable";
 }
 
+/** Aucune connexion n'existe encore pour ce type de service : réessayer n'y changera rien. */
+export class UnsupportedService extends Error {
+  name = "UnsupportedService";
+}
+
 /** Le service demande une vérification en plus (question de sécurité, code reçu par SMS…). */
 export class SecurityChallenge extends Error {
   name = "SecurityChallenge";

@@ -70,14 +70,26 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
-        .plugin(tauri_plugin_sql::Builder::new().build())
         .manage(AllowedInstances::default())
+        .setup(|app| {
+            // Sans base, l'app s'ouvre quand même : le front affiche l'erreur (commandes `db_*` en échec).
+            match tauri::async_runtime::block_on(database::open(app.handle())) {
+                Ok(database) => {
+                    app.manage(database);
+                }
+                Err(error) => eprintln!("base locale impossible à ouvrir : {error}"),
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             allow_instance,
             secrets::secret_get,
             secrets::secret_set,
             secrets::secret_delete,
-            database::sql_batch
+            database::db_select,
+            database::db_execute,
+            database::db_batch,
+            database::db_apply_migration
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

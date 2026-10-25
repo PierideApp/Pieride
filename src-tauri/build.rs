@@ -7,7 +7,10 @@ fn main() {
             "secret_get",
             "secret_set",
             "secret_delete",
-            "sql_batch",
+            "db_select",
+            "db_execute",
+            "db_batch",
+            "db_apply_migration",
         ]),
     ))
     .expect("failed to run tauri-build");

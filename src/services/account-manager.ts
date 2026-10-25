@@ -2,6 +2,7 @@
 // base locale ; les écrans lisent la base (hooks), jamais un service directement.
 // Inspiré de l'AccountManager de Papillon (services/shared/index.ts, GPLv3).
 import { and, eq, gte, lt } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Db } from "@/database/client";
 import {
@@ -21,6 +22,7 @@ import {
   AuthenticationError,
   SecurityChallenge,
   ServiceUnavailable,
+  UnsupportedService,
 } from "./shared/errors";
 import type { Account, LinkedService, ServiceKind } from "./shared/models";
 import type {
@@ -34,6 +36,7 @@ export const SYNCED = ["TIMETABLE", "HOMEWORK", "GRADES"] as const;
 export type SyncedCapability = (typeof SYNCED)[number];
 
 type ServiceRow = typeof services.$inferSelect;
+type Write = BatchItem<"sqlite">;
 
 /** Lundi 0 h, heure locale, de la semaine de `date`. */
 export function weekStart(date: Date): Date {
@@ -58,9 +61,20 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 function errorKind(error: unknown): string {
   return error instanceof AuthenticationError ||
     error instanceof ServiceUnavailable ||
-    error instanceof SecurityChallenge
+    error instanceof SecurityChallenge ||
+    error instanceof UnsupportedService
     ? error.name
     : "Unknown";
+}
+
+/** Attend tout, puis signale la première erreur : un échec n'arrête pas les autres. */
+async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
+  const failed = (await Promise.allSettled(tasks)).find(
+    result => result.status === "rejected"
+  );
+  if (failed) {
+    throw failed.reason;
+  }
 }
 
 export class AccountManager {
@@ -88,37 +102,60 @@ export class AccountManager {
     await this.db.insert(accounts).values(account);
   }
 
-  /** Lie un service : adresse ouverte au réseau, secret dans le trousseau, ligne en base. */
+  /**
+   * Lie un service : adresse ouverte au réseau, ligne en base, puis secret dans le trousseau.
+   * Si le trousseau échoue, la ligne est retirée : pas de service sans secret, ni l'inverse.
+   */
   async linkService(service: LinkedService, secret: string): Promise<void> {
     if (service.instanceUrl) {
       await allowInstance(service.instanceUrl);
     }
-    await setSecret(service.id, secret);
     await this.db.insert(services).values(service);
+    try {
+      await setSecret(service.id, secret);
+    } catch (error) {
+      await this.db.delete(services).where(eq(services.id, service.id));
+      throw error;
+    }
   }
 
-  /** Retire un compte : d'abord ses secrets, puis ses données (en cascade). */
-  async removeAccount(accountId: string): Promise<void> {
+  /**
+   * Retire un compte et toutes ses données, même si le trousseau est indisponible.
+   * Renvoie les services dont le secret n'a pas pu être effacé (à retenter avec `deleteSecret`).
+   */
+  async removeAccount(accountId: string): Promise<string[]> {
     const linked = await this.db
       .select({ id: services.id })
       .from(services)
       .where(eq(services.accountId, accountId));
+    const results = await Promise.allSettled(
+      linked.map(({ id }) => deleteSecret(id))
+    );
     for (const { id } of linked) {
-      await deleteSecret(id);
       this.plugins.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
+    return linked
+      .filter((_, i) => results[i]?.status === "rejected")
+      .map(({ id }) => id);
   }
 
   async refreshAll(accountId: string, now = new Date()): Promise<void> {
+    const errors: unknown[] = [];
     for (const capability of SYNCED) {
-      await this.refresh(accountId, capability, now);
+      await this.refresh(accountId, capability, now).catch((error: unknown) =>
+        errors.push(error)
+      );
+    }
+    if (errors.length > 0) {
+      throw errors[0];
     }
   }
 
   /**
    * Synchronise une capability pour chaque service du compte qui la fournit.
    * Un service en panne garde ses données en base ; l'erreur est notée dans `sync_state`.
+   * Ne rejette que si la base elle-même refuse d'écrire.
    */
   async refresh(
     accountId: string,
@@ -129,7 +166,7 @@ export class AccountManager {
       .select()
       .from(services)
       .where(eq(services.accountId, accountId));
-    await Promise.all(
+    await settleAll(
       linked.map(service => this.refreshService(service, capability, now))
     );
   }
@@ -140,58 +177,79 @@ export class AccountManager {
     now: Date
   ): Promise<void> {
     const state = { serviceId: service.id, capability };
+    let writes: Write[] | null;
     try {
-      const plugin = await this.plugin(service);
-      if (!(await this.sync(plugin, service.id, capability, now))) {
-        return;
+      writes = await this.fetch(
+        await this.plugin(service),
+        service.id,
+        capability,
+        now
+      );
+    } catch (error) {
+      const mustLogin = error instanceof AuthenticationError;
+      if (mustLogin) {
+        this.plugins.delete(service.id);
       }
+      const lastError = errorKind(error);
       await this.db.batch([
         this.db
           .insert(syncState)
-          .values({ ...state, lastSync: now, lastError: null })
+          .values({ ...state, lastError })
           .onConflictDoUpdate({
             target: [syncState.serviceId, syncState.capability],
-            set: { lastSync: now, lastError: null },
+            set: { lastError },
           }),
-        this.db
-          .update(services)
-          .set({ needsLogin: false })
-          .where(eq(services.id, service.id)),
+        ...(mustLogin
+          ? [
+              this.db
+                .update(services)
+                .set({ needsLogin: true })
+                .where(eq(services.id, service.id)),
+            ]
+          : []),
       ]);
-    } catch (error) {
-      if (error instanceof AuthenticationError) {
-        this.plugins.delete(service.id);
-        await this.db
-          .update(services)
-          .set({ needsLogin: true })
-          .where(eq(services.id, service.id));
-      }
-      const lastError = errorKind(error);
-      await this.db
+      return;
+    }
+    if (!writes) {
+      return;
+    }
+    // Les données et leur date de synchro passent ensemble, ou pas du tout.
+    await this.db.batch([
+      this.db
         .insert(syncState)
-        .values({ ...state, lastError })
+        .values({ ...state, lastSync: now, lastError: null })
         .onConflictDoUpdate({
           target: [syncState.serviceId, syncState.capability],
-          set: { lastError },
-        });
-    }
+          set: { lastSync: now, lastError: null },
+        }),
+      this.db
+        .update(services)
+        .set({ needsLogin: false })
+        .where(eq(services.id, service.id)),
+      ...writes,
+    ]);
   }
 
   /** Connexion gardée pour la session ; refaite si elle a échoué. */
   private plugin(service: ServiceRow): Promise<SchoolServicePlugin> {
-    let plugin = this.plugins.get(service.id);
-    if (!plugin) {
-      plugin = this.connect(service);
-      this.plugins.set(service.id, plugin);
-      plugin.catch(() => this.plugins.delete(service.id));
+    const cached = this.plugins.get(service.id);
+    if (cached) {
+      return cached;
     }
+    const plugin = this.connect(service);
+    this.plugins.set(service.id, plugin);
+    plugin.catch(() => {
+      if (this.plugins.get(service.id) === plugin) {
+        this.plugins.delete(service.id);
+      }
+    });
     return plugin;
   }
 
   private async connect(service: ServiceRow): Promise<SchoolServicePlugin> {
     const connect = this.connectors[service.kind];
     if (!connect) {
-      throw new ServiceUnavailable(
+      throw new UnsupportedService(
         `Service non pris en charge : ${service.kind}`
       );
     }
@@ -211,56 +269,49 @@ export class AccountManager {
     );
   }
 
-  /** Renvoie `false` si le service ne fournit pas cette capability. */
-  private async sync(
+  /** Les écritures à faire, ou `null` si le service ne fournit pas cette capability. */
+  private async fetch(
     plugin: SchoolServicePlugin,
     serviceId: string,
     capability: SyncedCapability,
     now: Date
-  ): Promise<boolean> {
+  ): Promise<Write[] | null> {
     const { TIMETABLE, HOMEWORK, GRADES } = plugin.capabilities;
     switch (capability) {
       case "TIMETABLE":
-        if (!TIMETABLE) {
-          return false;
-        }
-        await this.syncTimetable(serviceId, TIMETABLE, now);
-        return true;
+        return TIMETABLE ? this.timetable(serviceId, TIMETABLE, now) : null;
       case "HOMEWORK":
-        if (!HOMEWORK) {
-          return false;
-        }
-        await this.syncHomework(serviceId, HOMEWORK, now);
-        return true;
+        return HOMEWORK ? this.homework(serviceId, HOMEWORK, now) : null;
       case "GRADES":
-        if (!GRADES) {
-          return false;
-        }
-        await this.syncGrades(serviceId, GRADES);
-        return true;
+        return GRADES ? this.grades(serviceId, GRADES) : null;
       default:
         return capability satisfies never;
     }
   }
 
-  private subjectsOf(serviceId: string, names: string[]) {
-    return this.db
-      .insert(subjects)
-      .values([...new Set(names)].map(name => ({ serviceId, name })))
-      .onConflictDoNothing();
+  private subjectsOf(serviceId: string, names: string[]): Write[] {
+    if (names.length === 0) {
+      return [];
+    }
+    return [
+      this.db
+        .insert(subjects)
+        .values([...new Set(names)].map(name => ({ serviceId, name })))
+        .onConflictDoNothing(),
+    ];
   }
 
-  private async syncTimetable(
+  private async timetable(
     serviceId: string,
     methods: CapabilityMethods["TIMETABLE"],
     now: Date
-  ): Promise<void> {
+  ): Promise<Write[]> {
     const from = weekStart(now);
     const to = weekAfter(from);
     const list = uniqueById(await methods.getWeeklyTimetable(from)).filter(
       course => course.from >= from && course.from < to
     );
-    await this.db.batch([
+    return [
       this.db
         .delete(courses)
         .where(
@@ -270,31 +321,31 @@ export class AccountManager {
             lt(courses.from, to)
           )
         ),
+      ...this.subjectsOf(
+        serviceId,
+        list.map(course => course.subject)
+      ),
       ...(list.length > 0
         ? [
-            this.subjectsOf(
-              serviceId,
-              list.map(course => course.subject)
-            ),
             this.db
               .insert(courses)
               .values(list.map(course => ({ ...course, serviceId }))),
           ]
         : []),
-    ]);
+    ];
   }
 
-  private async syncHomework(
+  private async homework(
     serviceId: string,
     methods: CapabilityMethods["HOMEWORK"],
     now: Date
-  ): Promise<void> {
+  ): Promise<Write[]> {
     const from = weekStart(now);
     const to = weekAfter(from);
     const list = uniqueById(await methods.getHomeworks(from)).filter(
       item => item.dueAt >= from && item.dueAt < to
     );
-    await this.db.batch([
+    return [
       this.db
         .delete(homework)
         .where(
@@ -304,24 +355,24 @@ export class AccountManager {
             lt(homework.dueAt, to)
           )
         ),
+      ...this.subjectsOf(
+        serviceId,
+        list.map(item => item.subject)
+      ),
       ...(list.length > 0
         ? [
-            this.subjectsOf(
-              serviceId,
-              list.map(item => item.subject)
-            ),
             this.db
               .insert(homework)
               .values(list.map(item => ({ ...item, serviceId }))),
           ]
         : []),
-    ]);
+    ];
   }
 
-  private async syncGrades(
+  private async grades(
     serviceId: string,
     methods: CapabilityMethods["GRADES"]
-  ): Promise<void> {
+  ): Promise<Write[]> {
     const periodList = uniqueById(await methods.getGradesPeriods());
     const gradeList = [];
     // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
@@ -329,7 +380,7 @@ export class AccountManager {
       gradeList.push(...(await methods.getGradesForPeriod(period)));
     }
     const unique = uniqueById(gradeList);
-    await this.db.batch([
+    return [
       this.db.delete(grades).where(eq(grades.serviceId, serviceId)),
       this.db.delete(periods).where(eq(periods.serviceId, serviceId)),
       ...(periodList.length > 0
@@ -339,17 +390,17 @@ export class AccountManager {
               .values(periodList.map(period => ({ ...period, serviceId }))),
           ]
         : []),
+      ...this.subjectsOf(
+        serviceId,
+        unique.map(grade => grade.subject)
+      ),
       ...(unique.length > 0
         ? [
-            this.subjectsOf(
-              serviceId,
-              unique.map(grade => grade.subject)
-            ),
             this.db
               .insert(grades)
               .values(unique.map(grade => ({ ...grade, serviceId }))),
           ]
         : []),
-    ]);
+    ];
   }
 }

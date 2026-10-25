@@ -14,8 +14,8 @@ export async function migrate(driver: SqlDriver, files = FILES): Promise<void> {
     []
   );
   const applied = new Set(
-    (await driver.select("SELECT name FROM migrations", [])).map(row =>
-      String(row.name)
+    (await driver.select("SELECT name FROM migrations", [])).map(([name]) =>
+      String(name)
     )
   );
   const pending = Object.entries(files)
@@ -24,13 +24,6 @@ export async function migrate(driver: SqlDriver, files = FILES): Promise<void> {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   for (const { name, sql } of pending) {
-    // La migration et son enregistrement passent ensemble, ou pas du tout.
-    await driver.batch([
-      { sql, params: [] },
-      {
-        sql: "INSERT INTO migrations VALUES (?, unixepoch())",
-        params: [name],
-      },
-    ]);
+    await driver.applyMigration(name, sql);
   }
 }

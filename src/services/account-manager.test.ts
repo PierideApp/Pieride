@@ -5,6 +5,7 @@ import { migrate } from "@/database/migrate";
 import { nodeDriver } from "@/database/node-driver";
 import { courses, grades, services, syncState } from "@/database/schema";
 import { allowInstance } from "@/lib/http";
+import { deleteSecret, setSecret } from "@/lib/keyring";
 
 import { AccountManager, weekStart } from "./account-manager";
 import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
@@ -13,9 +14,11 @@ import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
 
 const secrets = vi.hoisted(() => new Map<string, string>());
 vi.mock("@/lib/keyring", () => ({
-  getSecret: async (id: string) => secrets.get(id) ?? null,
-  setSecret: async (id: string, value: string) => void secrets.set(id, value),
-  deleteSecret: async (id: string) => void secrets.delete(id),
+  getSecret: vi.fn(async (id: string) => secrets.get(id) ?? null),
+  setSecret: vi.fn(
+    async (id: string, value: string) => void secrets.set(id, value)
+  ),
+  deleteSecret: vi.fn(async (id: string) => void secrets.delete(id)),
 }));
 vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
 
@@ -187,6 +190,66 @@ describe("AccountManager", () => {
     expect(secrets.size).toBe(0);
     expect(await db.select().from(services)).toEqual([]);
     expect(await db.select().from(courses)).toEqual([]);
+  });
+
+  it("ne garde pas de service si le trousseau refuse le secret", async () => {
+    const { db, manager } = await setup();
+    vi.mocked(setSecret).mockRejectedValueOnce("keyring_unavailable");
+    await expect(
+      manager.linkService(
+        { id: "turboself-1", accountId: "camille", kind: "turboself" },
+        "mot de passe"
+      )
+    ).rejects.toBe("keyring_unavailable");
+    expect((await db.select().from(services)).map(s => s.id)).toEqual([
+      "pronote-1",
+    ]);
+  });
+
+  it("efface les données même si le trousseau est indisponible", async () => {
+    const { db, manager } = await setup();
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    vi.mocked(deleteSecret).mockRejectedValueOnce("keyring_unavailable");
+    expect(await manager.removeAccount("camille")).toEqual(["pronote-1"]);
+    expect(await db.select().from(services)).toEqual([]);
+    expect(await db.select().from(courses)).toEqual([]);
+  });
+
+  it("distingue un service non pris en charge d'une panne", async () => {
+    const { db, manager } = await setup();
+    await manager.linkService(
+      { id: "izly-1", accountId: "camille", kind: "izly" },
+      "jeton"
+    );
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    const states = await db.select().from(syncState);
+    expect(states.find(s => s.serviceId === "izly-1")?.lastError).toBe(
+      "UnsupportedService"
+    );
+  });
+
+  it("garde « à reconnecter » quand une panne suit un refus d'identifiants", async () => {
+    const { db, manager } = await setup();
+    timetable = async () => {
+      throw new AuthenticationError("refusé");
+    };
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    timetable = async () => {
+      throw new ServiceUnavailable("injoignable");
+    };
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    const [service] = await db.select().from(services);
+    expect(service?.needsLogin).toBe(true);
+  });
+
+  it("garde le dimanche soir dans la semaine du changement d'heure", async () => {
+    const { db, manager } = await setup();
+    // Le 25 octobre 2026 dure 25 h à Paris : une semaine n'y fait pas 7 × 24 h.
+    timetable = async () => [course("dimanche", new Date(2026, 9, 25, 23, 30))];
+    await manager.refresh("camille", "TIMETABLE", new Date(2026, 9, 21));
+    expect((await db.select().from(courses)).map(c => c.id)).toEqual([
+      "dimanche",
+    ]);
   });
 
   it("rouvre au démarrage l'adresse des services enregistrés", async () => {

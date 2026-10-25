@@ -10,6 +10,11 @@ import i18n from "@/lib/i18n";
 import { accountManager } from "@/services";
 
 const root = createRoot(document.getElementById("root") as HTMLElement);
+root.render(<p role="status">{i18n.t("app.loading")}</p>);
+
+// Le détail ne contient que du SQL ou un code d'erreur, utile pour un signalement.
+// eslint-disable-next-line no-console
+const report = (error: unknown) => console.error(error);
 
 // La base doit être à jour avant le premier écran qui la lit.
 migrateDatabase().then(
@@ -19,12 +24,10 @@ migrateDatabase().then(
         <App />
       </StrictMode>
     );
-    void accountManager.start();
+    accountManager.start().catch(report);
   },
   (error: unknown) => {
-    // Le détail ne contient que du SQL de migration, utile pour un signalement.
-    // eslint-disable-next-line no-console
-    console.error(error);
+    report(error);
     root.render(<p role="alert">{i18n.t("errors.database")}</p>);
   }
 );

@@ -9,9 +9,10 @@
     "allow-secret-get",
     "allow-secret-set",
     "allow-secret-delete",
-    "allow-sql-batch",
-    "sql:allow-select",
-    "sql:allow-execute",
+    "allow-db-select",
+    "allow-db-execute",
+    "allow-db-batch",
+    "allow-db-apply-migration",
     {
       "identifier": "http:default",
       "allow": [],
