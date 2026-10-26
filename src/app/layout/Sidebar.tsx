@@ -1,0 +1,212 @@
+// Barre latérale (UX §3) : compte, liens des modules du compte, état de la synchronisation,
+// Paramètres.
+// Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss).
+import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { NavLink } from "react-router";
+
+import icon from "@/assets/brand/icon.svg";
+import type { AccountSummary } from "@/hooks/useAccounts";
+import { useLastSync } from "@/hooks/useLastSync";
+import type { Loaded } from "@/hooks/useLoaded";
+import { MOD } from "@/lib/platform";
+import { type ModuleManifest, modulePath } from "@/modules/registry";
+import { useAccountStore } from "@/stores/accounts";
+import { useSyncStore } from "@/stores/sync";
+
+import styles from "./layout.module.scss";
+
+const initials = (account: AccountSummary) =>
+  `${account.firstName[0] ?? ""}${account.lastName[0] ?? ""}`.toUpperCase();
+
+/** Compte en cours ; menu pour changer s'il y en a plusieurs. */
+function AccountSwitcher({
+  accounts,
+  current,
+}: {
+  accounts: AccountSummary[];
+  current: AccountSummary | undefined;
+}) {
+  const { t } = useTranslation();
+  const setCurrent = useAccountStore(state => state.setCurrentAccount);
+  const menu = useRef<HTMLDetailsElement>(null);
+
+  if (!current) {
+    return <p className={styles.account}>{t("sidebar.noAccount")}</p>;
+  }
+  const summary = (
+    <>
+      <span className={styles.avatar} aria-hidden="true">
+        {initials(current)}
+      </span>
+      <span className={styles.accountText}>
+        <strong>
+          {current.firstName} {current.lastName}
+        </strong>
+        {current.schoolName && <small>{current.schoolName}</small>}
+      </span>
+    </>
+  );
+  if (accounts.length < 2) {
+    return <div className={styles.account}>{summary}</div>;
+  }
+  return (
+    <details ref={menu} className={styles.switcher}>
+      <summary
+        className={styles.account}
+        aria-label={t("sidebar.switchAccount")}
+      >
+        {summary}
+        <ChevronDown size={16} className={styles.chevron} />
+      </summary>
+      <ul className={styles.accountList}>
+        {accounts.map(account => (
+          <li key={account.id}>
+            <button
+              type="button"
+              aria-current={account.id === current.id}
+              onClick={() => {
+                setCurrent(account.id);
+                menu.current?.removeAttribute("open");
+              }}
+            >
+              {account.firstName} {account.lastName}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/** « Synchronisé il y a 2 minutes » ; un clic relance la synchronisation. */
+function SyncStatus({ account }: { account: AccountSummary | undefined }) {
+  const { t, i18n } = useTranslation();
+  const lastSync = useLastSync(account?.id);
+  const { syncing, failed, sync } = useSyncStore();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  let label = t("sync.never");
+  if (syncing) {
+    label = t("sync.running");
+  } else if (failed || lastSync.status === "error") {
+    label = t("sync.failed");
+  } else if (lastSync.status === "ready" && lastSync.data) {
+    const minutes = Math.round((lastSync.data.getTime() - now) / 60_000);
+    const when = new Intl.RelativeTimeFormat(i18n.language, {
+      numeric: "auto",
+    }).format(minutes, "minute");
+    label = t("sync.done", { when });
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.item}
+      disabled={!account || syncing}
+      title={t("sync.action")}
+      onClick={() => account && void sync(account.id)}
+    >
+      <Check size={20} className={styles.syncIcon} />
+      <span className={styles.label}>{label}</span>
+    </button>
+  );
+}
+
+function ModuleLinks({ modules }: { modules: ModuleManifest[] }) {
+  const { t } = useTranslation();
+  return (
+    <ul className={styles.links}>
+      {modules.map(module => (
+        <li key={module.id}>
+          <NavLink
+            to={modulePath(module)}
+            end
+            title={t(`modules.${module.id}`)}
+            className={({ isActive }) =>
+              isActive ? `${styles.item} ${styles.active}` : styles.item
+            }
+          >
+            <module.icon size={20} className={styles.moduleIcon} />
+            <span className={styles.label}>{t(`modules.${module.id}`)}</span>
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function Sidebar({
+  accounts,
+  current,
+  modules,
+  onSearch,
+  onSettings,
+}: {
+  accounts: Loaded<AccountSummary[]>;
+  current: AccountSummary | undefined;
+  modules: ModuleManifest[];
+  onSearch: () => void;
+  onSettings: () => void;
+}) {
+  const { t } = useTranslation();
+  const school = modules.filter(module => module.group === "school");
+  return (
+    <nav className={styles.sidebar} aria-label={t("sidebar.label")}>
+      <div className={styles.brand} data-tauri-drag-region>
+        <img src={icon} alt="" width={32} height={32} />
+        <span className={styles.label}>piéride</span>
+      </div>
+
+      {accounts.status === "error" ? (
+        <p className={styles.account} role="alert">
+          {t("errors.database")}
+        </p>
+      ) : (
+        <AccountSwitcher
+          accounts={accounts.status === "ready" ? accounts.data : []}
+          current={current}
+        />
+      )}
+
+      <button
+        type="button"
+        className={styles.search}
+        title={t("palette.search")}
+        onClick={onSearch}
+      >
+        <Search size={16} className={styles.moduleIcon} />
+        <span className={styles.label}>{t("palette.search")}</span>
+        <kbd className={styles.label}>{MOD} K</kbd>
+      </button>
+
+      <ModuleLinks
+        modules={modules.filter(module => module.group === "main")}
+      />
+      {school.length > 0 && (
+        <>
+          <p className={styles.group}>{t("sidebar.school")}</p>
+          <ModuleLinks modules={school} />
+        </>
+      )}
+
+      <div className={styles.footer}>
+        <SyncStatus account={current} />
+        <button
+          type="button"
+          className={styles.item}
+          title={t("settings.title")}
+          onClick={onSettings}
+        >
+          <Gears size={20} className={styles.moduleIcon} />
+          <span className={styles.label}>{t("settings.title")}</span>
+        </button>
+      </div>
+    </nav>
+  );
+}

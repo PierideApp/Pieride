@@ -1,0 +1,563 @@
+// Le cadre de la fenêtre : fond, panneau de page, barre latérale, boutons de la fenêtre.
+
+// Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4).
+@mixin rail {
+  @media (max-width: 1279px) {
+    @content;
+  }
+}
+
+// Caché à l'écran, toujours lu par les lecteurs d'écran.
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.shell {
+  display: flex;
+  height: 100%;
+  background: var(--brand-glow), var(--brand-surface);
+}
+
+// Le panneau de page, posé sur le fond de la marque comme dans les maquettes.
+.page {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.pageContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  // Fenêtre étroite : le panneau détail remplace le contenu (UX §4).
+  @media (max-width: 959px) {
+    .page[data-detail-open] & {
+      display: none;
+    }
+  }
+}
+
+// Panneau détail : à côté du contenu, par-dessus entre 960 et 1279 px, à sa place en dessous.
+.detail {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 400px;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  overflow-y: auto;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+
+  @media (min-width: 960px) and (max-width: 1279px) {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 5;
+    box-shadow: -12px 0 32px var(--color-overlay);
+  }
+
+  @media (max-width: 959px) {
+    flex: 1;
+    width: auto;
+    border-left: none;
+  }
+}
+
+.detailBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  margin-bottom: var(--space-4);
+}
+
+.detailClose {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-s);
+  color: var(--color-text-2);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.detailHint {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.detailSubtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-2);
+}
+
+.detailBody {
+  margin-top: var(--space-5);
+}
+
+// Palette de commandes (UX §5)
+.palette {
+  width: min(640px, 100% - 2 * var(--space-6));
+  max-height: min(560px, 100% - 2 * var(--space-8));
+  margin: 15vh auto auto;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  color: var(--color-text);
+  background: var(--color-surface);
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &::backdrop {
+    background: var(--color-overlay);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.paletteSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    font-size: 18px;
+    font-weight: 600;
+    color: inherit;
+    background: none;
+  }
+}
+
+.paletteSearchIcon {
+  flex-shrink: 0;
+  color: var(--color-accent-text);
+}
+
+.paletteList {
+  // Hauteur de son contenu, réduite et défilante si la fenêtre est trop basse.
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.paletteGroup {
+  margin: var(--space-3) var(--space-3) var(--space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+}
+
+.paletteEmpty {
+  margin: var(--space-6);
+  text-align: center;
+  color: var(--color-text-2);
+}
+
+.paletteItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+
+  &[aria-selected="true"] {
+    background: var(--color-accent-soft);
+
+    strong {
+      color: var(--color-accent-text);
+    }
+  }
+}
+
+.paletteIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-s);
+  color: var(--color-text-2);
+  background: var(--color-bg);
+}
+
+.paletteText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  small {
+    color: var(--color-text-2);
+  }
+}
+
+.paletteKeys {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.paletteFooter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+// Barre latérale
+
+.sidebar {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-2);
+  width: var(--sidebar-width);
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  overflow-y: auto;
+  color: var(--brand-lavender);
+
+  // Trame de papillons du bas, qui s'estompe vers le haut (maquettes, « Motif Piéride »).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 55% 0 0;
+    z-index: -1;
+    background: url("@/assets/brand/motif.svg") 0 0 / 92px;
+    opacity: 0.2;
+    mask-image: linear-gradient(transparent, black 45%);
+  }
+
+  // Sous macOS, les boutons natifs de la fenêtre sont posés en haut à gauche.
+  :global(:root[data-platform="mac"]) & {
+    padding-top: 44px;
+  }
+
+  @include rail {
+    width: var(--sidebar-rail);
+    padding-inline: var(--space-2);
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-2) var(--space-3);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--on-brand);
+
+  img {
+    border-radius: var(--radius-s);
+  }
+
+  @include rail {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-m);
+  list-style: none;
+  background: var(--on-brand-soft);
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  .switcher & {
+    cursor: pointer;
+  }
+
+  @include rail {
+    justify-content: center;
+    padding-inline: 0;
+    background: none;
+  }
+}
+
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-round);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--on-brand);
+  background: var(--brand-500);
+}
+
+.accountText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    color: var(--on-brand);
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.chevron {
+  flex-shrink: 0;
+}
+
+.accountList {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  list-style: none;
+  background: var(--on-brand-soft);
+
+  button {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-s);
+    text-align: left;
+    background: none;
+    cursor: pointer;
+
+    &[aria-current="true"],
+    &:hover {
+      color: var(--on-brand);
+      background: var(--on-brand-active);
+    }
+  }
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-m);
+  font-size: 13px;
+  text-align: left;
+  color: inherit;
+  background: var(--on-brand-soft);
+  cursor: pointer;
+
+  > span {
+    flex: 1;
+  }
+
+  kbd {
+    border-color: transparent;
+    color: inherit;
+    background: var(--on-brand-soft);
+  }
+
+  &:hover {
+    color: var(--on-brand);
+  }
+
+  @include rail {
+    justify-content: center;
+    padding-inline: 0;
+    background: none;
+  }
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-m);
+  font-size: 15px;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--on-brand);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  @include rail {
+    justify-content: center;
+    padding-inline: 0;
+  }
+}
+
+.active {
+  font-weight: 600;
+  color: var(--on-brand);
+  background: var(--on-brand-active);
+
+  .moduleIcon {
+    color: var(--brand-sulfur);
+  }
+}
+
+.moduleIcon {
+  flex-shrink: 0;
+}
+
+.group {
+  margin: var(--space-4) var(--space-3) var(--space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+
+  .item {
+    font-size: 12px;
+  }
+}
+
+.syncIcon {
+  flex-shrink: 0;
+  color: var(--color-success);
+}
+
+// Dans le rail, les libellés restent lus par les lecteurs d'écran.
+.label,
+.accountText,
+.chevron,
+.group {
+  @include rail {
+    @include visually-hidden;
+  }
+}
+
+// Boutons de la fenêtre
+// En haut à droite, dans le coin du panneau de page (maquettes, « Contrôles fenêtre »).
+.controls {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 10;
+  display: flex;
+  height: 40px;
+}
+
+.onPage {
+  color: var(--color-text-2);
+}
+
+.onBrand {
+  color: var(--brand-lavender);
+}
+
+.button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-border);
+  }
+
+  .onBrand &:hover {
+    color: var(--on-brand);
+    background: var(--on-brand-soft);
+  }
+}
+
+// Convention de Windows : la fermeture devient rouge au survol.
+.close {
+  composes: button;
+  border-top-right-radius: var(--radius-l);
+
+  &:hover,
+  .onBrand &:hover {
+    color: var(--color-on-accent);
+    background: var(--color-error);
+  }
+}
