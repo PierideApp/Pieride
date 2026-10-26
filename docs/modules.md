@@ -4,7 +4,7 @@ Chaque page de la barre latérale est un **module**. Un module s'affiche seuleme
 
 1. **L'équipe l'a activé.** Chaque module a un statut fixé dans le code : `stable`, `beta` ou `off`. Un module `off` n'existe pas pour l'utilisateur, ce qui permet de livrer une page en préparation sans la montrer.
 2. **Un service du compte sait le fournir.** Le module déclare les capabilities dont il a besoin. Il apparaît si au moins un service lié au compte en cours en déclare une.
-3. **L'utilisateur ne l'a pas masqué.** Dans Paramètres > Barre latérale, pour chaque compte, comme `disabledTabsByAccount` dans Papillon.
+3. **L'utilisateur ne l'a pas masqué.** Dans Paramètres > Barre latérale, pour chaque compte, comme `disabledTabsByAccount` dans Papillon (`hiddenModules` dans `src/stores/settings.ts`). L'Accueil ne se masque pas : c'est la page d'ouverture.
 
 Un **compte** est une personne avec ses services liés : par exemple PRONOTE + TurboSelf pour Camille. La barre latérale change donc quand on change de compte.
 
@@ -38,43 +38,36 @@ Un simple tableau de modules, pas de système de plugins ni de chargement dynami
 
 ```ts
 // src/modules/registry.ts
-export const MODULES: ModuleManifest[] = [
+export const MODULES: readonly ModuleManifest[] = [
   {
-    id: "accueil",
-    label: "Accueil",
-    icon: "Home",
-    route: "/",
+    id: "accueil", // clé i18n `modules.accueil`, chemin `/`
+    icon: Home,
+    page: AccueilPage, // src/modules/accueil/AccueilPage.tsx
     requires: [],
     status: "stable",
+    group: "main",
   },
   {
     id: "notes",
-    label: "Notes",
-    icon: "Pie",
-    route: "/notes",
-    requires: [Capabilities.GRADES],
+    icon: Pie,
+    page: NotesPage,
+    requires: ["GRADES"],
     status: "stable",
-  },
-  {
-    id: "messagerie",
-    label: "Messagerie",
-    icon: "TextBubble",
-    route: "/messagerie",
-    requires: [Capabilities.CHAT_READ],
-    status: "off",
+    group: "main",
   },
   // …
 ];
 
-// Modules affichés pour le compte en cours
-export const visibleModules = (account: Account, hidden: string[]) =>
-  MODULES.filter(
-    m =>
-      m.status !== "off" &&
-      !hidden.includes(m.id) &&
-      (m.requires.length === 0 ||
-        m.requires.some(c => accountHasCapability(account, c)))
+// Modules affichés : capabilities des services du compte, moins ceux masqués
+export function visibleModules(capabilities, hidden = []) {
+  return MODULES.filter(
+    module =>
+      module.status !== "off" &&
+      !hidden.includes(module.id) &&
+      (module.requires.length === 0 ||
+        module.requires.some(capability => capabilities.has(capability)))
   );
+}
 ```
 
 - Chaque module vit dans son dossier `src/modules/<id>/` : sa page, ses composants, ses hooks.
