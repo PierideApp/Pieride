@@ -1,0 +1,422 @@
+// Paramètres en plein écran (maquettes 07-parametres) : catégories sur le fond de la marque,
+// page de réglages dans un panneau comme celui des modules.
+
+.settings {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  color: var(--color-text);
+  background: var(--brand-glow), var(--brand-surface);
+
+  &[open] {
+    display: flex;
+  }
+}
+
+// Catégories
+
+.nav {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 2px;
+  width: var(--sidebar-width);
+  padding: var(--space-5) var(--space-3) var(--space-4);
+  overflow-y: auto;
+  color: var(--brand-lavender);
+
+  // Trame de papillons du bas, comme la barre latérale (layout.module.scss).
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 55% 0 0;
+    z-index: -1;
+    background: url("@/assets/brand/motif.svg") 0 0 / 92px;
+    opacity: 0.2;
+    mask-image: linear-gradient(transparent, black 45%);
+  }
+
+  // Sous macOS, les boutons natifs de la fenêtre sont posés en haut à gauche.
+  :global(:root[data-platform="mac"]) & {
+    padding-top: 44px;
+  }
+}
+
+.title {
+  margin: 0 var(--space-3) var(--space-3);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-brand);
+}
+
+.group {
+  margin: var(--space-4) var(--space-3) var(--space-1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-m);
+  font-size: 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--on-brand);
+  }
+}
+
+.active {
+  font-weight: 600;
+  color: var(--on-brand);
+  background: var(--on-brand-active);
+
+  .itemIcon {
+    color: var(--brand-sulfur);
+  }
+}
+
+.itemIcon {
+  flex-shrink: 0;
+}
+
+// Page de réglages
+
+.panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-radius: var(--radius-l);
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+
+.content {
+  max-width: 920px;
+  padding: var(--space-8) var(--space-8) var(--space-6);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+
+  > div {
+    flex: 1;
+  }
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.description {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-2);
+}
+
+// Rond « × » avec « Échap » dessous, sous les boutons de la fenêtre.
+.close {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+  padding: 0;
+  border: none;
+  color: var(--color-text-2);
+  background: none;
+  cursor: pointer;
+
+  svg {
+    box-sizing: content-box;
+    padding: 9px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-round);
+    background: var(--color-surface);
+  }
+
+  kbd {
+    border: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-3);
+    background: none;
+  }
+
+  &:hover svg {
+    color: var(--color-text);
+  }
+}
+
+.block {
+  min-width: 0;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: none;
+}
+
+.label {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.card {
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  list-style: none;
+  background: var(--color-surface);
+}
+
+.notice {
+  composes: card;
+  padding: var(--space-4);
+  color: var(--color-text-2);
+}
+
+// Une ligne de réglage : icône, texte, puis le contrôle à droite.
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) 0;
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--color-accent);
+  }
+
+  &:is(label) {
+    cursor: pointer;
+  }
+}
+
+.rowIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-s);
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
+.rowText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  small {
+    font-size: 12px;
+    color: var(--color-text-2);
+  }
+}
+
+// Bouton secondaire, à droite d'une ligne.
+.button {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
+  font-weight: 600;
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.error {
+  margin: var(--space-2) var(--space-1) 0;
+  color: var(--color-error);
+}
+
+.locked {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  color: var(--color-text-3);
+}
+
+// Interrupteur : une case à cocher native (`role="switch"`), redessinée.
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  border-radius: var(--radius-round);
+  appearance: none;
+  background: var(--color-text-3);
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-round);
+    background: var(--color-on-accent);
+    transition: transform 0.15s;
+  }
+
+  &:checked {
+    background: var(--color-accent);
+
+    &::before {
+      transform: translateX(16px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    &::before {
+      transition: none;
+    }
+  }
+}
+
+// Thème : trois cartes avec un aperçu
+
+.themes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.theme {
+  padding: var(--space-2);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-l);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &[data-checked] {
+    border-color: var(--color-accent);
+  }
+}
+
+// « Système » : l'aperçu sombre recouvre la moitié droite de l'aperçu clair.
+.previewFrame {
+  display: grid;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+
+  > * {
+    grid-area: 1 / 1;
+  }
+
+  > :nth-child(2) {
+    clip-path: inset(0 0 0 50%);
+  }
+}
+
+.preview {
+  display: flex;
+  gap: var(--space-2);
+  height: 96px;
+  padding: var(--space-2);
+  background: var(--color-bg);
+}
+
+.previewSidebar {
+  width: 22%;
+  border-radius: var(--radius-s);
+  background: var(--brand-ink);
+}
+
+.previewLines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+
+  span {
+    height: 12px;
+    border-radius: var(--radius-round);
+    background: var(--color-surface);
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-1) var(--space-1);
+  font-weight: 600;
+
+  input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--color-accent);
+  }
+}
+
+// Caché à l'écran, toujours lu par les lecteurs d'écran.
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

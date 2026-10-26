@@ -10,5 +10,198 @@
     "Unknown": "Une erreur inattendue est survenue.",
     "keyring_unavailable": "Le trousseau de ton système est inaccessible : impossible d'enregistrer tes identifiants.",
     "UnsupportedService": "Ce service n'est pas encore pris en charge par Piéride."
+  },
+  "modules": {
+    "accueil": "Accueil",
+    "cours": "Cours",
+    "taches": "Tâches",
+    "notes": "Notes",
+    "actualites": "Actualités",
+    "assiduite": "Assiduité"
+  },
+  "sidebar": {
+    "label": "Navigation",
+    "school": "Vie scolaire",
+    "noAccount": "Pas encore de compte",
+    "switchAccount": "Changer de compte"
+  },
+  "sync": {
+    "never": "Pas encore synchronisé",
+    "running": "Synchronisation…",
+    "failed": "Échec de la synchronisation",
+    "done": "Synchronisé {{when}}",
+    "action": "Synchroniser"
+  },
+  "placeholder": {
+    "title": "Bientôt ici",
+    "text": "Cette page arrive avec une prochaine version de Piéride."
+  },
+  "notFound": {
+    "heading": "Oups",
+    "title": "Page introuvable",
+    "text": "Cette page n'existe pas ou plus. Elle s'est peut-être envolée.",
+    "back": "Retour à l'accueil"
+  },
+  "crash": {
+    "title": "Cette page a rencontré un problème",
+    "text": "Le reste de Piéride fonctionne. Tu peux réessayer.",
+    "retry": "Réessayer"
+  },
+  "window": {
+    "minimize": "Réduire",
+    "maximize": "Agrandir",
+    "close": "Fermer"
+  },
+  "tray": {
+    "open": "Ouvrir Piéride",
+    "quit": "Quitter"
+  },
+  "palette": {
+    "label": "Palette de commandes",
+    "search": "Rechercher",
+    "placeholder": "Aller à une page, lancer une action…",
+    "goto": "Aller à",
+    "actions": "Actions",
+    "sync": "Synchroniser maintenant",
+    "switchAccount": "Changer de compte",
+    "empty": "Aucun résultat",
+    "navigate": "naviguer",
+    "open": "ouvrir",
+    "close": "fermer"
+  },
+  "keys": {
+    "escape": "Échap",
+    "enter": "Entrée"
+  },
+  "detail": {
+    "close": "Fermer le panneau",
+    "hint": "Échap pour fermer"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "close": "Fermer les paramètres",
+    "groups": {
+      "account": "Compte",
+      "appearance": "Apparence",
+      "app": "Application",
+      "pieride": "Piéride"
+    },
+    "sections": {
+      "account": "Mon compte",
+      "linkedAccounts": "Comptes liés",
+      "appearance": "Personnalisation",
+      "subjects": "Matières",
+      "sidebar": "Barre latérale",
+      "features": "Fonctionnalités",
+      "notifications": "Notifications",
+      "language": "Langue",
+      "startup": "Démarrage et fenêtre",
+      "privacy": "Vie privée",
+      "releaseNotes": "Notes de version",
+      "about": "À propos",
+      "developer": "Développeur"
+    },
+    "descriptions": {
+      "appearance": "Le thème de Piéride.",
+      "sidebar": "Les modules de ce compte. Ceux qu'aucun de tes services ne fournit n'apparaissent pas.",
+      "language": "La langue de l'interface.",
+      "developer": "Outils pour travailler sur Piéride, visibles seulement en version de dev."
+    },
+    "theme": {
+      "label": "Thème",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    },
+    "modules": {
+      "label": "Modules",
+      "account": "Compte : {{name}}",
+      "always": "Toujours disponible",
+      "providedBy": "Fourni par {{services}}",
+      "locked": "Toujours affiché",
+      "noAccount": "Ajoute d'abord un compte : chaque compte a ses propres modules."
+    },
+    "developer": {
+      "noAccount": "Crée d'abord un compte : les données fictives s'attachent au compte en cours.",
+      "mockTitle": "Données fictives",
+      "mockText": "L'emploi du temps, les devoirs et les notes d'une élève inventée, sans réseau. Pour travailler sur les écrans sans compte scolaire.",
+      "attached": "Attachées à ce compte",
+      "detached": "Pas attachées",
+      "attach": "Attacher et remplir",
+      "remove": "Retirer",
+      "failed": "Ça n'a pas marché : le détail est dans la console de développement."
+    }
+  },
+  "onboarding": {
+    "tagline": "Ta vie scolaire, en grand écran.",
+    "step": "Étape {{current}} sur {{total}}",
+    "back": "Retour",
+    "continue": "Continuer",
+    "welcome": {
+      "title": "L'application pour gérer ta vie scolaire",
+      "text": "Connecte tes applications scolaires pour accéder à tes notes, cours, devoirs et bien plus dans l'interface Piéride !",
+      "start": "Commencer"
+    },
+    "preview": {
+      "math": "Mathématiques",
+      "mathRoom": "B12 · M. Bernard",
+      "now": "En cours",
+      "physics": "Physique-Chimie",
+      "physicsRoom": "Labo 2 · M. Garnier",
+      "hour": "1 heure",
+      "average": "Moyenne",
+      "english": "Anglais LV1",
+      "tomorrow": "demain",
+      "homework": "Préparer l'oral sur un lieu de Londres.",
+      "menu": "Menu du jour",
+      "booked": "Réservé",
+      "dish": "Lasagnes, salade verte",
+      "dessert": "Tarte aux abricots"
+    },
+    "profile": {
+      "eyebrow": "À propos de toi",
+      "title": "Qui es-tu ?",
+      "text": "Sélectionne ton niveau scolaire.",
+      "middle": "Collégien",
+      "high": "Lycéen",
+      "student": "Étudiant",
+      "parent": "Parent d'élève",
+      "teacher": "Professeur",
+      "unavailableTitle": "Piéride n'est pas encore disponible pour toi.",
+      "unavailableText": "Les comptes parents et professeurs ne sont pas compatibles avec Piéride pour le moment. Tu peux créer un compte hors ligne pour découvrir l'application.",
+      "other": "Choisir un autre profil",
+      "offline": "Créer un compte hors ligne"
+    },
+    "service": {
+      "eyebrow": "Service scolaire",
+      "title": "Quelle application utilises-tu habituellement ?",
+      "text": "Sélectionne le service que tu as l'habitude d'utiliser dans ton établissement.",
+      "pronote": "Index Éducation, la plupart des lycées",
+      "ecoledirecte": "Aplim, établissements privés",
+      "skolengo": "Kosmos, ENT régionaux",
+      "others": "Autres options",
+      "university": "Université",
+      "universityText": "Lorraine, Nîmes, UPHF…",
+      "offline": "Compte hors ligne",
+      "offlineText": "Pour essayer Piéride",
+      "soon": "Bientôt"
+    },
+    "offline": {
+      "eyebrow": "Compte hors ligne",
+      "title": "Créer un compte hors ligne",
+      "text": "Ce compte ne sera connecté à aucun service scolaire. Tu pourras ajouter tes propres événements et tâches.",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Ton prénom",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Ton nom",
+      "features": {
+        "events": "Ajouter tes événements et calendriers iCal",
+        "homework": "Noter tes devoirs à la main",
+        "personalize": "Personnaliser l'accueil et les matières",
+        "link": "Lier un service plus tard depuis les paramètres"
+      },
+      "cancel": "Annuler",
+      "create": "Créer le compte"
+    }
   }
 }

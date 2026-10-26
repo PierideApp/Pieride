@@ -65,3 +65,52 @@ export type ConnectService = (
   secret: string,
   saveSecret: (secret: string) => Promise<void>
 ) => Promise<SchoolServicePlugin>;
+
+/**
+ * Ce que chaque service fournit, d'après les plugins de Papillon (services/<service>/index.ts),
+ * limité aux capabilities reprises. Sert à afficher les modules sans se connecter au service.
+ */
+export const SERVICE_CAPABILITIES: Record<ServiceKind, readonly Capability[]> =
+  {
+    pronote: [
+      "TIMETABLE",
+      "HOMEWORK",
+      "GRADES",
+      "NEWS",
+      "ATTENDANCE",
+      "CANTEEN_MENU",
+    ],
+    ecoledirecte: ["TIMETABLE", "HOMEWORK", "GRADES", "NEWS", "ATTENDANCE"],
+    skolengo: ["TIMETABLE", "HOMEWORK", "GRADES", "NEWS", "ATTENDANCE"],
+    appscho: ["TIMETABLE", "NEWS"],
+    multi: ["TIMETABLE", "NEWS"],
+    ical: ["TIMETABLE"],
+    turboself: ["CANTEEN_BALANCE", "CANTEEN_HISTORY", "CANTEEN_BOOKINGS"],
+    ard: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
+    izly: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
+    alise: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
+    mock: ["TIMETABLE", "HOMEWORK", "GRADES"],
+  };
+
+/** Nom affiché de chaque service : un nom de marque, le même dans toutes les langues. */
+export const SERVICE_NAMES: Record<ServiceKind, string> = {
+  pronote: "PRONOTE",
+  ecoledirecte: "ÉcoleDirecte",
+  skolengo: "Skolengo",
+  appscho: "APPSCHO",
+  multi: "ESUP Multi",
+  ical: "iCal",
+  turboself: "TurboSelf",
+  ard: "ARD",
+  izly: "Izly",
+  alise: "Alise",
+  mock: "Mock Data",
+};
+
+/** Les services sans identifiants : rien à garder dans le trousseau. */
+export const NO_SECRET: ReadonlySet<ServiceKind> = new Set(["mock"]);
+
+/** Les capabilities fournies par les services liés à un compte. */
+export function capabilitiesOf(kinds: readonly ServiceKind[]): Set<Capability> {
+  return new Set(kinds.flatMap(kind => SERVICE_CAPABILITIES[kind]));
+}

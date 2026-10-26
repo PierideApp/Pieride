@@ -1,0 +1,174 @@
+/* Thèmes clair et sombre, d'après les maquettes (pieride_design/design/README.md).
+   Toute couleur, espacement ou rayon de l'interface passe par ces variables. */
+
+@font-face {
+  font-family: "SN Pro";
+  font-weight: 400;
+  src: url("@/assets/fonts/SNPro-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "SN Pro";
+  font-weight: 500;
+  src: url("@/assets/fonts/SNPro-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "SN Pro";
+  font-weight: 600;
+  src: url("@/assets/fonts/SNPro-Semibold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "SN Pro";
+  font-weight: 700;
+  src: url("@/assets/fonts/SNPro-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Unbounded";
+  font-weight: 700;
+  src: url("@/assets/fonts/Unbounded-Bold.ttf") format("truetype");
+}
+
+@mixin light {
+  --color-bg: #f4f5fb;
+  --color-surface: #ffffff;
+  --color-border: #e4e6f2;
+  --color-text: #13123a;
+  --color-text-2: #6b6e8c;
+  --color-text-3: #a3a6bf;
+  --color-accent: #2b2bc2;
+  --color-accent-text: #2b2bc2;
+  --color-accent-soft: #eceeff;
+  --color-on-accent: #ffffff;
+  --color-success: #12a26b;
+  --color-success-bg: #e3f7ee;
+  --color-error: #d93a4a;
+  --color-error-bg: #fdecee;
+  --color-warning: #e8901c;
+  --color-warning-bg: #fff3e3;
+
+  color-scheme: light;
+}
+
+@mixin dark {
+  --color-bg: #0e0d22;
+  --color-surface: #181733;
+  --color-border: #2a2950;
+  --color-text: #eeeeff;
+  --color-text-2: #a3a5cc;
+  --color-text-3: #6d6f99;
+  --color-accent: #5a66f2;
+  --color-accent-text: #8792fa;
+  --color-accent-soft: #25264f;
+  --color-success: #3ccb86;
+  --color-success-bg: #10291e;
+  --color-error: #ff6b78;
+  --color-error-bg: #33161e;
+  --color-warning: #ffb547;
+  --color-warning-bg: #32240f;
+
+  color-scheme: dark;
+}
+
+:root {
+  /* Marque : identique dans les deux thèmes */
+  --brand-ink: #0e0b4d;
+  --brand-900: #16127a;
+  --brand-500: #5566f2;
+  --brand-lavender: #a9b4ff;
+  --brand-sulfur: #f1e25b;
+  --brand-surface: linear-gradient(160deg, #1d1a96 0%, var(--brand-ink) 100%);
+  --brand-glow: radial-gradient(circle at 15% 5%, #5566f273, transparent 60%);
+  --on-brand: #ffffff;
+  --on-brand-soft: #ffffff1f;
+  --on-brand-active: #ffffff21;
+  // Fond assombri sous la palette et ombre du panneau détail.
+  --color-overlay: #0e0b4d59;
+
+  --font-text: "SN Pro", system-ui, sans-serif;
+  --font-display: "Unbounded", "SN Pro", system-ui, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --radius-round: 999px;
+
+  --sidebar-width: 248px;
+  --sidebar-rail: 72px;
+
+  /* Thème clair par défaut */
+  @include light;
+}
+
+// Sur la racine (thème choisi, hooks/useTheme.ts) ou sur un élément (aperçus des Paramètres).
+[data-theme="light"] {
+  @include light;
+}
+
+[data-theme="dark"] {
+  @include dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--brand-ink);
+  color: var(--color-text);
+  font-family: var(--font-text);
+  font-size: 14px;
+  // Medium, comme le texte courant de Papillon (body1).
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+// Une touche du clavier (« Ctrl », « Échap ») dans un texte d'aide.
+kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-s);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-sulfur);
+  outline-offset: 2px;
+}
+
+/* Écrans d'attente et d'erreur du démarrage (main.tsx), avant le shell */
+#root > p[role] {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  margin: 0;
+  color: var(--on-brand);
+  background: var(--brand-surface);
+}

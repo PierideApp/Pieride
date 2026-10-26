@@ -25,10 +25,11 @@ import {
   UnsupportedService,
 } from "./shared/errors";
 import type { Account, LinkedService, ServiceKind } from "./shared/models";
-import type {
-  CapabilityMethods,
-  ConnectService,
-  SchoolServicePlugin,
+import {
+  type CapabilityMethods,
+  type ConnectService,
+  NO_SECRET,
+  type SchoolServicePlugin,
 } from "./shared/plugin";
 
 /** Les capabilities qui ont déjà leurs tables. Les autres arriveront avec leur migration. */
@@ -105,12 +106,20 @@ export class AccountManager {
   /**
    * Lie un service : adresse ouverte au réseau, ligne en base, puis secret dans le trousseau.
    * Si le trousseau échoue, la ligne est retirée : pas de service sans secret, ni l'inverse.
+   * Un service sans identifiants (`NO_SECRET`) ne touche pas au trousseau.
    */
-  async linkService(service: LinkedService, secret: string): Promise<void> {
+  async linkService(service: LinkedService, secret?: string): Promise<void> {
+    const secretless = NO_SECRET.has(service.kind);
+    if (!secretless && secret === undefined) {
+      throw new AuthenticationError("Identifiants manquants");
+    }
     if (service.instanceUrl) {
       await allowInstance(service.instanceUrl);
     }
     await this.db.insert(services).values(service);
+    if (secretless || secret === undefined) {
+      return;
+    }
     try {
       await setSecret(service.id, secret);
     } catch (error) {
@@ -125,19 +134,39 @@ export class AccountManager {
    */
   async removeAccount(accountId: string): Promise<string[]> {
     const linked = await this.db
-      .select({ id: services.id })
+      .select({ id: services.id, kind: services.kind })
       .from(services)
       .where(eq(services.accountId, accountId));
+    const withSecret = linked.filter(({ kind }) => !NO_SECRET.has(kind));
     const results = await Promise.allSettled(
-      linked.map(({ id }) => deleteSecret(id))
+      withSecret.map(({ id }) => deleteSecret(id))
     );
     for (const { id } of linked) {
       this.plugins.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
-    return linked
+    return withSecret
       .filter((_, i) => results[i]?.status === "rejected")
       .map(({ id }) => id);
+  }
+
+  /**
+   * Délie un service : son secret d'abord, puis sa ligne et toutes ses données (cascade).
+   * Si le trousseau échoue, rien n'est effacé : pas de secret sans service.
+   */
+  async unlinkService(serviceId: string): Promise<void> {
+    const [service] = await this.db
+      .select({ kind: services.kind })
+      .from(services)
+      .where(eq(services.id, serviceId));
+    if (!service) {
+      return;
+    }
+    if (!NO_SECRET.has(service.kind)) {
+      await deleteSecret(serviceId);
+    }
+    this.plugins.delete(serviceId);
+    await this.db.delete(services).where(eq(services.id, serviceId));
   }
 
   async refreshAll(accountId: string, now = new Date()): Promise<void> {
@@ -253,7 +282,9 @@ export class AccountManager {
         `Service non pris en charge : ${service.kind}`
       );
     }
-    const secret = await getSecret(service.id);
+    const secret = NO_SECRET.has(service.kind)
+      ? ""
+      : await getSecret(service.id);
     if (secret === null) {
       throw new AuthenticationError("Aucun secret enregistré pour ce service");
     }

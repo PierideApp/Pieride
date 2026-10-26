@@ -1,0 +1,590 @@
+// Premier lancement (maquettes 01-premier-lancement) : fond de la marque, étape dans un panneau.
+
+// Trame de papillons du bas, comme la barre latérale (layout.module.scss).
+@mixin motif {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 60% 0 0;
+    z-index: -1;
+    background: url("@/assets/brand/motif.svg") 0 0 / 92px;
+    opacity: 0.2;
+    mask-image: linear-gradient(transparent, black 45%);
+  }
+}
+
+// Bienvenue
+
+.welcome {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: 100%;
+  padding: var(--space-8) clamp(var(--space-6), 8vw, 120px);
+  overflow: hidden;
+  color: var(--brand-lavender);
+  background: var(--brand-glow), var(--brand-surface);
+
+  @include motif;
+}
+
+.welcomeText {
+  flex: 1;
+  max-width: 600px;
+
+  img {
+    border-radius: var(--radius-l);
+  }
+
+  h1 {
+    margin: var(--space-6) 0 var(--space-4);
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.4vw, 44px);
+    line-height: 1.2;
+    color: var(--on-brand);
+  }
+
+  p {
+    margin: 0 0 var(--space-6);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+}
+
+.start {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-m);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--on-brand);
+  cursor: pointer;
+}
+
+// Aperçu de l'app : décoratif, caché quand la fenêtre est étroite.
+.preview {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--space-3);
+  width: 420px;
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-l);
+  font-size: 13px;
+  color: var(--color-text);
+  background: var(--on-brand-soft);
+
+  small {
+    color: var(--color-text-2);
+  }
+
+  @media (max-width: 1099px) {
+    display: none;
+  }
+}
+
+.course {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-5);
+  border-radius: var(--radius-m);
+  background: var(--tone-bg);
+
+  // Barre de couleur de la matière.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: var(--space-2) auto var(--space-2) var(--space-2);
+    width: 4px;
+    border-radius: var(--radius-round);
+    background: var(--tone);
+  }
+
+  strong {
+    color: var(--tone);
+  }
+
+  small {
+    grid-column: 1;
+  }
+
+  &[data-tone="accent"] {
+    --tone: var(--color-accent-text);
+    --tone-bg: var(--color-accent-soft);
+  }
+
+  &[data-tone="error"] {
+    --tone: var(--color-error);
+    --tone-bg: var(--color-error-bg);
+  }
+}
+
+.now {
+  grid-row: 1;
+  grid-column: 2;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+
+.previewRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.previewCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: var(--color-surface);
+}
+
+.average {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-accent-text);
+}
+
+.trend,
+.booked {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.homeworkHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+
+  strong {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-success);
+  }
+
+  > .booked {
+    align-self: center;
+  }
+}
+
+.menuIcon {
+  color: var(--color-success);
+}
+
+// Étapes : la marque à gauche, l'étape à droite
+
+.onboarding {
+  display: flex;
+  height: 100%;
+  background: var(--brand-glow), var(--brand-surface);
+}
+
+.brand {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: clamp(260px, 38%, 560px);
+  padding: var(--space-6);
+  color: var(--brand-lavender);
+
+  @include motif;
+}
+
+.mark {
+  width: min(260px, 70%);
+}
+
+.name {
+  margin: var(--space-8) 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--on-brand);
+}
+
+.tagline {
+  margin: 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.progress {
+  position: absolute;
+  right: var(--space-8);
+  bottom: var(--space-6);
+  left: var(--space-8);
+
+  p {
+    margin: 0 0 var(--space-2);
+    font-size: 13px;
+    font-weight: 700;
+  }
+}
+
+.bars {
+  display: flex;
+  gap: var(--space-2);
+
+  span {
+    flex: 1;
+    height: 5px;
+    border-radius: var(--radius-round);
+    background: var(--on-brand-soft);
+
+    &[data-done] {
+      background: var(--brand-sulfur);
+    }
+  }
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border-radius: var(--radius-l);
+  overflow-y: auto;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: none;
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.step {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding-top: clamp(var(--space-5), 10vh, 120px);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent-text);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.text {
+  margin: var(--space-3) 0 var(--space-6);
+  line-height: 1.5;
+  color: var(--color-text-2);
+}
+
+.label {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-6);
+}
+
+.primary,
+.secondary {
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-m);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.secondary {
+  margin-right: auto;
+  color: var(--color-text-2);
+  background: none;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+// Qui es-tu ?
+
+.profiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-3);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-l);
+  font-weight: 700;
+  text-align: center;
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &[data-checked] {
+    border-color: var(--color-accent);
+    color: var(--color-accent-text);
+    background: var(--color-accent-soft);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--brand-sulfur);
+    outline-offset: 2px;
+  }
+}
+
+.emoji {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-round);
+  font-size: 30px;
+  background: var(--color-bg);
+}
+
+.warning {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-l);
+  background: var(--color-warning-bg);
+
+  p {
+    margin: var(--space-1) 0 0;
+    line-height: 1.5;
+  }
+}
+
+// L'orange sert à l'icône et au cadre : en texte, il manquerait de contraste.
+.warningIcon {
+  flex-shrink: 0;
+  color: var(--color-warning);
+}
+
+// Service scolaire
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.optionsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  text-align: left;
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    cursor: default;
+
+    .optionIcon,
+    .optionText {
+      opacity: 0.55;
+    }
+  }
+}
+
+.optionIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-s);
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
+.optionText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  small {
+    color: var(--color-text-2);
+  }
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--color-text-3);
+}
+
+.soon {
+  flex-shrink: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-2);
+  background: var(--color-bg);
+}
+
+// Compte hors ligne
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  input {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text);
+    background: var(--color-surface);
+
+    &:focus {
+      border-color: var(--color-accent);
+      outline: 1px solid var(--color-accent);
+      outline-offset: 0;
+    }
+  }
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  list-style: none;
+  font-weight: 600;
+  background: var(--color-surface);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+}
+
+.featureIcon {
+  flex-shrink: 0;
+  color: var(--color-accent-text);
+}
+
+.error {
+  margin: var(--space-4) 0 0;
+  color: var(--color-error);
+}
+
+// Caché à l'écran, toujours lu par les lecteurs d'écran.
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

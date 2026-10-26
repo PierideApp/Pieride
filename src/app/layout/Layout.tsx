@@ -1,0 +1,124 @@
+// Le cadre de la fenêtre (UX §3) : barre latérale, boutons de la fenêtre, page du module affiché,
+// panneau détail, palette de commandes et Paramètres.
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Route, Routes, useLocation } from "react-router";
+
+import { Settings } from "@/app/settings/Settings";
+import { EmptyState } from "@/components/EmptyState/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
+import { Page } from "@/components/Page/Page";
+import type { AccountSummary } from "@/hooks/useAccounts";
+import type { Loaded } from "@/hooks/useLoaded";
+import { useShortcuts } from "@/hooks/useShortcuts";
+import { modulePath, visibleModules } from "@/modules/registry";
+import { capabilitiesOf } from "@/services/shared/plugin";
+import { useAccountStore } from "@/stores/accounts";
+import { useDetailStore } from "@/stores/detail";
+import { useSettingsStore } from "@/stores/settings";
+import { useSyncStore } from "@/stores/sync";
+
+import { CommandPalette } from "./CommandPalette";
+import { DetailPanel } from "./DetailPanel";
+import styles from "./layout.module.scss";
+import { NotFound } from "./NotFound";
+import { Sidebar } from "./Sidebar";
+import { WindowControls } from "./WindowControls";
+
+export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
+  const { t } = useTranslation();
+  const currentId = useAccountStore(state => state.currentAccountId);
+  const detailOpen = useDetailStore(state => state.content !== null);
+  const closeDetail = useDetailStore(state => state.close);
+  const { pathname } = useLocation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
+  const [settingsAt, setSettingsAt] = useState<string | null>(null);
+  const list = useMemo(
+    () => (accounts.status === "ready" ? accounts.data : []),
+    [accounts]
+  );
+  const current = list.find(account => account.id === currentId) ?? list[0];
+  const hidden = useSettingsStore(state =>
+    current ? state.hiddenModules[current.id] : undefined
+  );
+  const modules = useMemo(
+    () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden),
+    [current, hidden]
+  );
+  const sync = useSyncStore(state => state.sync);
+  const currentAccountId = current?.id;
+  const syncCurrent = useCallback(() => {
+    if (currentAccountId) {
+      void sync(currentAccountId);
+    }
+  }, [currentAccountId, sync]);
+  // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
+  useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
+
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const openSettings = useCallback(() => setSettingsAt(pathname), [pathname]);
+  useShortcuts(modules, {
+    sync: syncCurrent,
+    palette: openPalette,
+    settings: openSettings,
+  });
+
+  return (
+    <div className={styles.shell}>
+      <Sidebar
+        accounts={accounts}
+        current={current}
+        modules={modules}
+        onSearch={openPalette}
+        onSettings={openSettings}
+      />
+      <WindowControls />
+      <main className={styles.page} data-detail-open={detailOpen || undefined}>
+        <div className={styles.pageContent}>
+          <Routes>
+            {modules.map(module => (
+              <Route
+                key={module.id}
+                path={modulePath(module)}
+                element={
+                  <ErrorBoundary
+                    key={module.id}
+                    fallback={retry => (
+                      <Page title={t(`modules.${module.id}`)}>
+                        <EmptyState
+                          icon={module.icon}
+                          title={t("crash.title")}
+                          text={t("crash.text")}
+                          action={{ label: t("crash.retry"), onClick: retry }}
+                        />
+                      </Page>
+                    )}
+                  >
+                    <module.page module={module} />
+                  </ErrorBoundary>
+                }
+              />
+            ))}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+        <DetailPanel />
+      </main>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        modules={modules}
+        accounts={list}
+        current={current}
+        onSync={syncCurrent}
+        onSettings={openSettings}
+      />
+      <Settings
+        open={settingsAt === pathname}
+        onClose={() => setSettingsAt(null)}
+        account={current}
+      />
+    </div>
+  );
+}

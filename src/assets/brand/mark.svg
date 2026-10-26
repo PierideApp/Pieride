@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="75 209 874 598">
+  <defs>
+    <linearGradient id="tipL" gradientUnits="userSpaceOnUse" x1="110" y1="250" x2="330" y2="420"><stop offset=".25" stop-color="#F1E25B"/><stop offset=".42" stop-color="#fff"/></linearGradient>
+    <linearGradient id="tipR" gradientUnits="userSpaceOnUse" x1="914" y1="250" x2="694" y2="420"><stop offset=".25" stop-color="#F1E25B"/><stop offset=".42" stop-color="#fff"/></linearGradient>
+  </defs>
+  <g fill="none" stroke-width="54" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#fff" d="M440 330 C480 380 504 450 512 540 C548 690 690 800 742 746 C794 690 700 570 512 540 C324 570 230 690 282 746 C334 800 476 690 512 540"/>
+    <path stroke="url(#tipL)" d="M512 540 C430 400 230 200 140 270 C60 340 250 530 512 540"/>
+    <path stroke="url(#tipR)" d="M512 540 C774 530 964 340 884 270 C794 200 594 400 512 540 C520 450 544 380 584 330"/>
+  </g>
+  <circle cx="440" cy="330" r="30" fill="#fff"/><circle cx="584" cy="330" r="30" fill="#fff"/>
+</svg>

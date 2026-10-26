@@ -18,6 +18,8 @@ pnpm install
 pnpm tauri dev
 ```
 
+Pour avoir des données sans compte scolaire : crée un compte hors ligne au premier lancement, puis ouvre Paramètres > Développeur > « Attacher et remplir ». Ces données fictives n'existent qu'en dev.
+
 ## De la branche à la fusion
 
 1. Crée une branche depuis `main`, par exemple `feat/vue-semaine` ou `fix/synchro-notes`.

@@ -13,7 +13,9 @@ export type ServiceKind =
   | "turboself"
   | "ard"
   | "izly"
-  | "alise";
+  | "alise"
+  /** Données fictives, en dev seulement (services/mock). */
+  | "mock";
 
 /** Une personne. Ses données viennent de ses services liés. */
 export interface Account {
