@@ -5,7 +5,7 @@ import { migrate } from "@/database/migrate";
 import { nodeDriver } from "@/database/node-driver";
 import { courses, grades, services, syncState } from "@/database/schema";
 import { allowInstance } from "@/lib/http";
-import { deleteSecret, setSecret } from "@/lib/keyring";
+import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 
 import { AccountManager, weekStart } from "./account-manager";
 import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
@@ -60,7 +60,7 @@ async function setup() {
   const driver = nodeDriver();
   await migrate(driver);
   const db = createDb(driver);
-  const manager = new AccountManager(db, { pronote: connect });
+  const manager = new AccountManager(db, { pronote: connect, mock: connect });
   await manager.addAccount({
     id: "camille",
     firstName: "Camille",
@@ -201,6 +201,38 @@ describe("AccountManager", () => {
         "mot de passe"
       )
     ).rejects.toBe("keyring_unavailable");
+    expect((await db.select().from(services)).map(s => s.id)).toEqual([
+      "pronote-1",
+    ]);
+  });
+
+  it("lie et délie un service sans identifiants sans toucher au trousseau", async () => {
+    const { db, manager } = await setup();
+    await manager.linkService({
+      id: "mock-1",
+      accountId: "camille",
+      kind: "mock",
+    });
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    const ofMock = async () =>
+      (await db.select().from(courses)).filter(c => c.serviceId === "mock-1");
+    expect(await ofMock()).toHaveLength(2);
+
+    await manager.unlinkService("mock-1");
+    expect(await ofMock()).toEqual([]);
+    expect((await db.select().from(services)).map(s => s.id)).toEqual([
+      "pronote-1",
+    ]);
+    for (const keyring of [getSecret, setSecret, deleteSecret]) {
+      expect(keyring).not.toHaveBeenCalledWith("mock-1");
+    }
+  });
+
+  it("refuse de lier sans secret un service qui en demande un", async () => {
+    const { db, manager } = await setup();
+    await expect(
+      manager.linkService({ id: "izly-1", accountId: "camille", kind: "izly" })
+    ).rejects.toBeInstanceOf(AuthenticationError);
     expect((await db.select().from(services)).map(s => s.id)).toEqual([
       "pronote-1",
     ]);
