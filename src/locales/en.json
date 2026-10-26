@@ -10,5 +10,198 @@
     "Unknown": "Something unexpected went wrong.",
     "keyring_unavailable": "Your system keyring is unavailable: your credentials can't be saved.",
     "UnsupportedService": "This service isn't supported by Piéride yet."
+  },
+  "modules": {
+    "accueil": "Home",
+    "cours": "Classes",
+    "taches": "Tasks",
+    "notes": "Grades",
+    "actualites": "News",
+    "assiduite": "Attendance"
+  },
+  "sidebar": {
+    "label": "Navigation",
+    "school": "School life",
+    "noAccount": "No account yet",
+    "switchAccount": "Switch account"
+  },
+  "sync": {
+    "never": "Not synced yet",
+    "running": "Syncing…",
+    "failed": "Sync failed",
+    "done": "Synced {{when}}",
+    "action": "Sync"
+  },
+  "placeholder": {
+    "title": "Coming soon",
+    "text": "This page arrives with an upcoming version of Piéride."
+  },
+  "notFound": {
+    "heading": "Oops",
+    "title": "Page not found",
+    "text": "This page doesn't exist or no longer does. It may have flown away.",
+    "back": "Back to home"
+  },
+  "crash": {
+    "title": "This page ran into a problem",
+    "text": "The rest of Piéride still works. You can try again.",
+    "retry": "Try again"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "close": "Close"
+  },
+  "tray": {
+    "open": "Open Piéride",
+    "quit": "Quit"
+  },
+  "palette": {
+    "label": "Command palette",
+    "search": "Search",
+    "placeholder": "Go to a page, run an action…",
+    "goto": "Go to",
+    "actions": "Actions",
+    "sync": "Sync now",
+    "switchAccount": "Switch account",
+    "empty": "No results",
+    "navigate": "navigate",
+    "open": "open",
+    "close": "close"
+  },
+  "keys": {
+    "escape": "Esc",
+    "enter": "Enter"
+  },
+  "detail": {
+    "close": "Close the panel",
+    "hint": "Esc to close"
+  },
+  "settings": {
+    "title": "Settings",
+    "close": "Close settings",
+    "groups": {
+      "account": "Account",
+      "appearance": "Appearance",
+      "app": "App",
+      "pieride": "Piéride"
+    },
+    "sections": {
+      "account": "My account",
+      "linkedAccounts": "Linked accounts",
+      "appearance": "Personalization",
+      "subjects": "Subjects",
+      "sidebar": "Sidebar",
+      "features": "Features",
+      "notifications": "Notifications",
+      "language": "Language",
+      "startup": "Startup and window",
+      "privacy": "Privacy",
+      "releaseNotes": "Release notes",
+      "about": "About",
+      "developer": "Developer"
+    },
+    "descriptions": {
+      "appearance": "Piéride's theme.",
+      "sidebar": "This account's modules. Those none of your services provide don't show up.",
+      "language": "The interface language.",
+      "developer": "Tools to work on Piéride, only shown in dev builds."
+    },
+    "theme": {
+      "label": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "modules": {
+      "label": "Modules",
+      "account": "Account: {{name}}",
+      "always": "Always available",
+      "providedBy": "Provided by {{services}}",
+      "locked": "Always shown",
+      "noAccount": "Add an account first: each account has its own modules."
+    },
+    "developer": {
+      "noAccount": "Create an account first: fake data is attached to the current account.",
+      "mockTitle": "Fake data",
+      "mockText": "The timetable, homework and grades of a made-up student, offline. To work on the screens without a school account.",
+      "attached": "Attached to this account",
+      "detached": "Not attached",
+      "attach": "Attach and fill",
+      "remove": "Remove",
+      "failed": "That didn't work: see the developer console for details."
+    }
+  },
+  "onboarding": {
+    "tagline": "Your school life, on the big screen.",
+    "step": "Step {{current}} of {{total}}",
+    "back": "Back",
+    "continue": "Continue",
+    "welcome": {
+      "title": "The app to manage your school life",
+      "text": "Connect your school apps to see your grades, classes, homework and more in Piéride!",
+      "start": "Get started"
+    },
+    "preview": {
+      "math": "Mathematics",
+      "mathRoom": "B12 · Mr Bernard",
+      "now": "Now",
+      "physics": "Physics and Chemistry",
+      "physicsRoom": "Lab 2 · Mr Garnier",
+      "hour": "1 hour",
+      "average": "Average",
+      "english": "English",
+      "tomorrow": "tomorrow",
+      "homework": "Prepare a talk about a place in London.",
+      "menu": "Today's menu",
+      "booked": "Booked",
+      "dish": "Lasagna, green salad",
+      "dessert": "Apricot tart"
+    },
+    "profile": {
+      "eyebrow": "About you",
+      "title": "Who are you?",
+      "text": "Pick your school level.",
+      "middle": "Middle school",
+      "high": "High school",
+      "student": "University",
+      "parent": "Parent",
+      "teacher": "Teacher",
+      "unavailableTitle": "Piéride isn't available for you yet.",
+      "unavailableText": "Parent and teacher accounts don't work with Piéride for now. You can create an offline account to try the app.",
+      "other": "Pick another profile",
+      "offline": "Create an offline account"
+    },
+    "service": {
+      "eyebrow": "School service",
+      "title": "Which app do you usually use?",
+      "text": "Pick the service you usually use at your school.",
+      "pronote": "Index Éducation, most high schools",
+      "ecoledirecte": "Aplim, private schools",
+      "skolengo": "Kosmos, regional portals",
+      "others": "Other options",
+      "university": "University",
+      "universityText": "Lorraine, Nîmes, UPHF…",
+      "offline": "Offline account",
+      "offlineText": "To try Piéride",
+      "soon": "Soon"
+    },
+    "offline": {
+      "eyebrow": "Offline account",
+      "title": "Create an offline account",
+      "text": "This account won't be connected to any school service. You can add your own events and tasks.",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Your first name",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Your last name",
+      "features": {
+        "events": "Add your events and iCal calendars",
+        "homework": "Write down your homework",
+        "personalize": "Customize the home page and subjects",
+        "link": "Link a service later from the settings"
+      },
+      "cancel": "Cancel",
+      "create": "Create account"
+    }
   }
 }
