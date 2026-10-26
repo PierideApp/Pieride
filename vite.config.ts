@@ -14,6 +14,8 @@ export default defineConfig({
   },
   // Laisse les erreurs Rust visibles dans le terminal
   clearScreen: false,
+  // Toujours des fichiers, jamais d'URL `data:` : la CSP n'autorise que 'self' pour les images.
+  build: { assetsInlineLimit: 0 },
   server: {
     // Tauri attend un port fixe
     port: 1420,
@@ -24,5 +26,9 @@ export default defineConfig({
   },
   // Les dates des tests dépendent du fuseau : celui des élèves, avec changement d'heure,
   // même sur la CI qui tourne en UTC.
-  test: { env: { TZ: "Europe/Paris" } },
+  test: {
+    env: { TZ: "Europe/Paris" },
+    // Papicons importe ses fichiers sans extension : Node le refuse, Vite non.
+    server: { deps: { inline: ["@getpapillon/papicons"] } },
+  },
 });

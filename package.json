@@ -20,6 +20,7 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@getpapillon/papicons": "^0.2.3",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-http": "^2.8.3",
     "drizzle-orm": "^0.45.4",
@@ -27,6 +28,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-i18next": "^17.1.7",
+    "react-router": "^8.5.0",
     "zustand": "^5.0.16"
   },
   "devDependencies": {
@@ -44,6 +46,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.13.0",
     "prettier": "^3.9.10",
+    "sass": "^1.106.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.0",
     "vite": "^8.3.5",
