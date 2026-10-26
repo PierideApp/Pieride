@@ -1,0 +1,14 @@
+{
+  "app": {
+    "loading": "Loading…"
+  },
+  "errors": {
+    "database": "Your data couldn't be opened. Restart Piéride, and if it keeps happening, report it.",
+    "AuthenticationError": "Sign in to this service again.",
+    "ServiceUnavailable": "Service unreachable for now: you're seeing the last saved data.",
+    "SecurityChallenge": "This service is asking for a verification.",
+    "Unknown": "Something unexpected went wrong.",
+    "keyring_unavailable": "Your system keyring is unavailable: your credentials can't be saved.",
+    "UnsupportedService": "This service isn't supported by Piéride yet."
+  }
+}

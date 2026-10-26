@@ -6,6 +6,13 @@
   "permissions": [
     "core:default",
     "allow-allow-instance",
+    "allow-secret-get",
+    "allow-secret-set",
+    "allow-secret-delete",
+    "allow-db-select",
+    "allow-db-execute",
+    "allow-db-batch",
+    "allow-db-apply-migration",
     {
       "identifier": "http:default",
       "allow": [],

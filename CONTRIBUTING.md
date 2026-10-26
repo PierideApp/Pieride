@@ -42,7 +42,7 @@ pnpm tauri dev
 - **Un nouveau service** = un dossier dans `src/services/` qui implémente `SchoolServicePlugin` et déclare ses `Capabilities`.
 - **Un nouveau module** = un dossier dans `src/modules/` et une ligne dans `registry.ts` (voir [docs/modules.md](docs/modules.md)).
 - **Base locale** : toute modification du schéma = une nouvelle migration.
-- **Rust** : seulement ce que la WebView ne sait pas faire (réseau sans CORS, trousseau, fenêtre de connexion ENT, icône de la barre des tâches).
+- **Rust** : seulement ce que la WebView ne sait pas faire (réseau sans CORS, base SQLite, trousseau, fenêtre de connexion ENT, icône de la barre des tâches).
 - **Secrets** : identifiants et jetons uniquement dans le trousseau du système, jamais dans la base, un store ou les journaux.
 - **Textes** : tout texte affiché passe par i18next, au moins en français.
 

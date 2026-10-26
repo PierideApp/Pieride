@@ -1,6 +1,9 @@
 // Évite d'ouvrir une console en plus sous Windows en release, ne pas retirer.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod database;
+mod secrets;
+
 use std::{collections::HashSet, sync::Mutex};
 
 use tauri::{AppHandle, Manager, State, Url, ipc::CapabilityBuilder};
@@ -68,7 +71,26 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .manage(AllowedInstances::default())
-        .invoke_handler(tauri::generate_handler![allow_instance])
+        .setup(|app| {
+            // Sans base, l'app s'ouvre quand même : le front affiche l'erreur (commandes `db_*` en échec).
+            match tauri::async_runtime::block_on(database::open(app.handle())) {
+                Ok(database) => {
+                    app.manage(database);
+                }
+                Err(error) => eprintln!("base locale impossible à ouvrir : {error}"),
+            }
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            allow_instance,
+            secrets::secret_get,
+            secrets::secret_set,
+            secrets::secret_delete,
+            database::db_select,
+            database::db_execute,
+            database::db_batch,
+            database::db_apply_migration
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

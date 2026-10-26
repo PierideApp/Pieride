@@ -1,9 +1,11 @@
 # database
 
-La base locale : SQLite (`tauri-plugin-sql`) avec [Drizzle](https://orm.drizzle.team) en mode `sqlite-proxy`.
+La base locale : SQLite, ouverte côté Rust avec sqlx (`src-tauri/src/database.rs`), et [Drizzle](https://orm.drizzle.team) en mode `sqlite-proxy` côté front. Le fichier `pieride.db` est dans le dossier de données de l'app.
 
-- Le schéma est écrit en TypeScript ici.
-- Les migrations sont générées par `drizzle-kit` dans `migrations/` et appliquées au démarrage.
-- Toute modification du schéma = une nouvelle migration numérotée.
+- `schema.ts` : le schéma. Chaque table de données porte `service_id` (clé étrangère en cascade) : retirer un compte ou délier un service supprime ses données. Un test le vérifie pour chaque table.
+- `migrations/` : le SQL généré par `pnpm db:generate` après un changement de schéma. Ne pas le modifier à la main.
+- `migrate.ts` : applique au démarrage les migrations pas encore passées. Chacune tourne clés étrangères coupées (drizzle-kit reconstruit des tables en les supprimant), dans une transaction vérifiée avant validation. Ajouter un fichier ne demande rien d'autre.
+- `client.ts` : Drizzle branché sur les commandes Rust `db_*`. Pour plusieurs écritures d'un coup, `db.batch` (vraie transaction), jamais `db.transaction`.
+- `node-driver.ts` : les mêmes règles sur `node:sqlite`, pour les tests.
 
-Le modèle de données est décrit dans la section 5 de [docs/architecture.excalidraw](../../docs/architecture.excalidraw). Les réglages ne vont pas dans la base, ils vont dans [`../stores`](../stores).
+Chaque connexion refuse `ATTACH` (et donc `VACUUM INTO`) : le front ne peut ni lire ni créer d'autre fichier que cette base. Aucun secret dans la base. Les réglages vont dans [`../stores`](../stores).
