@@ -23,6 +23,7 @@
     "@getpapillon/papicons": "^0.2.3",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-http": "^2.8.3",
+    "@tauri-apps/plugin-window-state": "~2.5.0",
     "drizzle-orm": "^0.45.4",
     "i18next": "^26.5.10",
     "react": "^19.3.1",

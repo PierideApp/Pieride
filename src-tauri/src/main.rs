@@ -69,6 +69,7 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .manage(AllowedInstances::default())
         .setup(|app| {
