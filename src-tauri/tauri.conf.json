@@ -11,13 +11,15 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "appDirectoriesOverride": "$CONFIG/Pieride",
     "windows": [
       {
         "title": "Piéride",
         "width": 1280,
-        "height": 800,
-        "minWidth": 800,
-        "decorations": false
+        "height": 720,
+        "minWidth": 720,
+        "decorations": false,
+        "center": true
       }
     ],
     "security": {
