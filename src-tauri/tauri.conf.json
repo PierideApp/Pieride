@@ -11,6 +11,7 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "appDirectoriesOverride": "$CONFIG/Pieride",
     "windows": [
       {
         "title": "Piéride",
