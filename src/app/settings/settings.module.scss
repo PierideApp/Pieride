@@ -110,8 +110,10 @@
   background: var(--color-bg);
 }
 
+// Largeur limitée pour rester lisible, centrée dans le panneau quand la fenêtre est grande.
 .content {
   max-width: 920px;
+  margin-inline: auto;
   padding: var(--space-8) var(--space-8) var(--space-6);
 }
 

@@ -20,6 +20,8 @@
   isolation: isolate;
   display: flex;
   align-items: center;
+  // Le texte et l'aperçu ont une largeur limitée : centrés ensemble quand la fenêtre est grande.
+  justify-content: center;
   gap: var(--space-8);
   height: 100%;
   padding: var(--space-8) clamp(var(--space-6), 8vw, 120px);
