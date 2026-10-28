@@ -51,6 +51,8 @@ jobs:
   build:
     name: Build ${{ matrix.os }}
     needs: [front, rust]
+    # Build seulement sur main (en PR, la ref de l'appelant est refs/pull/<n>/merge)
+    if: github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
