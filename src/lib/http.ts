@@ -6,12 +6,23 @@ import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 
 import { ServiceUnavailable } from "@/services/shared/errors";
 
+import { logRequest } from "./log";
+
 /** Origine seule : le chemin et la query string peuvent porter un identifiant ou un jeton. */
 export function redactUrl(url: string | URL): string {
   try {
     return new URL(url).origin;
   } catch {
     return "[URL invalide]";
+  }
+}
+
+/** Le domaine d'une requête, pour le journal. */
+function hostOf(input: RequestInfo | URL): string {
+  try {
+    return new URL(input instanceof Request ? input.url : input).host;
+  } catch {
+    return "?";
   }
 }
 
@@ -29,12 +40,25 @@ async function externalFetch(
   // Le plugin ignore `redirect` : « manual » s'écrit maxRedirections = 0.
   const redirect =
     init?.redirect ?? (input instanceof Request ? input.redirect : "follow");
+  // Pour le journal (Paramètres > Développeur) : le domaine seulement.
+  const request = {
+    method: init?.method ?? (input instanceof Request ? input.method : "GET"),
+    host: hostOf(input),
+  };
+  const started = performance.now();
   try {
-    return await pluginFetch(input, {
+    const response = await pluginFetch(input, {
       ...init,
       maxRedirections: redirect === "manual" ? 0 : undefined,
     });
+    logRequest({
+      ...request,
+      status: response.status,
+      duration: performance.now() - started,
+    });
+    return response;
   } catch (error) {
+    logRequest({ ...request, duration: performance.now() - started });
     // Les erreurs du plugin recopient l'URL complète : on garde la raison, pas l'URL.
     const reason = String(error).replace(
       /\b[a-z][a-z0-9+.-]*:\/\/\S+/gi,
