@@ -25,7 +25,13 @@ export interface CapabilityMethods {
   };
   GRADES: {
     getGradesPeriods(): Promise<Period[]>;
-    getGradesForPeriod(period: Period): Promise<Grade[]>;
+    /**
+     * Les notes de la période, et les matières de son relevé (`subjects`), même celles sans
+     * note : la liste des matières (Paramètres > Matières) ne dépend pas que des notes.
+     */
+    getGradesForPeriod(
+      period: Period
+    ): Promise<{ grades: Grade[]; subjects: string[] }>;
   };
   NEWS: {
     getNews(): Promise<News[]>;

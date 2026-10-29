@@ -182,10 +182,15 @@ export function capabilities(
           .get(TabLocation.Grades)
           ?.periods.find(candidate => candidate.name === period.name);
         if (!found) {
-          return [];
+          return { grades: [], subjects: [] };
         }
         const overview = await gradesOverview(handle, found);
-        return overview.grades.map(grade => toGrade(grade, period.id));
+        return {
+          grades: overview.grades.map(grade => toGrade(grade, period.id)),
+          subjects: overview.subjectsAverages.map(
+            average => average.subject.name
+          ),
+        };
       }),
   };
   return {

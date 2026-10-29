@@ -147,8 +147,8 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
       },
       GRADES: {
         getGradesPeriods: async () => trimesters(now()),
-        getGradesForPeriod: async period =>
-          GRADES.map(
+        getGradesForPeriod: async period => ({
+          grades: GRADES.map(
             ([week, subject, title, value, coefficient, classAverage], index) =>
               ({
                 id: `mock-grade-${period.id}-${index}`,
@@ -167,6 +167,8 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
                 optional: false,
               }) satisfies Grade
           ).filter(grade => grade.date <= now()),
+          subjects: [],
+        }),
       },
     },
   };

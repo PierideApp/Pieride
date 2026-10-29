@@ -508,9 +508,12 @@ export class AccountManager {
   ): Promise<Write[]> {
     const periodList = uniqueById(await methods.getGradesPeriods());
     const gradeList = [];
+    const subjectNames = [];
     // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
     for (const period of periodList) {
-      gradeList.push(...(await methods.getGradesForPeriod(period)));
+      const found = await methods.getGradesForPeriod(period);
+      gradeList.push(...found.grades);
+      subjectNames.push(...found.subjects);
     }
     const unique = uniqueById(gradeList);
     return [
@@ -523,10 +526,10 @@ export class AccountManager {
               .values(periodList.map(period => ({ ...period, serviceId }))),
           ]
         : []),
-      ...this.subjectsOf(
-        serviceId,
-        unique.map(grade => grade.subject)
-      ),
+      ...this.subjectsOf(serviceId, [
+        ...subjectNames,
+        ...unique.map(grade => grade.subject),
+      ]),
       ...(unique.length > 0
         ? [
             this.db

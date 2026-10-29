@@ -46,20 +46,24 @@ const connect = vi.fn(async (): Promise<SchoolServicePlugin> => ({
     TIMETABLE: { getWeeklyTimetable: weekStart => timetable(weekStart) },
     GRADES: {
       getGradesPeriods: () => gradesPeriods(),
-      getGradesForPeriod: async period => [
-        {
-          id: `note-${period.id}`,
-          subject: "Maths",
-          periodId: period.id,
-          title: "Contrôle",
-          date: period.start,
-          value: 15,
-          outOf: 20,
-          coefficient: 1,
-          bonus: false,
-          optional: false,
-        },
-      ],
+      getGradesForPeriod: async period => ({
+        grades: [
+          {
+            id: `note-${period.id}`,
+            subject: "Maths",
+            periodId: period.id,
+            title: "Contrôle",
+            date: period.start,
+            value: 15,
+            outOf: 20,
+            coefficient: 1,
+            bonus: false,
+            optional: false,
+          },
+        ],
+        // Une matière du relevé sans note.
+        subjects: ["Maths", "Latin"],
+      }),
     },
   },
 }));
@@ -217,6 +221,9 @@ describe("AccountManager", () => {
       "note-t1",
       "note-t2",
     ]);
+    expect(
+      (await db.select().from(subjects)).map(subject => subject.name).sort()
+    ).toEqual(["Latin", "Maths"]);
   });
 
   it("retire un compte : secrets puis données", async () => {

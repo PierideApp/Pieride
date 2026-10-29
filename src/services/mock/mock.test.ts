@@ -35,8 +35,8 @@ describe("données fictives", () => {
     expect(periods[0]?.start).toEqual(new Date(2026, 8, 1));
 
     const [first, second] = periods;
-    const now = first ? await GRADES?.getGradesForPeriod(first) : [];
-    const later = second ? await GRADES?.getGradesForPeriod(second) : [];
+    const now = first && (await GRADES?.getGradesForPeriod(first))?.grades;
+    const later = second && (await GRADES?.getGradesForPeriod(second))?.grades;
     expect(now?.length).toBeGreaterThan(0);
     expect(now?.every(grade => grade.date <= NOW)).toBe(true);
     expect(later).toEqual([]);
