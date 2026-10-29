@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { OfflineAccountStep } from "@/app/onboarding/OfflineAccountStep";
 import { ServiceStep } from "@/app/onboarding/ServiceStep";
-import { useModalDialog } from "@/hooks/useModalDialog";
+import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 
 import styles from "./settings.module.scss";
 
@@ -32,7 +32,7 @@ export function AddAccountDialog({
       ref={dialog}
       className={styles.addAccount}
       aria-label={t("settings.linked.addAccount")}
-      onClose={close}
+      onClose={onOwnClose(close)}
     >
       <button
         type="button"

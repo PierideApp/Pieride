@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 import { WindowControls } from "@/app/layout/WindowControls";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import type { AccountSummary } from "@/hooks/useAccounts";
-import { useModalDialog } from "@/hooks/useModalDialog";
+import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 import { removeAccount } from "@/stores/accounts";
 
 import { AboutSettings } from "./AboutSettings";
@@ -127,7 +127,7 @@ export function Settings({
       ref={dialog}
       className={styles.settings}
       aria-label={t("settings.title")}
-      onClose={onClose}
+      onClose={onOwnClose(onClose)}
       data-tauri-drag-region
     >
       <nav className={styles.nav} aria-label={t("settings.title")}>

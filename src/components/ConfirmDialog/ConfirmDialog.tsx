@@ -4,7 +4,7 @@ import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
-import { useModalDialog } from "@/hooks/useModalDialog";
+import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 
 import styles from "./ConfirmDialog.module.scss";
 
@@ -39,7 +39,7 @@ export function ConfirmDialog({
       ref={dialog}
       className={styles.dialog}
       aria-labelledby={titleId}
-      onClose={onCancel}
+      onClose={onOwnClose(onCancel)}
     >
       <h2 id={titleId} className={styles.title}>
         {title}

@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import type { AccountSummary } from "@/hooks/useAccounts";
-import { useModalDialog } from "@/hooks/useModalDialog";
+import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 import { MOD } from "@/lib/platform";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
@@ -156,7 +156,7 @@ export function CommandPalette({
       ref={dialog}
       className={styles.palette}
       aria-label={t("palette.label")}
-      onClose={close}
+      onClose={onOwnClose(close)}
       onClick={event => event.target === dialog.current && close()}
     >
       <div className={styles.paletteSearch}>
