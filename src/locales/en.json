@@ -374,6 +374,7 @@
       "test": "Test",
       "denied": "Piéride's notifications are blocked: allow them in your system settings.",
       "failed": "The notification could not be sent.",
+      "macDev": "In dev mode, macOS shows the notification as coming from Terminal: allow its notifications in System Settings > Notifications > Terminal. The built app sends them under its own name.",
       "for": "Notify me about",
       "reminderTime": "Reminder time",
       "quiet": "Quiet",

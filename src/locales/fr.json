@@ -374,6 +374,7 @@
       "test": "Tester",
       "denied": "Les notifications de Piéride sont bloquées : autorise-les dans les réglages de ton système.",
       "failed": "La notification n'a pas pu être envoyée.",
+      "macDev": "En mode dev, macOS affiche la notification au nom du Terminal : autorise ses notifications dans Réglages Système > Notifications > Terminal. L'app compilée envoie les siennes sous son propre nom.",
       "for": "M'avertir pour",
       "reminderTime": "Heure du rappel",
       "quiet": "Discrétion",

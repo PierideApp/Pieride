@@ -26,6 +26,7 @@ import { Section } from "@/components/Section/Section";
 import { Select } from "@/components/Select/Select";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Tip } from "@/components/Tip/Tip";
+import { isMac } from "@/lib/platform";
 import { REMINDER_TIMES, useSettingsStore } from "@/stores/settings";
 
 import styles from "./settings.module.scss";
@@ -87,6 +88,10 @@ export function NotificationsSettings() {
         <p className={styles.error} role="alert">
           {t(problem)}
         </p>
+      )}
+      {import.meta.env.DEV && isMac && (
+        // En dev, le plugin envoie la notification au nom du Terminal (com.apple.Terminal).
+        <Tip>{t("settings.notifications.macDev")}</Tip>
       )}
 
       <Section title={t("settings.notifications.for")}>
