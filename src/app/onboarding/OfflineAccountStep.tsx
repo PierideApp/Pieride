@@ -3,6 +3,8 @@ import { Calendar, Link, Palette, Tasks } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/Button/Button";
+import { TextField } from "@/components/TextField/TextField";
 import { accountManager } from "@/services";
 import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
@@ -16,7 +18,14 @@ const FEATURES = [
   { id: "link", icon: Link },
 ] as const;
 
-export function OfflineAccountStep({ onCancel }: { onCancel: () => void }) {
+/** `onCreated` : le compte est créé (Paramètres > Comptes liés referme alors sa fenêtre). */
+export function OfflineAccountStep({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void;
+  onCreated?: () => void;
+}) {
   const { t } = useTranslation();
   const setCurrentAccount = useAccountStore(state => state.setCurrentAccount);
   const reload = useSyncStore(state => state.reload);
@@ -45,6 +54,7 @@ export function OfflineAccountStep({ onCancel }: { onCancel: () => void }) {
     // L'app relit les comptes et quitte le premier lancement.
     setCurrentAccount(id);
     reload();
+    onCreated?.();
   };
 
   return (
@@ -60,29 +70,27 @@ export function OfflineAccountStep({ onCancel }: { onCancel: () => void }) {
       <p className={styles.text}>{t("onboarding.offline.text")}</p>
 
       <div className={styles.fields}>
-        <label className={styles.field}>
-          {t("onboarding.offline.firstName")}
-          <input
-            required
-            maxLength={50}
-            autoComplete="given-name"
-            placeholder={t("onboarding.offline.firstNamePlaceholder")}
-            value={firstName}
-            onChange={event => setFirstName(event.target.value)}
-            // L'étape ne sert qu'à ça.
-            autoFocus
-          />
-        </label>
-        <label className={styles.field}>
-          {t("onboarding.offline.lastName")}
-          <input
-            maxLength={50}
-            autoComplete="family-name"
-            placeholder={t("onboarding.offline.lastNamePlaceholder")}
-            value={lastName}
-            onChange={event => setLastName(event.target.value)}
-          />
-        </label>
+        <TextField
+          size="large"
+          label={t("onboarding.offline.firstName")}
+          required
+          maxLength={50}
+          autoComplete="given-name"
+          placeholder={t("onboarding.offline.firstNamePlaceholder")}
+          value={firstName}
+          onChange={event => setFirstName(event.target.value)}
+          // L'étape ne sert qu'à ça.
+          autoFocus
+        />
+        <TextField
+          size="large"
+          label={t("onboarding.offline.lastName")}
+          maxLength={50}
+          autoComplete="family-name"
+          placeholder={t("onboarding.offline.lastNamePlaceholder")}
+          value={lastName}
+          onChange={event => setLastName(event.target.value)}
+        />
       </div>
 
       <ul className={styles.features}>
@@ -101,16 +109,22 @@ export function OfflineAccountStep({ onCancel }: { onCancel: () => void }) {
       )}
 
       <footer className={styles.footer}>
-        <button type="button" className={styles.secondary} onClick={onCancel}>
+        <Button
+          variant="ghost"
+          size="large"
+          className={styles.footerStart}
+          onClick={onCancel}
+        >
           {t("onboarding.offline.cancel")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className={styles.primary}
+          variant="primary"
+          size="large"
           disabled={saving || firstName.trim() === ""}
         >
           {t("onboarding.offline.create")}
-        </button>
+        </Button>
       </footer>
     </form>
   );

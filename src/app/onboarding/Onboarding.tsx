@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { WindowControls } from "@/app/layout/WindowControls";
 import mark from "@/assets/brand/mark.svg";
+import { Button } from "@/components/Button/Button";
 
 import { OfflineAccountStep } from "./OfflineAccountStep";
 import styles from "./onboarding.module.scss";
@@ -54,10 +55,14 @@ export function Onboarding() {
 
       <main className={styles.panel}>
         <WindowControls />
-        <button type="button" className={styles.back} onClick={back}>
-          <ChevronLeft size={16} />
+        <Button
+          variant="ghost"
+          icon={ChevronLeft}
+          className={styles.back}
+          onClick={back}
+        >
           {t("onboarding.back")}
-        </button>
+        </Button>
         {step === "profile" && (
           <ProfileStep
             onNext={() => go("service")}
