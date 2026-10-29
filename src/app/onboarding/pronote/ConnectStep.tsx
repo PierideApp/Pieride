@@ -265,7 +265,9 @@ export function ConnectStep({
         {phase.id === "waiting" ? (
           <Card className={pronote.waiting} role="status">
             <Spinner />
-            <span>{t("onboarding.pronote.waiting")}</span>
+            <span className={pronote.waitingText}>
+              {t("onboarding.pronote.waiting")}
+            </span>
             <Button
               onClick={() =>
                 // Déjà ouverte : la commande la ramène au premier plan.

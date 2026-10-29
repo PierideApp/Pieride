@@ -47,7 +47,7 @@ export function CityStep({ onNext }: { onNext: (school: School) => void }) {
   });
 
   return (
-    <div className={styles.step}>
+    <div className={`${styles.step} ${pronote.cityStep}`}>
       <p className={styles.eyebrow}>{t("onboarding.pronote.searchEyebrow")}</p>
       <h1 className={styles.title}>{t("onboarding.pronote.searchTitle")}</h1>
       <p className={styles.text}>{t("onboarding.pronote.searchText")}</p>
@@ -102,6 +102,7 @@ export function CityStep({ onNext }: { onNext: (school: School) => void }) {
           )}
           <Card
             rows
+            className={pronote.schools}
             role="radiogroup"
             aria-label={t("onboarding.pronote.searchTitle")}
             hidden={shown.length === 0}
