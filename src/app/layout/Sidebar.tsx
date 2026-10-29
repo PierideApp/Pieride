@@ -1,24 +1,24 @@
 // Barre latérale (UX §3) : compte, liens des modules du compte, état de la synchronisation,
 // Paramètres.
-// Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss).
+// Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss), sauf si
+// l'utilisateur l'a refusé dans les Paramètres.
 import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
 
 import icon from "@/assets/brand/icon.svg";
+import { Avatar } from "@/components/Avatar/Avatar";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { useLastSync } from "@/hooks/useLastSync";
-import type { Loaded } from "@/hooks/useLoaded";
+import { type Loaded, useLoaded } from "@/hooks/useLoaded";
 import { MOD } from "@/lib/platform";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
+import { useSettingsStore } from "@/stores/settings";
 import { useSyncStore } from "@/stores/sync";
 
 import styles from "./layout.module.scss";
-
-const initials = (account: AccountSummary) =>
-  `${account.firstName[0] ?? ""}${account.lastName[0] ?? ""}`.toUpperCase();
 
 /** Compte en cours ; menu pour changer s'il y en a plusieurs. */
 function AccountSwitcher({
@@ -37,9 +37,7 @@ function AccountSwitcher({
   }
   const summary = (
     <>
-      <span className={styles.avatar} aria-hidden="true">
-        {initials(current)}
-      </span>
+      <Avatar account={current} />
       <span className={styles.accountText}>
         <strong>
           {current.firstName} {current.lastName}
@@ -118,7 +116,37 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   );
 }
 
-function ModuleLinks({ modules }: { modules: ModuleManifest[] }) {
+/** Les pastilles des modules qui en ont une, relues après chaque synchronisation. */
+function useBadges(
+  modules: ModuleManifest[],
+  accountId: string | undefined
+): Map<string, number> {
+  const enabled = useSettingsStore(state => state.sidebarBadges);
+  const counted =
+    enabled && accountId
+      ? modules.flatMap(({ id, badge }) =>
+          badge ? [{ id, count: () => badge(accountId) }] : []
+        )
+      : [];
+  const badges = useLoaded(
+    async () =>
+      new Map(
+        await Promise.all(
+          counted.map(async ({ id, count }) => [id, await count()] as const)
+        )
+      ),
+    `${accountId}:${counted.map(({ id }) => id).join()}`
+  );
+  return badges.status === "ready" ? badges.data : new Map();
+}
+
+function ModuleLinks({
+  modules,
+  badges,
+}: {
+  modules: ModuleManifest[];
+  badges: Map<string, number>;
+}) {
   const { t } = useTranslation();
   return (
     <ul className={styles.links}>
@@ -134,11 +162,18 @@ function ModuleLinks({ modules }: { modules: ModuleManifest[] }) {
           >
             <module.icon size={20} className={styles.moduleIcon} />
             <span className={styles.label}>{t(`modules.${module.id}`)}</span>
+            <Badge count={badges.get(module.id)} />
           </NavLink>
         </li>
       ))}
     </ul>
   );
+}
+
+function Badge({ count = 0 }: { count?: number }) {
+  return count > 0 ? (
+    <span className={styles.badge}>{count > 99 ? "99+" : count}</span>
+  ) : null;
 }
 
 export function Sidebar({
@@ -156,6 +191,7 @@ export function Sidebar({
 }) {
   const { t } = useTranslation();
   const school = modules.filter(module => module.group === "school");
+  const badges = useBadges(modules, current?.id);
   return (
     <nav className={styles.sidebar} aria-label={t("sidebar.label")}>
       <div className={styles.brand} data-tauri-drag-region>
@@ -187,11 +223,12 @@ export function Sidebar({
 
       <ModuleLinks
         modules={modules.filter(module => module.group === "main")}
+        badges={badges}
       />
       {school.length > 0 && (
         <>
           <p className={styles.group}>{t("sidebar.school")}</p>
-          <ModuleLinks modules={school} />
+          <ModuleLinks modules={school} badges={badges} />
         </>
       )}
 

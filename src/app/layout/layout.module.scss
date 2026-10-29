@@ -1,9 +1,12 @@
 // Le cadre de la fenêtre : fond, panneau de page, barre latérale, boutons de la fenêtre.
 
-// Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4).
+// Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4), sauf si
+// l'utilisateur l'a refusé (Paramètres > Barre latérale, `data-expanded`).
 @mixin rail {
   @media (max-width: 1279px) {
-    @content;
+    .shell:not([data-expanded]) & {
+      @content;
+    }
   }
 }
 
@@ -323,19 +326,6 @@
   }
 }
 
-.avatar {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-round);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--on-brand);
-  background: var(--brand-500);
-}
-
 .accountText {
   display: flex;
   flex: 1;
@@ -428,6 +418,7 @@
 }
 
 .item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -468,6 +459,28 @@
 
 .moduleIcon {
   flex-shrink: 0;
+}
+
+// Pastille d'un module (tâches à faire…) ; dans le rail, posée sur le coin de l'icône.
+.badge {
+  min-width: 20px;
+  margin-left: auto;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--brand-ink);
+  background: var(--brand-sulfur);
+
+  @include rail {
+    position: absolute;
+    top: 0;
+    right: var(--space-1);
+    min-width: 16px;
+    padding: 0 var(--space-1);
+    font-size: 10px;
+  }
 }
 
 .group {

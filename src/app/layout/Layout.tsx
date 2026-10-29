@@ -11,6 +11,7 @@ import { Page } from "@/components/Page/Page";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
+import { useTrayGlance } from "@/hooks/useTrayGlance";
 import { modulePath, visibleModules } from "@/modules/registry";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
@@ -42,9 +43,13 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const hidden = useSettingsStore(state =>
     current ? state.hiddenModules[current.id] : undefined
   );
+  const order = useSettingsStore(state =>
+    current ? state.moduleOrder[current.id] : undefined
+  );
+  const autoCollapse = useSettingsStore(state => state.sidebarAutoCollapse);
   const modules = useMemo(
-    () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden),
-    [current, hidden]
+    () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden, order),
+    [current, hidden, order]
   );
   const sync = useSyncStore(state => state.sync);
   const currentAccountId = current?.id;
@@ -56,6 +61,8 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
 
+  useTrayGlance(currentAccountId);
+
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const openSettings = useCallback(() => setSettingsAt(pathname), [pathname]);
   useShortcuts(modules, {
@@ -64,8 +71,12 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     settings: openSettings,
   });
 
+  // `data-expanded` : barre latérale complète à toutes les largeurs (pas de rail).
   return (
-    <div className={styles.shell}>
+    <div
+      className={styles.shell}
+      data-expanded={autoCollapse ? undefined : true}
+    >
       <Sidebar
         accounts={accounts}
         current={current}
@@ -118,6 +129,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         open={settingsAt === pathname}
         onClose={() => setSettingsAt(null)}
         account={current}
+        accounts={list}
       />
     </div>
   );
