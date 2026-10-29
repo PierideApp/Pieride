@@ -1,0 +1,33 @@
+.segmented {
+  display: flex;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: var(--radius-m);
+  background: var(--color-bg);
+
+  label {
+    position: relative;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-s);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-2);
+    cursor: pointer;
+
+    &[data-checked] {
+      color: var(--color-text);
+      background: var(--color-surface);
+      box-shadow: 0 1px 3px var(--color-overlay);
+    }
+
+    &:has(:focus-visible) {
+      outline: 2px solid var(--brand-sulfur);
+    }
+  }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

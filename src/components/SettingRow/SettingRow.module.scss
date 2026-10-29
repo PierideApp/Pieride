@@ -1,0 +1,72 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) 0;
+  border: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: none;
+
+  &:is(label, button) {
+    cursor: pointer;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--color-accent);
+  }
+
+  &[data-tone="danger"] {
+    color: var(--color-error);
+
+    .icon {
+      color: var(--color-error);
+      background: var(--color-error-bg);
+    }
+  }
+
+  &[data-tone="success"] .icon {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+  }
+}
+
+.icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-s);
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  small {
+    font-size: 12px;
+    color: var(--color-text-2);
+  }
+}
+
+.value {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--color-text-2);
+}

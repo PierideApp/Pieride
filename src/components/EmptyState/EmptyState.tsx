@@ -3,6 +3,8 @@
 import type { Home } from "@getpapillon/papicons";
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/Button/Button";
+
 import styles from "./EmptyState.module.scss";
 
 interface EmptyStateProps {
@@ -34,13 +36,13 @@ export function EmptyState({
       <h2 className={styles.title}>{title}</h2>
       <p className={styles.text}>{text}</p>
       {action && (
-        <button
-          type="button"
+        <Button
+          variant="primary"
           className={styles.action}
           onClick={action.onClick}
         >
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -1,0 +1,33 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  input {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-m);
+    font: inherit;
+    font-size: 14px;
+    color: var(--color-text);
+    // Dans une carte : le fond de la page fait ressortir le champ.
+    background: var(--color-bg);
+
+    &:focus {
+      border-color: var(--color-accent);
+      outline: 1px solid var(--color-accent);
+      outline-offset: 0;
+    }
+  }
+}
+
+// Posé sur le fond de la page : plus grand, sur une surface.
+.large input {
+  padding: var(--space-3) var(--space-4);
+  font-size: 15px;
+  font-weight: 500;
+  background: var(--color-surface);
+}
