@@ -14,7 +14,8 @@ export default defineConfig({
   },
   // Laisse les erreurs Rust visibles dans le terminal
   clearScreen: false,
-  // Toujours des fichiers, jamais d'URL `data:` : la CSP n'autorise que 'self' pour les images.
+  // Toujours des fichiers, jamais d'URL `data:` : la CSP ne l'accepte que pour les images
+  // choisies par l'utilisateur (photo de profil, fond d'écran), jamais pour les styles.
   build: { assetsInlineLimit: 0 },
   server: {
     // Tauri attend un port fixe

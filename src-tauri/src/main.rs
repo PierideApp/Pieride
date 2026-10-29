@@ -7,6 +7,11 @@ mod secrets;
 use std::{collections::HashSet, sync::Mutex};
 
 use tauri::{AppHandle, Manager, State, Url, ipc::CapabilityBuilder};
+use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_window_state::StateFlags;
+
+/// Argument du lancement à l'ouverture de session : Piéride démarre dans la barre des tâches.
+const MINIMIZED: &str = "--minimized";
 
 /// Origines ouvertes au plugin http pendant cette session.
 #[derive(Default)]
@@ -67,10 +72,34 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
     Ok(url.origin().ascii_serialization())
 }
 
+/// Montre la fenêtre principale, même réduite ou cachée dans la barre des tâches.
+fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        // En premier : ouvrir Piéride une deuxième fois montre la fenêtre déjà lancée.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main_window(app);
+        }))
+        // Sans la visibilité : c'est le lancement qui décide de montrer la fenêtre (`setup`).
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(StateFlags::all().difference(StateFlags::VISIBLE))
+                .build(),
+        )
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec![MINIMIZED]),
+        ))
         .manage(AllowedInstances::default())
         .setup(|app| {
             // Sans base, l'app s'ouvre quand même : le front affiche l'erreur (commandes `db_*` en échec).
@@ -79,6 +108,11 @@ fn main() {
                     app.manage(database);
                 }
                 Err(error) => eprintln!("base locale impossible à ouvrir : {error}"),
+            }
+            // La fenêtre est créée cachée (tauri.conf.json). Lancée à l'ouverture de session,
+            // elle le reste ; le front la montre si l'utilisateur ne veut pas démarrer réduit.
+            if !std::env::args().any(|arg| arg == MINIMIZED) {
+                show_main_window(app.handle());
             }
             Ok(())
         })

@@ -19,11 +19,13 @@
         "height": 720,
         "minWidth": 720,
         "decorations": false,
-        "center": true
+        "center": true,
+        "dragDropEnabled": false,
+        "visible": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'"
+      "csp": "default-src 'self'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; base-uri 'none'; form-action 'none'"
     }
   },
   "bundle": {
