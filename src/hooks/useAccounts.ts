@@ -10,6 +10,8 @@ export interface AccountService {
   kind: ServiceKind;
   /** Le service a refusé les identifiants : il faut se reconnecter. */
   needsLogin: boolean;
+  /** Adresse propre au compte (instance PRONOTE…). */
+  instanceUrl?: string;
 }
 
 export interface AccountSummary extends Account {
@@ -26,6 +28,7 @@ async function loadAccounts(): Promise<AccountSummary[]> {
         accountId: services.accountId,
         kind: services.kind,
         needsLogin: services.needsLogin,
+        instanceUrl: services.instanceUrl,
       })
       .from(services)
       .orderBy(services.createdAt),
@@ -33,7 +36,12 @@ async function loadAccounts(): Promise<AccountSummary[]> {
   return rows.map(row => {
     const own = linked
       .filter(service => service.accountId === row.id)
-      .map(({ id, kind, needsLogin }) => ({ id, kind, needsLogin }));
+      .map(({ id, kind, needsLogin, instanceUrl }) => ({
+        id,
+        kind,
+        needsLogin,
+        instanceUrl: instanceUrl ?? undefined,
+      }));
     return {
       id: row.id,
       firstName: row.firstName,

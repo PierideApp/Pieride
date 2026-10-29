@@ -1,29 +1,34 @@
-// Ajouter un compte depuis Paramètres > Comptes liés : les étapes « service scolaire » et
-// « compte hors ligne » du premier lancement, dans une boîte de dialogue. Les connexions aux
-// services arrivent avec eux (PRONOTE en M3).
+// Ajouter un compte depuis Paramètres > Comptes liés : les étapes du premier lancement
+// (service scolaire, connexion PRONOTE, compte hors ligne) dans une boîte de dialogue. Sert
+// aussi à reconnecter un service PRONOTE refusé.
 import { Cross } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OfflineAccountStep } from "@/app/onboarding/OfflineAccountStep";
+import type { Relink } from "@/app/onboarding/pronote/ConnectStep";
+import { PronoteFlow } from "@/app/onboarding/pronote/PronoteFlow";
 import { ServiceStep } from "@/app/onboarding/ServiceStep";
 import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 
 import styles from "./settings.module.scss";
+
+/** Ce qu'ouvre la fenêtre : un service, un compte hors ligne, ou la reconnexion d'un service. */
+export type AddAccountStart = "service" | "offline" | Relink;
 
 /** `start` : l'étape d'ouverture, `null` quand la fenêtre est fermée. */
 export function AddAccountDialog({
   start,
   onClose,
 }: {
-  start: "service" | "offline" | null;
+  start: AddAccountStart | null;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const dialog = useModalDialog(start !== null);
-  const [offline, setOffline] = useState(false);
+  const [chosen, setChosen] = useState<"pronote" | "offline" | null>(null);
   const close = () => {
-    setOffline(false);
+    setChosen(null);
     onClose();
   };
 
@@ -42,15 +47,24 @@ export function AddAccountDialog({
       >
         <Cross size={18} />
       </button>
-      {start === "offline" || (start === "service" && offline) ? (
+      {typeof start === "object" && start !== null && (
+        <PronoteFlow relink={start} onExit={close} onDone={close} />
+      )}
+      {(start === "offline" ||
+        (start === "service" && chosen === "offline")) && (
         <OfflineAccountStep
-          onCancel={start === "offline" ? close : () => setOffline(false)}
+          onCancel={start === "offline" ? close : () => setChosen(null)}
           onCreated={close}
         />
-      ) : (
-        start === "service" && (
-          <ServiceStep onOffline={() => setOffline(true)} />
-        )
+      )}
+      {start === "service" && chosen === "pronote" && (
+        <PronoteFlow onExit={() => setChosen(null)} onDone={close} />
+      )}
+      {start === "service" && chosen === null && (
+        <ServiceStep
+          onPronote={() => setChosen("pronote")}
+          onOffline={() => setChosen("offline")}
+        />
       )}
     </dialog>
   );

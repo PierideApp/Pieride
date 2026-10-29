@@ -1,7 +1,7 @@
 // Comptes liés (maquette 02-comptes-lies) : les comptes scolaires, puis les services de
 // cantine et les calendriers liés à chacun. On change de compte, on en supprime un (données
 // et secrets compris), on délie un service, on ajoute un compte.
-// La reconnexion d'un service et « Ajouter un calendrier » arrivent avec leurs services.
+// Un compte PRONOTE refusé se reconnecte ici. « Ajouter un calendrier » arrive avec iCal (M4).
 import { AlertTriangle, Plus, User } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,7 @@ import { SERVICE_GROUPS, SERVICE_NAMES } from "@/services/shared/plugin";
 import { removeAccount, useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
-import { AddAccountDialog } from "./AddAccountDialog";
+import { AddAccountDialog, type AddAccountStart } from "./AddAccountDialog";
 import type { SettingsSectionProps } from "./Settings";
 import styles from "./settings.module.scss";
 
@@ -81,7 +81,7 @@ export function LinkedAccountsSettings({
   const { t } = useTranslation();
   const setCurrent = useAccountStore(state => state.setCurrentAccount);
   const reload = useSyncStore(state => state.reload);
-  const [adding, setAdding] = useState<"service" | "offline" | null>(null);
+  const [adding, setAdding] = useState<AddAccountStart | null>(null);
   const [removing, setRemoving] = useState<AccountSummary | null>(null);
   const [unlinking, setUnlinking] = useState<{
     service: AccountService;
@@ -116,6 +116,18 @@ export function LinkedAccountsSettings({
               service => SERVICE_GROUPS[service.kind] === "school"
             );
             const needsLogin = school.some(service => service.needsLogin);
+            // Seul PRONOTE sait se reconnecter pour l'instant.
+            const refused = school.find(
+              service => service.needsLogin && service.kind === "pronote"
+            );
+            const relink: AddAccountStart | null = refused?.instanceUrl
+              ? {
+                  accountId: candidate.id,
+                  serviceId: refused.id,
+                  url: refused.instanceUrl,
+                  name: candidate.schoolName ?? SERVICE_NAMES.pronote,
+                }
+              : null;
             return (
               <SettingRow
                 key={candidate.id}
@@ -149,6 +161,14 @@ export function LinkedAccountsSettings({
                 <ActionMenu
                   label={t("settings.linked.actions")}
                   actions={[
+                    ...(relink
+                      ? [
+                          {
+                            label: t("settings.linked.relink"),
+                            onSelect: () => setAdding(relink),
+                          },
+                        ]
+                      : []),
                     ...(candidate.id === account?.id
                       ? []
                       : [

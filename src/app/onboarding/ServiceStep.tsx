@@ -1,58 +1,28 @@
-// Service scolaire. Seul le compte hors ligne est disponible : les connexions arrivent avec
-// leurs services (PRONOTE en M3, les autres en M4).
+// Service scolaire. PRONOTE et le compte hors ligne sont disponibles ; les autres services
+// arrivent en M4.
 import {
-  ChevronRight,
   Ecoledirecte,
   GraduationHat,
-  type Home,
   Pronote,
   Skolengo,
   User,
 } from "@getpapillon/papicons";
 import { useTranslation } from "react-i18next";
 
+import { ChoiceCard } from "@/components/ChoiceCard/ChoiceCard";
 import { SERVICE_NAMES } from "@/services/shared/plugin";
 
 import styles from "./onboarding.module.scss";
 
-function Option({
-  icon: Icon,
-  title,
-  text,
-  onClick,
+export function ServiceStep({
+  onPronote,
+  onOffline,
 }: {
-  icon: typeof Home;
-  title: string;
-  text: string;
-  /** Absent : bientôt disponible. */
-  onClick?: () => void;
+  onPronote: () => void;
+  onOffline: () => void;
 }) {
   const { t } = useTranslation();
-  return (
-    <button
-      type="button"
-      className={styles.option}
-      disabled={!onClick}
-      onClick={onClick}
-    >
-      <span className={styles.optionIcon} aria-hidden="true">
-        <Icon size={20} />
-      </span>
-      <span className={styles.optionText}>
-        <strong>{title}</strong>
-        <small>{text}</small>
-      </span>
-      {onClick ? (
-        <ChevronRight size={18} className={styles.chevron} />
-      ) : (
-        <span className={styles.soon}>{t("onboarding.service.soon")}</span>
-      )}
-    </button>
-  );
-}
-
-export function ServiceStep({ onOffline }: { onOffline: () => void }) {
-  const { t } = useTranslation();
+  const soon = t("onboarding.service.soon");
   return (
     <div className={styles.step}>
       <p className={styles.eyebrow}>{t("onboarding.service.eyebrow")}</p>
@@ -60,31 +30,35 @@ export function ServiceStep({ onOffline }: { onOffline: () => void }) {
       <p className={styles.text}>{t("onboarding.service.text")}</p>
 
       <div className={styles.options}>
-        <Option
+        <ChoiceCard
           icon={Pronote}
           title={SERVICE_NAMES.pronote}
           text={t("onboarding.service.pronote")}
+          onClick={onPronote}
         />
-        <Option
+        <ChoiceCard
           icon={Ecoledirecte}
           title={SERVICE_NAMES.ecoledirecte}
           text={t("onboarding.service.ecoledirecte")}
+          disabledLabel={soon}
         />
-        <Option
+        <ChoiceCard
           icon={Skolengo}
           title={SERVICE_NAMES.skolengo}
           text={t("onboarding.service.skolengo")}
+          disabledLabel={soon}
         />
       </div>
 
       <p className={styles.label}>{t("onboarding.service.others")}</p>
       <div className={styles.optionsRow}>
-        <Option
+        <ChoiceCard
           icon={GraduationHat}
           title={t("onboarding.service.university")}
           text={t("onboarding.service.universityText")}
+          disabledLabel={soon}
         />
-        <Option
+        <ChoiceCard
           icon={User}
           title={t("onboarding.service.offline")}
           text={t("onboarding.service.offlineText")}
