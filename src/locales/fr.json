@@ -54,7 +54,12 @@
   },
   "tray": {
     "open": "Ouvrir Piéride",
-    "quit": "Quitter"
+    "quit": "Quitter",
+    "now": "En cours : {{subject}}, jusqu'à {{end}}",
+    "noCurrent": "Pas de cours en ce moment",
+    "next": "Ensuite : {{subject}} à {{start}}",
+    "nextRoom": "Ensuite : {{subject}} à {{start}}, salle {{room}}",
+    "noNext": "Plus de cours aujourd'hui"
   },
   "palette": {
     "label": "Palette de commandes",
@@ -102,10 +107,19 @@
       "developer": "Développeur"
     },
     "descriptions": {
-      "appearance": "Le thème de Piéride.",
+      "appearance": "Thème, couleur et fond d'écran.",
       "sidebar": "Les modules de ce compte. Ceux qu'aucun de tes services ne fournit n'apparaissent pas.",
       "language": "La langue de l'interface.",
-      "developer": "Outils pour travailler sur Piéride, visibles seulement en version de dev."
+      "developer": "Le journal et les requêtes réseau depuis le lancement, pour comprendre un problème.",
+      "features": "Active ou désactive ce dont tu as besoin.",
+      "releaseNotes": "Quoi de neuf dans Piéride ?",
+      "account": "Ton profil tel qu'il apparaît dans Piéride.",
+      "linkedAccounts": "Tes comptes scolaires, de cantine et tes calendriers.",
+      "subjects": "Nom, couleur et emoji de chaque matière, partout dans Piéride.",
+      "notifications": "Notifications du système, même quand la fenêtre est fermée.",
+      "startup": "Comment Piéride vit sur ton ordinateur.",
+      "privacy": "Toi et Piéride : ce qui reste chez toi.",
+      "about": "Qui fait Piéride, et avec quoi."
     },
     "theme": {
       "label": "Thème",
@@ -113,13 +127,32 @@
       "dark": "Sombre",
       "system": "Système"
     },
+    "accent": {
+      "label": "Couleur d'accentuation",
+      "text": "La couleur choisie s'applique aux boutons et aux éléments sélectionnés.",
+      "indigo": "Indigo",
+      "blue": "Bleu",
+      "teal": "Turquoise",
+      "green": "Vert",
+      "yellow": "Jaune",
+      "orange": "Orange",
+      "red": "Rouge",
+      "pink": "Framboise",
+      "purple": "Violet",
+      "ink": "Encre"
+    },
     "modules": {
       "label": "Modules",
-      "account": "Compte : {{name}}",
+      "account": "Compte",
       "always": "Toujours disponible",
       "providedBy": "Fourni par {{services}}",
       "locked": "Toujours affiché",
-      "noAccount": "Ajoute d'abord un compte : chaque compte a ses propres modules."
+      "noAccount": "Ajoute d'abord un compte : chaque compte a ses propres modules.",
+      "reorder": "Glisse pour réordonner",
+      "move": "Déplacer {{name}}",
+      "moveHint": "Glisse la ligne, ou utilise les flèches haut et bas",
+      "tip": "Chaque compte a ses propres modules. Avec un compte universitaire (APPSCHO, ESUP Multi), seuls Accueil, Cours et Actualités sont disponibles.",
+      "display": "Affichage"
     },
     "developer": {
       "noAccount": "Crée d'abord un compte : les données fictives s'attachent au compte en cours.",
@@ -129,7 +162,263 @@
       "detached": "Pas attachées",
       "attach": "Attacher et remplir",
       "remove": "Retirer",
-      "failed": "Ça n'a pas marché : le détail est dans la console de développement."
+      "failed": "Ça n'a pas marché : le détail est dans la console de développement.",
+      "network": "Réseau",
+      "requests": "Requêtes réseau",
+      "requestCount_one": "{{count}} requête depuis le lancement",
+      "requestCount_other": "{{count}} requêtes depuis le lancement",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "time": "Heure",
+      "method": "Méthode",
+      "host": "Domaine",
+      "status": "Statut",
+      "duration": "Durée",
+      "noResponse": "échec",
+      "log": "Journal",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "La copie n'a pas marché : sélectionne le texte du journal à la main.",
+      "emptyLog": "Rien pour l'instant.",
+      "private": "Gardé en mémoire seulement, sans jetons ni adresses complètes. Il s'efface quand Piéride se ferme."
+    },
+    "toggles": {
+      "showCoefficients": {
+        "title": "Afficher les coefficients",
+        "text": "Dans la liste des notes"
+      },
+      "showWeekend": {
+        "title": "Afficher le week-end",
+        "text": "Samedi et dimanche dans la vue semaine"
+      },
+      "showNowLine": {
+        "title": "Ligne de l'heure actuelle",
+        "text": "Repère rouge dans l'emploi du temps"
+      },
+      "showBreaks": {
+        "title": "Pauses",
+        "text": "Pause méridienne et récréations dans la liste"
+      },
+      "showCanteen": {
+        "title": "Menu et réservation de cantine",
+        "text": "Dans la pause méridienne"
+      },
+      "hideDoneTasks": {
+        "title": "Masquer les tâches terminées",
+        "text": "Elles restent visibles avec le filtre Terminées"
+      },
+      "sidebarAutoCollapse": {
+        "title": "Replier automatiquement",
+        "text": "Quand la fenêtre fait moins de 1280 px de large"
+      },
+      "sidebarBadges": {
+        "title": "Pastilles de nouveautés",
+        "text": "Nombre de tâches à faire"
+      },
+      "startMinimized": {
+        "title": "Démarrer réduit dans la barre des tâches",
+        "text": "Quand Piéride se lance à l'ouverture de session"
+      },
+      "closeToTray": {
+        "title": "Fermer la fenêtre réduit Piéride",
+        "text": "L'application reste dans la barre des tâches au lieu de quitter"
+      },
+      "trayGlance": {
+        "title": "Coup d'œil dans la barre des tâches",
+        "text": "Cours actuel et suivant dans le menu de l'icône"
+      },
+      "notifyGrades": {
+        "title": "Nouvelles notes",
+        "text": "Dès qu'une note est publiée"
+      },
+      "notifyCourses": {
+        "title": "Cours annulés ou modifiés",
+        "text": "Changement de salle, absence d'un professeur"
+      },
+      "notifyHomework": {
+        "title": "Rappel des tâches",
+        "text": "La veille de la date de rendu"
+      },
+      "notifyNews": {
+        "title": "Nouvelles actualités",
+        "text": "Publiées par ton établissement"
+      },
+      "notifyMorning": {
+        "title": "Résumé du matin",
+        "text": "Tes cours et tâches du jour à l'ouverture de session"
+      },
+      "quietDuringClasses": {
+        "title": "Silencieux pendant les cours",
+        "text": "Les notifications attendent la fin du cours"
+      }
+    },
+    "features": {
+      "gradeScale": "Échelle des notes",
+      "gradeScaleText": "Notation par défaut dans l'interface",
+      "outOf": "Sur {{scale}}",
+      "tasksLayout": "Affichage des tâches",
+      "tasksLayoutText": "Une colonne par jour, ou une liste par date de rendu",
+      "board": "Tableau",
+      "list": "Liste"
+    },
+    "language": {
+      "recommended": "Recommandé"
+    },
+    "releaseNotes": {
+      "installed": "Installée",
+      "emptyTitle": "Pas encore de notes de version",
+      "emptyText": "Elles arriveront avec la première version publiée de Piéride."
+    },
+    "account": {
+      "noAccount": "Ajoute d'abord un compte.",
+      "profile": "Profil",
+      "changePhoto": "Changer la photo",
+      "offline": "Compte hors ligne",
+      "identity": "Identité",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "photo": "Photo de profil",
+      "fromFile": "Depuis un fichier",
+      "fromFileText": "Choisir une image sur ton ordinateur",
+      "removePhoto": "Supprimer la photo",
+      "fromServices": "Informations transmises par {{services}}",
+      "school": "Établissement",
+      "className": "Classe"
+    },
+    "image": {
+      "too_big": "Cette image est trop lourde : 25 Mo au plus.",
+      "unreadable": "Cette image n'a pas pu être ouverte. Essaie un fichier PNG, JPEG ou WebP."
+    },
+    "linked": {
+      "school": "Comptes scolaires",
+      "canteen": "Cantine et cartes",
+      "calendar": "Calendriers",
+      "current": "Compte affiché",
+      "needsLogin": "Reconnexion nécessaire",
+      "actions": "Actions",
+      "show": "Afficher ce compte",
+      "remove": "Supprimer le compte",
+      "unlink": "Délier",
+      "removeTitle": "Supprimer le compte de {{name}} ?",
+      "removeText": "Ses données et ses identifiants seront effacés de cet ordinateur. Rien ne change sur les sites de ses services.",
+      "unlinkTitle": "Délier {{service}} ?",
+      "unlinkText": "Ses données seront effacées de cet ordinateur. Tu pourras le lier de nouveau au compte de {{name}}.",
+      "failed": "Ça n'a pas marché. Réessaie dans un instant.",
+      "secretsLeft": "Le compte est supprimé, mais ses identifiants sont restés dans le trousseau : Piéride réessaiera au prochain démarrage.",
+      "addAccount": "Ajouter un compte",
+      "addOffline": "Créer un compte hors ligne"
+    },
+    "signOut": {
+      "label": "Se déconnecter",
+      "title": "Te déconnecter de {{name}} ?"
+    },
+    "subjects": {
+      "search": "Rechercher une matière",
+      "reset": "Réinitialiser",
+      "resetTitle": "Réinitialiser toutes les matières ?",
+      "resetText": "Les noms, couleurs et emojis choisis pour ce compte reviennent à ceux par défaut.",
+      "resetOne": "Revenir aux choix par défaut",
+      "noMatch": "Aucune matière ne correspond à ta recherche.",
+      "emptyTitle": "Pas encore de matières",
+      "emptyText": "Elles apparaissent après la première synchronisation de tes cours, tâches ou notes.",
+      "all": "Toutes les matières",
+      "everywhere": "Les changements s'appliquent à toutes les vues.",
+      "preview": "Aperçu",
+      "previewText": "Comme dans ton emploi du temps",
+      "name": "Nom affiché",
+      "original": "Nom donné par ton établissement : {{name}}",
+      "emoji": "Emoji",
+      "otherEmoji": "Ou tape un emoji",
+      "color": "Couleur",
+      "colorNumber": "Couleur {{number}}"
+    },
+    "wallpaper": {
+      "label": "Fond d'écran de l'accueil",
+      "title": "Fond d'écran",
+      "text": "Choisis le fond du bandeau de ton accueil.",
+      "where": "En haut de ton accueil",
+      "change": "Changer",
+      "remove": "Supprimer le fond d'écran",
+      "drop": "Glisse une image ici ou clique pour choisir un fichier",
+      "failed": "L'image n'a pas pu être enregistrée. Essaie une image plus petite.",
+      "none": "Aucun",
+      "image": "Ton image",
+      "indigo": "Indigo",
+      "sunset": "Coucher de soleil",
+      "lagoon": "Lagon",
+      "raspberry": "Framboise",
+      "mist": "Brume"
+    },
+    "startup": {
+      "launch": "Démarrage",
+      "atLogin": "Lancer au démarrage de l'ordinateur",
+      "atLoginText": "À l'ouverture de ta session",
+      "autostartFailed": "Le lancement au démarrage n'a pas pu être réglé sur ce système.",
+      "updates": "Mises à jour",
+      "version": "Piéride {{version}}",
+      "updatesText": "Les mises à jour automatiques arrivent avec la version 1.0.",
+      "releases": "Voir les versions",
+      "shortcuts": "Raccourcis clavier",
+      "to": "à",
+      "shortcut": {
+        "palette": "Palette de commandes",
+        "sections": "Aller à une section",
+        "sync": "Synchroniser",
+        "settings": "Paramètres",
+        "close": "Fermer un panneau ou une fenêtre"
+      }
+    },
+    "notifications": {
+      "sampleFrom": "Piéride · maintenant",
+      "example": "Cours annulé : Histoire-Géographie à 9:00 est annulé.",
+      "test": "Tester",
+      "denied": "Les notifications de Piéride sont bloquées : autorise-les dans les réglages de ton système.",
+      "failed": "La notification n'a pas pu être envoyée.",
+      "for": "M'avertir pour",
+      "reminderTime": "Heure du rappel",
+      "quiet": "Discrétion",
+      "soon": "Piéride t'enverra ces notifications dès que la synchronisation en arrière-plan sera prête. Tes choix sont déjà enregistrés."
+    },
+    "privacy": {
+      "nothing": "Piéride n'envoie rien",
+      "nothingText": "Aucune statistique, aucun suivi : l'équipe ne sait même pas que tu utilises Piéride.",
+      "promises": "Nos engagements",
+      "local": "Tes données scolaires restent sur cet ordinateur",
+      "keyring": "Tes identifiants sont gardés dans le trousseau de ton système",
+      "services": "Piéride ne parle qu'à tes services scolaires",
+      "remove": "Supprimer un compte efface toutes ses données",
+      "source": "Vérifier dans le code source"
+    },
+    "about": {
+      "versionOn": "Version {{version}} · {{system}}",
+      "text": "Maintenu par des élèves et étudiants bénévoles. Inspiré de Papillon, avec l'accord de son équipe.",
+      "links": {
+        "repository": {
+          "title": "Projet GitHub",
+          "text": "Contribuer au code source"
+        },
+        "contributors": {
+          "title": "Contributeurs",
+          "text": "Les bénévoles qui font vivre le projet"
+        },
+        "issues": {
+          "title": "Signaler un bug",
+          "text": "Ouvrir un ticket sur GitHub"
+        },
+        "translate": {
+          "title": "Aider à traduire Piéride",
+          "text": "Les fichiers de langue du projet"
+        },
+        "papillon": {
+          "title": "Papillon",
+          "text": "L'application qui a inspiré Piéride"
+        }
+      },
+      "appVersion": "Version de l'application",
+      "dependencies": "Versions des dépendances",
+      "licenses": "Licences open source",
+      "licensesText": "GPL-3.0, Papicons (MIT), polices SIL OFL",
+      "readLicense": "Lire"
     }
   },
   "onboarding": {
@@ -203,5 +492,9 @@
       "cancel": "Annuler",
       "create": "Créer le compte"
     }
+  },
+  "dialog": {
+    "cancel": "Annuler",
+    "close": "Fermer"
   }
 }

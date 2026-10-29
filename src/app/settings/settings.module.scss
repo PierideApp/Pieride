@@ -27,7 +27,7 @@
   flex-shrink: 0;
   gap: 2px;
   width: var(--sidebar-width);
-  padding: var(--space-5) var(--space-3) var(--space-4);
+  padding: 0 var(--space-3) var(--space-4);
   overflow-y: auto;
   color: var(--brand-lavender);
 
@@ -41,19 +41,21 @@
     opacity: 0.2;
     mask-image: linear-gradient(transparent, black 45%);
   }
+}
+
+// Le titre occupe tout le haut de la colonne : on y déplace la fenêtre.
+.title {
+  margin: 0 calc(-1 * var(--space-3)) var(--space-3);
+  padding: var(--space-5) var(--space-6) 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-brand);
 
   // Sous macOS, les boutons natifs de la fenêtre sont posés en haut à gauche.
   :global(:root[data-platform="mac"]) & {
     padding-top: 44px;
   }
-}
-
-.title {
-  margin: 0 var(--space-3) var(--space-3);
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--on-brand);
 }
 
 .group {
@@ -98,6 +100,17 @@
   flex-shrink: 0;
 }
 
+// En bas des catégories, comme dans la maquette.
+.signOut {
+  margin-top: auto;
+  color: var(--on-brand-danger);
+
+  &:hover {
+    color: var(--on-brand-danger);
+    background: var(--on-brand-soft);
+  }
+}
+
 // Page de réglages
 
 .panel {
@@ -110,11 +123,21 @@
   background: var(--color-bg);
 }
 
+// Barre de titre du panneau, sous les boutons de la fenêtre : on y déplace la fenêtre, et la
+// page défile dessous.
+.dragBar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 40px;
+  background: var(--color-bg);
+}
+
 // Largeur limitée pour rester lisible, centrée dans le panneau quand la fenêtre est grande.
 .content {
   max-width: 920px;
   margin-inline: auto;
-  padding: var(--space-8) var(--space-8) var(--space-6);
+  padding: var(--space-2) var(--space-8) var(--space-6);
 }
 
 .header {
@@ -174,112 +197,9 @@
   }
 }
 
-.block {
-  min-width: 0;
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  border: none;
-}
-
-.label {
-  margin: 0 0 var(--space-2);
-  padding: 0 var(--space-1);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text-2);
-}
-
-.labelRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
 .hint {
   font-size: 12px;
   color: var(--color-text-3);
-}
-
-.card {
-  margin: 0;
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-l);
-  list-style: none;
-  background: var(--color-surface);
-}
-
-.notice {
-  composes: card;
-  padding: var(--space-4);
-  color: var(--color-text-2);
-}
-
-// Une ligne de réglage : icône, texte, puis le contrôle à droite.
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 56px;
-  padding: var(--space-2) 0;
-
-  & + & {
-    border-top: 1px solid var(--color-border);
-  }
-
-  input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    accent-color: var(--color-accent);
-  }
-
-  &:is(label) {
-    cursor: pointer;
-  }
-}
-
-.rowIcon {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-s);
-  color: var(--color-accent-text);
-  background: var(--color-accent-soft);
-}
-
-.rowText {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-
-  small {
-    font-size: 12px;
-    color: var(--color-text-2);
-  }
-}
-
-// Bouton secondaire, à droite d'une ligne.
-.button {
-  flex-shrink: 0;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-m);
-  font-weight: 600;
-  background: var(--color-surface);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    border-color: var(--color-accent);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
 }
 
 .error {
@@ -287,52 +207,23 @@
   color: var(--color-error);
 }
 
+// Une carte qui entoure un contenu libre (couleurs, champ, aperçu) plutôt que des lignes.
+.padded {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+
+  > p {
+    margin: 0;
+  }
+}
+
 .locked {
   display: grid;
   place-items: center;
   width: 40px;
   color: var(--color-text-3);
-}
-
-// Interrupteur : une case à cocher native (`role="switch"`), redessinée.
-.switch {
-  position: relative;
-  flex-shrink: 0;
-  width: 40px;
-  height: 24px;
-  margin: 0;
-  border-radius: var(--radius-round);
-  appearance: none;
-  background: var(--color-text-3);
-  cursor: pointer;
-  transition: background-color 0.15s;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-round);
-    background: var(--color-on-accent);
-    transition: transform 0.15s;
-  }
-
-  &:checked {
-    background: var(--color-accent);
-
-    &::before {
-      transform: translateX(16px);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    &,
-    &::before {
-      transition: none;
-    }
-  }
 }
 
 // Thème : trois cartes avec un aperçu
@@ -421,4 +312,607 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+// Choix du compte réglé, à droite du titre (Barre latérale).
+.accountPicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+// Poignée pour réordonner (six points), aussi déplaçable au clavier avec les flèches.
+.handle {
+  flex-shrink: 0;
+  width: 16px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-s);
+  background: radial-gradient(
+      circle,
+      var(--color-text-3) 1.5px,
+      transparent 2px
+    )
+    1px 2px / 7px 6px;
+  cursor: grab;
+}
+
+li[draggable] {
+  cursor: grab;
+}
+
+// Notes de version : chaque version sur une ligne, son numéro et sa date à gauche (qui
+// restent visibles en défilant), ses notes à droite. Comme le site de StewardPad.
+
+.release {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.releaseMeta {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: start;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.releaseVersion {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.releaseNotes {
+  line-height: 1.55;
+
+  h3 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: 18px;
+  }
+
+  h4 {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent-text);
+  }
+
+  p {
+    margin: 0 0 var(--space-3);
+    color: var(--color-text-2);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+
+  li {
+    padding-block: var(--space-1);
+
+    &::marker {
+      color: var(--color-accent-text);
+    }
+  }
+
+  code {
+    padding: 1px var(--space-1);
+    border-radius: var(--radius-s);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-accent-soft);
+  }
+}
+
+// Mon compte
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+}
+
+.profilePhoto {
+  position: relative;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-round);
+  background: none;
+  cursor: pointer;
+}
+
+.profileCamera {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-surface);
+  border-radius: var(--radius-round);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+
+.profileText {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+  }
+
+  p {
+    margin: var(--space-1) 0 var(--space-2);
+    color: var(--color-text-2);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+// Comptes liés
+
+.warning {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+
+  .rowText & {
+    color: var(--color-warning);
+  }
+}
+
+// Boutons d'action sous une page.
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+// Ajouter un compte : les étapes du premier lancement dans une grande fenêtre.
+.addAccount {
+  width: min(760px, calc(100% - 2 * var(--space-6)));
+  height: min(680px, calc(100% - 2 * var(--space-6)));
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border: none;
+  border-radius: var(--radius-l);
+  color: var(--color-text);
+  background: var(--color-bg);
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &::backdrop {
+    background: var(--color-overlay);
+  }
+}
+
+.dialogClose {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-round);
+  color: var(--color-text-2);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+// Outils au-dessus d'une liste : recherche, réinitialiser.
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+
+  .description {
+    margin-bottom: 0;
+  }
+}
+
+// Matières : la couleur arrive par `--subject`, éclaircie de 30 % en sombre (maquettes).
+
+.subjectTile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-s);
+  font-size: 20px;
+  background: color-mix(in oklab, var(--subject) 18%, var(--color-surface));
+}
+
+.subjectDot {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-round);
+  background: var(--subject-shown, var(--subject));
+}
+
+:global(:root[data-theme="dark"]) {
+  .subjectTile {
+    background: color-mix(
+      in oklab,
+      color-mix(in oklab, var(--subject) 70%, #ffffff) 22%,
+      var(--color-surface)
+    );
+  }
+
+  .subjectDot,
+  .coursePreview {
+    --subject-shown: color-mix(in oklab, var(--subject) 70%, #ffffff);
+  }
+}
+
+// Aperçu d'un cours, sur la couleur de la matière.
+.coursePreview {
+  --subject-shown: var(--subject);
+
+  max-width: 420px;
+  padding: var(--space-3);
+  border-radius: var(--radius-m);
+  background: color-mix(
+    in oklab,
+    var(--subject-shown) 10%,
+    var(--color-surface)
+  );
+}
+
+.emojis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.emojiChoice {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-m);
+  font-size: 24px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-bg);
+  }
+
+  &[data-checked] {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--brand-sulfur);
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.emojiInput input {
+  width: 72px;
+  font-size: 20px;
+  text-align: center;
+}
+
+// Fond d'écran
+
+.wallpapers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.wallpaper {
+  padding: var(--space-2);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-l);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &[data-checked] {
+    border-color: var(--color-accent);
+  }
+}
+
+// Sans fond choisi : celui de la marque, comme le bandeau de l'accueil.
+.wallpaperPreview,
+.wallpaperThumb {
+  display: block;
+  border-radius: var(--radius-m);
+  background: var(--brand-glow), var(--brand-surface);
+}
+
+.wallpaperPreview {
+  height: 110px;
+}
+
+.wallpaperThumb {
+  flex-shrink: 0;
+  width: 112px;
+  height: 64px;
+}
+
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-l);
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  svg {
+    color: var(--color-accent-text);
+  }
+
+  &[data-dragging],
+  &:hover {
+    border-color: var(--color-accent);
+  }
+
+  &:has(:focus-visible) {
+    outline: 2px solid var(--brand-sulfur);
+  }
+}
+
+// Icône de l'app dans une ligne (mises à jour, exemple de notification).
+.appIcon {
+  flex-shrink: 0;
+  border-radius: var(--radius-m);
+}
+
+// Raccourcis clavier : deux colonnes de « action … touches ».
+.shortcuts dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-6);
+  margin: 0;
+  padding-block: var(--space-2);
+
+  > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 44px;
+  }
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-3);
+  }
+}
+
+// Notifications : un exemple sur le fond de la marque, comme une notification du système.
+.notificationSample {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-l);
+  color: var(--on-brand);
+  background: var(--brand-glow), var(--brand-surface);
+
+  small {
+    color: var(--brand-lavender);
+  }
+}
+
+.sampleText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  small {
+    font-size: 12px;
+  }
+}
+
+// À propos
+
+.about {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  color: var(--on-brand);
+  background: var(--brand-glow), var(--brand-surface);
+
+  p {
+    margin: 0;
+  }
+}
+
+.aboutMark {
+  flex-shrink: 0;
+  width: 120px;
+}
+
+.aboutName {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.about .aboutVersion {
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+  color: var(--brand-lavender);
+}
+
+.links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+// Un lien du projet : une ligne de réglage dans son propre cadre.
+.linkCard {
+  height: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  background: var(--color-surface);
+
+  > svg {
+    flex-shrink: 0;
+    color: var(--color-text-3);
+  }
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+}
+
+// Vie privée
+
+.privacy {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+
+  strong {
+    font-size: 16px;
+  }
+}
+
+// Développeur
+
+.requests {
+  width: 100%;
+  margin-bottom: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+
+  th {
+    padding: var(--space-2) var(--space-2) var(--space-1) 0;
+    font-family: var(--font-text);
+    font-weight: 600;
+    text-align: left;
+    color: var(--color-text-2);
+  }
+
+  td {
+    padding: 2px var(--space-2) 2px 0;
+  }
+
+  [data-failed] {
+    color: var(--color-error);
+  }
+}
+
+// Le journal : fond sombre de la marque dans les deux thèmes, comme dans la maquette.
+.log {
+  max-height: 360px;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-l);
+  overflow-y: auto;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--on-brand);
+  background: var(--brand-ink);
+
+  li {
+    display: grid;
+    grid-template-columns: auto 52px 72px 1fr;
+    gap: var(--space-3);
+    padding-block: 3px;
+  }
+
+  time,
+  li > span:nth-of-type(2) {
+    color: var(--brand-lavender);
+  }
+
+  [data-level="info"] {
+    color: var(--color-success);
+  }
+
+  [data-level="warn"] {
+    color: var(--brand-sulfur);
+  }
+
+  [data-level="error"] {
+    color: var(--on-brand-danger);
+  }
 }

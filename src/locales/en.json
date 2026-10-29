@@ -54,7 +54,12 @@
   },
   "tray": {
     "open": "Open Piéride",
-    "quit": "Quit"
+    "quit": "Quit",
+    "now": "Now: {{subject}}, until {{end}}",
+    "noCurrent": "No class right now",
+    "next": "Next: {{subject}} at {{start}}",
+    "nextRoom": "Next: {{subject}} at {{start}}, room {{room}}",
+    "noNext": "No more classes today"
   },
   "palette": {
     "label": "Command palette",
@@ -102,10 +107,19 @@
       "developer": "Developer"
     },
     "descriptions": {
-      "appearance": "Piéride's theme.",
+      "appearance": "Theme, color and wallpaper.",
       "sidebar": "This account's modules. Those none of your services provide don't show up.",
       "language": "The interface language.",
-      "developer": "Tools to work on Piéride, only shown in dev builds."
+      "developer": "The log and network requests since launch, to understand a problem.",
+      "features": "Turn on what you need.",
+      "releaseNotes": "What's new in Piéride?",
+      "account": "Your profile as it appears in Piéride.",
+      "linkedAccounts": "Your school and canteen accounts, and your calendars.",
+      "subjects": "Name, color and emoji of each subject, everywhere in Piéride.",
+      "notifications": "System notifications, even when the window is closed.",
+      "startup": "How Piéride lives on your computer.",
+      "privacy": "You and Piéride: what stays with you.",
+      "about": "Who makes Piéride, and with what."
     },
     "theme": {
       "label": "Theme",
@@ -113,13 +127,32 @@
       "dark": "Dark",
       "system": "System"
     },
+    "accent": {
+      "label": "Accent color",
+      "text": "The chosen color is used for buttons and selected items.",
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
+      "yellow": "Yellow",
+      "orange": "Orange",
+      "red": "Red",
+      "pink": "Raspberry",
+      "purple": "Purple",
+      "ink": "Ink"
+    },
     "modules": {
       "label": "Modules",
-      "account": "Account: {{name}}",
+      "account": "Account",
       "always": "Always available",
       "providedBy": "Provided by {{services}}",
       "locked": "Always shown",
-      "noAccount": "Add an account first: each account has its own modules."
+      "noAccount": "Add an account first: each account has its own modules.",
+      "reorder": "Drag to reorder",
+      "move": "Move {{name}}",
+      "moveHint": "Drag the row, or use the up and down arrows",
+      "tip": "Each account has its own modules. With a university account (APPSCHO, ESUP Multi), only Home, Classes and News are available.",
+      "display": "Display"
     },
     "developer": {
       "noAccount": "Create an account first: fake data is attached to the current account.",
@@ -129,7 +162,263 @@
       "detached": "Not attached",
       "attach": "Attach and fill",
       "remove": "Remove",
-      "failed": "That didn't work: see the developer console for details."
+      "failed": "That didn't work: see the developer console for details.",
+      "network": "Network",
+      "requests": "Network requests",
+      "requestCount_one": "{{count}} request since launch",
+      "requestCount_other": "{{count}} requests since launch",
+      "show": "Show",
+      "hide": "Hide",
+      "time": "Time",
+      "method": "Method",
+      "host": "Domain",
+      "status": "Status",
+      "duration": "Duration",
+      "noResponse": "failed",
+      "log": "Log",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Copying didn't work: select the log text by hand.",
+      "emptyLog": "Nothing yet.",
+      "private": "Kept in memory only, without tokens or full addresses. It is erased when Piéride closes."
+    },
+    "toggles": {
+      "showCoefficients": {
+        "title": "Show coefficients",
+        "text": "In the list of grades"
+      },
+      "showWeekend": {
+        "title": "Show the weekend",
+        "text": "Saturday and Sunday in the week view"
+      },
+      "showNowLine": {
+        "title": "Current time line",
+        "text": "Red marker in the timetable"
+      },
+      "showBreaks": {
+        "title": "Breaks",
+        "text": "Lunch break and recess in the list"
+      },
+      "showCanteen": {
+        "title": "Canteen menu and booking",
+        "text": "In the lunch break"
+      },
+      "hideDoneTasks": {
+        "title": "Hide completed tasks",
+        "text": "They stay visible with the Done filter"
+      },
+      "sidebarAutoCollapse": {
+        "title": "Collapse automatically",
+        "text": "When the window is narrower than 1280 px"
+      },
+      "sidebarBadges": {
+        "title": "Badges",
+        "text": "Number of tasks to do"
+      },
+      "startMinimized": {
+        "title": "Start minimized in the taskbar",
+        "text": "When Piéride starts as you log in"
+      },
+      "closeToTray": {
+        "title": "Closing the window minimizes Piéride",
+        "text": "The app stays in the taskbar instead of quitting"
+      },
+      "trayGlance": {
+        "title": "Glance in the taskbar",
+        "text": "Current and next class in the icon's menu"
+      },
+      "notifyGrades": {
+        "title": "New grades",
+        "text": "As soon as a grade is published"
+      },
+      "notifyCourses": {
+        "title": "Canceled or changed classes",
+        "text": "Room change, absent teacher"
+      },
+      "notifyHomework": {
+        "title": "Task reminder",
+        "text": "The day before it's due"
+      },
+      "notifyNews": {
+        "title": "New news",
+        "text": "Published by your school"
+      },
+      "notifyMorning": {
+        "title": "Morning summary",
+        "text": "Your classes and tasks of the day when you log in"
+      },
+      "quietDuringClasses": {
+        "title": "Quiet during classes",
+        "text": "Notifications wait until the class ends"
+      }
+    },
+    "features": {
+      "gradeScale": "Grade scale",
+      "gradeScaleText": "Default scale in the interface",
+      "outOf": "Out of {{scale}}",
+      "tasksLayout": "Tasks layout",
+      "tasksLayoutText": "One column per day, or a list by due date",
+      "board": "Board",
+      "list": "List"
+    },
+    "language": {
+      "recommended": "Recommended"
+    },
+    "releaseNotes": {
+      "installed": "Installed",
+      "emptyTitle": "No release notes yet",
+      "emptyText": "They will come with Piéride's first published version."
+    },
+    "account": {
+      "noAccount": "Add an account first.",
+      "profile": "Profile",
+      "changePhoto": "Change photo",
+      "offline": "Offline account",
+      "identity": "Identity",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "photo": "Profile photo",
+      "fromFile": "From a file",
+      "fromFileText": "Choose an image on your computer",
+      "removePhoto": "Remove photo",
+      "fromServices": "Information from {{services}}",
+      "school": "School",
+      "className": "Class"
+    },
+    "image": {
+      "too_big": "This image is too large: 25 MB at most.",
+      "unreadable": "This image could not be opened. Try a PNG, JPEG or WebP file."
+    },
+    "linked": {
+      "school": "School accounts",
+      "canteen": "Canteen and cards",
+      "calendar": "Calendars",
+      "current": "Shown account",
+      "needsLogin": "Sign in again",
+      "actions": "Actions",
+      "show": "Show this account",
+      "remove": "Remove account",
+      "unlink": "Unlink",
+      "removeTitle": "Remove {{name}}'s account?",
+      "removeText": "Its data and credentials will be erased from this computer. Nothing changes on its services' websites.",
+      "unlinkTitle": "Unlink {{service}}?",
+      "unlinkText": "Its data will be erased from this computer. You can link it again to {{name}}'s account.",
+      "failed": "That didn't work. Try again in a moment.",
+      "secretsLeft": "The account is removed, but its credentials stayed in the keychain: Piéride will try again on next launch.",
+      "addAccount": "Add an account",
+      "addOffline": "Create an offline account"
+    },
+    "signOut": {
+      "label": "Sign out",
+      "title": "Sign out of {{name}}?"
+    },
+    "subjects": {
+      "search": "Search for a subject",
+      "reset": "Reset",
+      "resetTitle": "Reset all subjects?",
+      "resetText": "The names, colors and emojis chosen for this account go back to the defaults.",
+      "resetOne": "Back to defaults",
+      "noMatch": "No subject matches your search.",
+      "emptyTitle": "No subjects yet",
+      "emptyText": "They appear after the first sync of your classes, tasks or grades.",
+      "all": "All subjects",
+      "everywhere": "Changes apply to every view.",
+      "preview": "Preview",
+      "previewText": "As in your timetable",
+      "name": "Displayed name",
+      "original": "Name given by your school: {{name}}",
+      "emoji": "Emoji",
+      "otherEmoji": "Or type an emoji",
+      "color": "Color",
+      "colorNumber": "Color {{number}}"
+    },
+    "wallpaper": {
+      "label": "Home wallpaper",
+      "title": "Wallpaper",
+      "text": "Choose the background of your home banner.",
+      "where": "At the top of your home page",
+      "change": "Change",
+      "remove": "Remove wallpaper",
+      "drop": "Drop an image here or click to choose a file",
+      "failed": "The image could not be saved. Try a smaller image.",
+      "none": "None",
+      "image": "Your image",
+      "indigo": "Indigo",
+      "sunset": "Sunset",
+      "lagoon": "Lagoon",
+      "raspberry": "Raspberry",
+      "mist": "Mist"
+    },
+    "startup": {
+      "launch": "Startup",
+      "atLogin": "Launch at computer startup",
+      "atLoginText": "When you log in",
+      "autostartFailed": "Launch at startup could not be set on this system.",
+      "updates": "Updates",
+      "version": "Piéride {{version}}",
+      "updatesText": "Automatic updates come with version 1.0.",
+      "releases": "See releases",
+      "shortcuts": "Keyboard shortcuts",
+      "to": "to",
+      "shortcut": {
+        "palette": "Command palette",
+        "sections": "Go to a section",
+        "sync": "Sync",
+        "settings": "Settings",
+        "close": "Close a panel or window"
+      }
+    },
+    "notifications": {
+      "sampleFrom": "Piéride · now",
+      "example": "Class canceled: History-Geography at 9:00 is canceled.",
+      "test": "Test",
+      "denied": "Piéride's notifications are blocked: allow them in your system settings.",
+      "failed": "The notification could not be sent.",
+      "for": "Notify me about",
+      "reminderTime": "Reminder time",
+      "quiet": "Quiet",
+      "soon": "Piéride will send these notifications as soon as background sync is ready. Your choices are already saved."
+    },
+    "privacy": {
+      "nothing": "Piéride sends nothing",
+      "nothingText": "No statistics, no tracking: the team doesn't even know you use Piéride.",
+      "promises": "Our commitments",
+      "local": "Your school data stays on this computer",
+      "keyring": "Your credentials are kept in your system's keychain",
+      "services": "Piéride only talks to your school services",
+      "remove": "Removing an account erases all its data",
+      "source": "Check the source code"
+    },
+    "about": {
+      "versionOn": "Version {{version}} · {{system}}",
+      "text": "Maintained by student volunteers. Inspired by Papillon, with its team's agreement.",
+      "links": {
+        "repository": {
+          "title": "GitHub project",
+          "text": "Contribute to the source code"
+        },
+        "contributors": {
+          "title": "Contributors",
+          "text": "The volunteers behind the project"
+        },
+        "issues": {
+          "title": "Report a bug",
+          "text": "Open an issue on GitHub"
+        },
+        "translate": {
+          "title": "Help translate Piéride",
+          "text": "The project's language files"
+        },
+        "papillon": {
+          "title": "Papillon",
+          "text": "The app that inspired Piéride"
+        }
+      },
+      "appVersion": "App version",
+      "dependencies": "Dependency versions",
+      "licenses": "Open source licenses",
+      "licensesText": "GPL-3.0, Papicons (MIT), SIL OFL fonts",
+      "readLicense": "Read"
     }
   },
   "onboarding": {
@@ -203,5 +492,9 @@
       "cancel": "Cancel",
       "create": "Create account"
     }
+  },
+  "dialog": {
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }
