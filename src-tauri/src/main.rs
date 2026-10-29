@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod database;
+mod pronote_login;
 mod secrets;
 
 use std::{collections::HashSet, sync::Mutex};
@@ -19,6 +20,7 @@ struct AllowedInstances(Mutex<HashSet<String>>);
 
 /// Ouvre au plugin http l'adresse propre à un compte (instance PRONOTE, URL iCal…).
 /// Les domaines fixes des services, eux, sont déclarés dans `capabilities/`.
+/// Les erreurs sont des codes, traduits par l'interface (voir `instance_origin`).
 #[tauri::command]
 fn allow_instance(
     app: AppHandle,
@@ -26,10 +28,7 @@ fn allow_instance(
     url: &str,
 ) -> Result<(), String> {
     let origin = instance_origin(url)?;
-    let mut allowed = allowed
-        .0
-        .lock()
-        .map_err(|_| "verrou des instances inutilisable")?;
+    let mut allowed = allowed.0.lock().map_err(|_| "instance_lock")?;
     if allowed.contains(&origin) {
         return Ok(());
     }
@@ -38,25 +37,25 @@ fn allow_instance(
             .window("main")
             .permission_scoped("http:default", vec![format!("{origin}/*")], vec![]),
     )
-    .map_err(|e| e.to_string())?;
+    .map_err(|_| "instance_capability")?;
     allowed.insert(origin);
     Ok(())
 }
 
-/// Origine d'une URL HTTPS vers un nom de domaine public. Les erreurs ne recopient
-/// jamais l'URL, qui peut contenir un jeton.
+/// Origine d'une URL HTTPS vers un nom de domaine public. Les erreurs sont des codes,
+/// qui ne recopient jamais l'URL : elle peut contenir un jeton.
 fn instance_origin(url: &str) -> Result<String, &'static str> {
-    let url = Url::parse(url).map_err(|_| "URL invalide")?;
+    let url = Url::parse(url).map_err(|_| "invalid_url")?;
     if url.scheme() != "https" {
-        return Err("HTTPS obligatoire");
+        return Err("https_required");
     }
     if !url.username().is_empty() || url.password().is_some() {
-        return Err("identifiants interdits dans l'URL");
+        return Err("credentials_in_url");
     }
     // `domain()` vaut None pour une adresse IP.
     // ponytail: un domaine public qui pointe vers 127.0.0.1 passe quand même (DNS rebinding) ;
     // filtrer l'adresse résolue côté plugin si ça devient un risque réel.
-    let host = url.domain().ok_or("adresse IP refusée")?;
+    let host = url.domain().ok_or("ip_address")?;
     // Lettres, chiffres, tirets et points seulement : l'origine devient un motif d'URL
     // du plugin, où `*` serait un joker et `+` un motif invalide qui bloque tout le réseau.
     if host.ends_with('.')
@@ -64,10 +63,10 @@ fn instance_origin(url: &str) -> Result<String, &'static str> {
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.')
     {
-        return Err("nom de domaine invalide");
+        return Err("invalid_domain");
     }
     if !host.contains('.') || host.ends_with(".localhost") || host.ends_with(".local") {
-        return Err("domaine local refusé");
+        return Err("local_domain");
     }
     Ok(url.origin().ascii_serialization())
 }
@@ -118,6 +117,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             allow_instance,
+            pronote_login::pronote_login,
             secrets::secret_get,
             secrets::secret_set,
             secrets::secret_delete,
