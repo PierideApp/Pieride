@@ -1,7 +1,7 @@
 // Point d'entrée unique des données scolaires. Il synchronise les services liés dans la
 // base locale ; les écrans lisent la base (hooks), jamais un service directement.
 // Inspiré de l'AccountManager de Papillon (services/shared/index.ts, GPLv3).
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, lt } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Db } from "@/database/client";
@@ -17,6 +17,7 @@ import {
 } from "@/database/schema";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
+import { log } from "@/lib/log";
 
 import {
   AuthenticationError,
@@ -103,6 +104,21 @@ export class AccountManager {
     await this.db.insert(accounts).values(account);
   }
 
+  /** Modifie le profil (Paramètres > Mon compte). `avatar: null` retire la photo. */
+  async updateAccount(
+    accountId: string,
+    profile: Partial<{
+      firstName: string;
+      lastName: string;
+      avatar: string | null;
+    }>
+  ): Promise<void> {
+    await this.db
+      .update(accounts)
+      .set(profile)
+      .where(eq(accounts.id, accountId));
+  }
+
   /**
    * Lie un service : adresse ouverte au réseau, ligne en base, puis secret dans le trousseau.
    * Si le trousseau échoue, la ligne est retirée : pas de service sans secret, ni l'inverse.
@@ -130,24 +146,66 @@ export class AccountManager {
 
   /**
    * Retire un compte et toutes ses données, même si le trousseau est indisponible.
-   * Renvoie les services dont le secret n'a pas pu être effacé (à retenter avec `deleteSecret`).
+   * Renvoie les services dont le secret n'a pas pu être effacé (à retenter avec `deleteSecrets`).
    */
   async removeAccount(accountId: string): Promise<string[]> {
     const linked = await this.db
       .select({ id: services.id, kind: services.kind })
       .from(services)
       .where(eq(services.accountId, accountId));
-    const withSecret = linked.filter(({ kind }) => !NO_SECRET.has(kind));
-    const results = await Promise.allSettled(
-      withSecret.map(({ id }) => deleteSecret(id))
+    const failed = await this.deleteSecrets(
+      linked.filter(({ kind }) => !NO_SECRET.has(kind)).map(({ id }) => id)
     );
     for (const { id } of linked) {
       this.plugins.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
-    return withSecret
-      .filter((_, i) => results[i]?.status === "rejected")
-      .map(({ id }) => id);
+    return failed;
+  }
+
+  /**
+   * Nom, couleur et emoji choisis pour une matière, dans tous les services du compte qui la
+   * fournissent (Paramètres > Matières). `null` revient au choix par défaut.
+   */
+  async updateSubject(
+    accountId: string,
+    name: string,
+    choice: Partial<{
+      displayName: string | null;
+      color: string | null;
+      emoji: string | null;
+    }>
+  ): Promise<void> {
+    await this.db
+      .update(subjects)
+      .set(choice)
+      .where(
+        and(
+          eq(subjects.name, name),
+          inArray(subjects.serviceId, this.servicesOf(accountId))
+        )
+      );
+  }
+
+  /** Oublie les choix faits pour toutes les matières du compte. */
+  async resetSubjects(accountId: string): Promise<void> {
+    await this.db
+      .update(subjects)
+      .set({ displayName: null, color: null, emoji: null })
+      .where(inArray(subjects.serviceId, this.servicesOf(accountId)));
+  }
+
+  private servicesOf(accountId: string) {
+    return this.db
+      .select({ id: services.id })
+      .from(services)
+      .where(eq(services.accountId, accountId));
+  }
+
+  /** Efface les secrets de ces services ; renvoie ceux que le trousseau a refusé d'effacer. */
+  async deleteSecrets(serviceIds: readonly string[]): Promise<string[]> {
+    const results = await Promise.allSettled(serviceIds.map(deleteSecret));
+    return serviceIds.filter((_, i) => results[i]?.status === "rejected");
   }
 
   /**
@@ -220,6 +278,17 @@ export class AccountManager {
         this.plugins.delete(service.id);
       }
       const lastError = errorKind(error);
+      // En mémoire seulement, masqué par `log` (lib/log.ts) : de quoi comprendre une erreur
+      // inconnue sans garder un jeton qu'une bibliothèque aurait mis dans son message.
+      log(
+        lastError === "Unknown" ? "error" : "warn",
+        "sync",
+        `${service.kind} ${capability} : ${
+          lastError === "Unknown" && error instanceof Error
+            ? `${error.name} ${error.message.slice(0, 200)}`
+            : lastError
+        }`
+      );
       await this.db.batch([
         this.db
           .insert(syncState)

@@ -32,6 +32,7 @@ export const accounts = sqliteTable("accounts", {
   lastName: text("last_name").notNull(),
   schoolName: text("school_name"),
   className: text("class_name"),
+  avatar: text("avatar"),
   createdAt: createdAt(),
 });
 
@@ -66,6 +67,7 @@ export const subjects = sqliteTable(
   {
     serviceId: serviceId(),
     name: text("name").notNull(),
+    displayName: text("display_name"),
     color: text("color"),
     emoji: text("emoji"),
   },

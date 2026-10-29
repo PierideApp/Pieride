@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb } from "@/database/client";
 import { migrate } from "@/database/migrate";
 import { nodeDriver } from "@/database/node-driver";
-import { courses, grades, services, syncState } from "@/database/schema";
+import {
+  courses,
+  grades,
+  services,
+  subjects,
+  syncState,
+} from "@/database/schema";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 
@@ -245,6 +251,43 @@ describe("AccountManager", () => {
     expect(await manager.removeAccount("camille")).toEqual(["pronote-1"]);
     expect(await db.select().from(services)).toEqual([]);
     expect(await db.select().from(courses)).toEqual([]);
+  });
+
+  it("applique le choix d'une matière à tous les services du compte, et à eux seuls", async () => {
+    const { db, manager } = await setup();
+    await manager.addAccount({ id: "leo", firstName: "Léo", lastName: "Test" });
+    await manager.linkService({
+      id: "mock-1",
+      accountId: "camille",
+      kind: "mock",
+    });
+    await manager.linkService({ id: "mock-2", accountId: "leo", kind: "mock" });
+    await db.insert(subjects).values([
+      { serviceId: "pronote-1", name: "Maths" },
+      { serviceId: "mock-1", name: "Maths" },
+      { serviceId: "mock-2", name: "Maths" },
+      { serviceId: "pronote-1", name: "SVT" },
+    ]);
+    const emojis = async () =>
+      (await db.select().from(subjects))
+        .map(row => `${row.serviceId} ${row.name} ${row.emoji}`)
+        .sort();
+
+    await manager.updateSubject("camille", "Maths", { emoji: "📐" });
+    expect(await emojis()).toEqual([
+      "mock-1 Maths 📐",
+      "mock-2 Maths null",
+      "pronote-1 Maths 📐",
+      "pronote-1 SVT null",
+    ]);
+
+    await manager.resetSubjects("camille");
+    expect(await emojis()).toEqual([
+      "mock-1 Maths null",
+      "mock-2 Maths null",
+      "pronote-1 Maths null",
+      "pronote-1 SVT null",
+    ]);
   });
 
   it("distingue un service non pris en charge d'une panne", async () => {

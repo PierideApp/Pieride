@@ -107,6 +107,24 @@ export const SERVICE_NAMES: Record<ServiceKind, string> = {
   mock: "Mock Data",
 };
 
+/** Le rôle de chaque service, pour les ranger dans Paramètres > Comptes liés. */
+export const SERVICE_GROUPS: Record<
+  ServiceKind,
+  "school" | "canteen" | "calendar"
+> = {
+  pronote: "school",
+  ecoledirecte: "school",
+  skolengo: "school",
+  appscho: "school",
+  multi: "school",
+  ical: "calendar",
+  turboself: "canteen",
+  ard: "canteen",
+  izly: "canteen",
+  alise: "canteen",
+  mock: "school",
+};
+
 /** Les services sans identifiants : rien à garder dans le trousseau. */
 export const NO_SECRET: ReadonlySet<ServiceKind> = new Set(["mock"]);
 

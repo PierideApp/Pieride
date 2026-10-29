@@ -24,6 +24,8 @@ export interface Account {
   lastName: string;
   schoolName?: string;
   className?: string;
+  /** Photo de profil, en URL `data:` (lib/image.ts). */
+  avatar?: string;
 }
 
 /** Un service lié à un compte. Ses secrets sont dans le trousseau, rangés sous `id`. */
@@ -41,9 +43,11 @@ export interface Attachment {
   url: string;
 }
 
-/** Une matière, telle que l'app l'affiche (couleur et emoji choisis localement). */
+/** Une matière, telle que l'app l'affiche (nom, couleur et emoji choisis localement). */
 export interface Subject {
+  /** Le nom donné par le service, qui identifie la matière. */
   name: string;
+  displayName?: string;
   color?: string;
   emoji?: string;
 }
