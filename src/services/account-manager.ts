@@ -37,6 +37,12 @@ import {
 export const SYNCED = ["TIMETABLE", "HOMEWORK", "GRADES"] as const;
 export type SyncedCapability = (typeof SYNCED)[number];
 
+/**
+ * Une donnée synchronisée il y a moins longtemps n'est pas redemandée au service : PRONOTE
+ * suspend les adresses IP qui envoient trop de requêtes. Fixé dans le code, non réglable.
+ */
+export const SYNC_INTERVAL = 30 * 60_000;
+
 type ServiceRow = typeof services.$inferSelect;
 type Write = BatchItem<"sqlite">;
 
@@ -145,6 +151,19 @@ export class AccountManager {
   }
 
   /**
+   * Reconnecte un service refusé : le nouveau secret remplace l'ancien, et la connexion en
+   * mémoire est oubliée pour que la prochaine synchro reparte de lui.
+   */
+  async relinkService(serviceId: string, secret: string): Promise<void> {
+    await setSecret(serviceId, secret);
+    this.plugins.delete(serviceId);
+    await this.db
+      .update(services)
+      .set({ needsLogin: false })
+      .where(eq(services.id, serviceId));
+  }
+
+  /**
    * Retire un compte et toutes ses données, même si le trousseau est indisponible.
    * Renvoie les services dont le secret n'a pas pu être effacé (à retenter avec `deleteSecrets`).
    */
@@ -240,7 +259,8 @@ export class AccountManager {
   }
 
   /**
-   * Synchronise une capability pour chaque service du compte qui la fournit.
+   * Synchronise une capability pour chaque service du compte qui la fournit, s'il n'a pas
+   * réussi depuis `SYNC_INTERVAL`.
    * Un service en panne garde ses données en base ; l'erreur est notée dans `sync_state`.
    * Ne rejette que si la base elle-même refuse d'écrire.
    */
@@ -250,11 +270,24 @@ export class AccountManager {
     now = new Date()
   ): Promise<void> {
     const linked = await this.db
-      .select()
+      .select({ service: services, lastSync: syncState.lastSync })
       .from(services)
+      .leftJoin(
+        syncState,
+        and(
+          eq(syncState.serviceId, services.id),
+          eq(syncState.capability, capability)
+        )
+      )
       .where(eq(services.accountId, accountId));
+    // `abs` : une horloge reculée ne bloque pas la synchro jusqu'à ce qu'elle rattrape.
+    const due = linked.filter(
+      ({ lastSync }) =>
+        !lastSync ||
+        Math.abs(now.getTime() - lastSync.getTime()) >= SYNC_INTERVAL
+    );
     await settleAll(
-      linked.map(service => this.refreshService(service, capability, now))
+      due.map(({ service }) => this.refreshService(service, capability, now))
     );
   }
 

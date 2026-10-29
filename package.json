@@ -20,6 +20,7 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@blockshub/pawnote-lts": "1.6.4",
     "@getpapillon/papicons": "^0.2.3",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-autostart": "^2.7.0",

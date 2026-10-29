@@ -1,7 +1,7 @@
 # services
 
 - `shared/` : modèles communs, `Capabilities`, interface `SchoolServicePlugin`.
-- `account-manager.ts` : point d'entrée unique pour les données. Choisit le service selon la capability, se replie sur le cache, gère plusieurs comptes.
+- `account-manager.ts` : point d'entrée unique pour les données. Choisit le service selon la capability, se replie sur le cache, gère plusieurs comptes. Une donnée n'est pas redemandée au service moins de 30 minutes après sa dernière synchro (`SYNC_INTERVAL`).
 - Un dossier par service : `pronote/`, `ecoledirecte/`, `skolengo/`, `appscho/`, `multi/`, `ical/`, `turboself/`, `ard/`, `izly/`, `alise/`.
 - `mock/` : des données fictives (emploi du temps, devoirs, notes), sans réseau ni trousseau, pour travailler sur les écrans sans compte scolaire. En dev seulement : l'app publiée ne le contient pas. On l'attache depuis Paramètres > Développeur.
 

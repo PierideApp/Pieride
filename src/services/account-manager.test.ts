@@ -13,7 +13,7 @@ import {
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 
-import { AccountManager, weekStart } from "./account-manager";
+import { AccountManager, SYNC_INTERVAL, weekStart } from "./account-manager";
 import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
 import type { Course } from "./shared/models";
 import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
@@ -30,6 +30,8 @@ vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
 
 // Lundi 26 octobre 2026, 10 h : la semaine va du 26 au 2 novembre.
 const NOW = new Date(2026, 9, 26, 10);
+/** Assez tard pour que la synchro de `NOW` soit à refaire. */
+const LATER = new Date(NOW.getTime() + SYNC_INTERVAL);
 const at = (day: number, hour: number) => new Date(2026, 9, day, hour);
 
 function course(id: string, from: Date): Course {
@@ -124,7 +126,7 @@ describe("AccountManager", () => {
       course("mardi", at(27, 10)),
       course("semaine-suivante", at(3, 8)),
     ];
-    await manager.refresh("camille", "TIMETABLE", NOW);
+    await manager.refresh("camille", "TIMETABLE", LATER);
 
     const stored = await db.select().from(courses);
     expect(stored.map(c => [c.id, c.from])).toEqual([["mardi", at(27, 10)]]);
@@ -132,7 +134,7 @@ describe("AccountManager", () => {
       {
         serviceId: "pronote-1",
         capability: "TIMETABLE",
-        lastSync: NOW,
+        lastSync: LATER,
         lastError: null,
       },
     ]);
@@ -145,7 +147,7 @@ describe("AccountManager", () => {
     timetable = async () => {
       throw new ServiceUnavailable("Requête impossible : https://exemple.fr");
     };
-    await manager.refresh("camille", "TIMETABLE", NOW);
+    await manager.refresh("camille", "TIMETABLE", LATER);
 
     expect(await db.select().from(courses)).toHaveLength(2);
     const [state] = await db.select().from(syncState);
@@ -168,6 +170,34 @@ describe("AccountManager", () => {
     const [state] = await db.select().from(syncState);
     expect(state?.lastError).toBe("AuthenticationError");
     expect(connect).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne redemande pas une donnée synchronisée il y a moins de 30 minutes", async () => {
+    const { manager } = await setup();
+    const fetchTimetable = vi.fn(timetable);
+    timetable = fetchTimetable;
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    await manager.refresh(
+      "camille",
+      "TIMETABLE",
+      new Date(LATER.getTime() - 1)
+    );
+    expect(fetchTimetable).toHaveBeenCalledOnce();
+    await manager.refresh("camille", "TIMETABLE", LATER);
+    expect(fetchTimetable).toHaveBeenCalledTimes(2);
+  });
+
+  it("reconnecte un service refusé avec son nouveau secret", async () => {
+    const { db, manager } = await setup();
+    timetable = async () => {
+      throw new AuthenticationError("refusé");
+    };
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    await manager.relinkService("pronote-1", "nouveau-jeton");
+
+    const [service] = await db.select().from(services);
+    expect(service?.needsLogin).toBe(false);
+    expect(secrets.get("pronote-1")).toBe("nouveau-jeton");
   });
 
   it("ignore un service qui ne fournit pas la capability", async () => {

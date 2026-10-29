@@ -73,6 +73,7 @@ export interface Course {
 export interface Homework {
   id: string;
   subject: string;
+  /** HTML venant du service (PRONOTE) ou texte simple : à nettoyer avant affichage. */
   content: string;
   givenAt?: Date;
   dueAt: Date;
