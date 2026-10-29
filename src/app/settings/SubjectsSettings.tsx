@@ -17,9 +17,9 @@ import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { SubPageHeader } from "@/components/SubPageHeader/SubPageHeader";
 import { TextField } from "@/components/TextField/TextField";
 import { useSubjects } from "@/hooks/useSubjects";
+import { matches } from "@/lib/search";
 import {
   firstGrapheme,
-  simplify,
   SUBJECT_COLORS,
   SUBJECT_EMOJIS,
   subjectStyle,
@@ -258,9 +258,8 @@ export function SubjectsSettings({ account }: SettingsSectionProps) {
       </Card>
     );
   }
-  const words = simplify(query).split(/\s+/).filter(Boolean);
   const shown = list.data.filter(({ label, name }) =>
-    words.every(word => simplify(`${label} ${name}`).includes(word))
+    matches(`${label} ${name}`, query)
   );
 
   return (

@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 
 import { mix } from "./color";
+import { simplify } from "./search";
 
 /** Couleurs proposées (maquette 06-modifier-matiere), éclaircies en thème sombre (CSS). */
 export const SUBJECT_COLORS = [
@@ -66,13 +67,6 @@ const KEYWORDS: readonly [RegExp, string][] = [
   [/\bemc\b|civique|morale/, "⚖️"],
   [/latin|grec/, "🏛️"],
 ];
-
-/** Sans accents ni majuscules, pour comparer et chercher. */
-export const simplify = (name: string) =>
-  name
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
 
 export function defaultSubjectEmoji(name: string): string {
   const text = simplify(name);

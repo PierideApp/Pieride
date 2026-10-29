@@ -10,3 +10,4 @@ Les briques techniques partagées :
 - **Liens** (`links.ts`) : les adresses ouvertes dans le navigateur (plugin opener), toutes déclarées dans `capabilities/`.
 - **Notes de version** (`changelog.ts`) : lit les fichiers Markdown de `changelog/`, un par version (le format est décrit en tête du fichier ; aucun pour l'instant).
 - **Matières** (`subjects.ts`) : nom, couleur et emoji affichés, avec des valeurs par défaut stables.
+- **Recherche** (`search.ts`) : filtrer une liste sans tenir compte des accents ni des majuscules.
