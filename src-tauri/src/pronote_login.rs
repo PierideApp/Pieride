@@ -8,7 +8,7 @@
 use serde_json::{Value, json};
 use tauri::{
     AppHandle, Manager, Url, WebviewUrl, WebviewWindowBuilder, WindowEvent, async_runtime,
-    webview::NewWindowResponse,
+    webview::{NewWindowResponse, PageLoadEvent},
 };
 
 use crate::{instance_origin, secrets::valid_id};
@@ -47,6 +47,7 @@ pub async fn pronote_login(
         return Err("invalid_title");
     }
     if let Some(window) = app.get_webview_window(LABEL) {
+        let _ = window.show();
         let _ = window.set_focus();
         return Err("login_open");
     }
@@ -73,6 +74,8 @@ pub async fn pronote_login(
         .inner_size(480.0, 720.0)
         .center()
         .incognito(true)
+        // Cachée tant qu'on est sur `InfoMobileApp.json` : sinon son JSON s'affiche un instant.
+        .visible(false)
         .user_agent(USER_AGENT)
         .initialization_script(format!("var pieride = {settings};\n{SCRIPT}"))
         .on_navigation(move |target| {
@@ -86,6 +89,14 @@ pub async fn pronote_login(
                 });
             }
             false
+        })
+        .on_page_load(|window, payload| {
+            if matches!(payload.event(), PageLoadEvent::Finished) && !is_info_page(payload.url()) {
+                async_runtime::spawn(async move {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                });
+            }
         })
         // Un ENT qui ouvre une fenêtre : la page s'ouvre à la place, comme dans Papillon.
         .on_new_window(move |target, _features| {
@@ -111,6 +122,13 @@ fn with_window(app: &AppHandle, action: impl FnOnce(tauri::WebviewWindow) + Send
     if let Some(window) = app.get_webview_window(LABEL) {
         async_runtime::spawn(async move { action(window) });
     }
+}
+
+/// La page de départ, qui pose les cookies puis ouvre la page de connexion.
+fn is_info_page(url: &Url) -> bool {
+    url.path()
+        .to_ascii_lowercase()
+        .ends_with("/infomobileapp.json")
 }
 
 /// L'identifiant et le jeton renvoyés par le script, s'ils ont la forme attendue.
@@ -142,6 +160,17 @@ mod tests {
             read("https://pieride.invalid/pronote?login=camille&token=a%2Bb"),
             Some(json!({ "login": "camille", "token": "a+b" }))
         );
+    }
+
+    #[test]
+    fn reconnait_la_page_de_depart() {
+        let url = |text: &str| Url::parse(text).unwrap();
+        assert!(is_info_page(&url(
+            "https://0000000a.index-education.net/pronote/InfoMobileApp.json?id=x"
+        )));
+        assert!(!is_info_page(&url(
+            "https://0000000a.index-education.net/pronote/mobile.eleve.html?fd=1"
+        )));
     }
 
     #[test]
