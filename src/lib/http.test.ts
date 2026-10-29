@@ -1,5 +1,5 @@
 import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ServiceUnavailable } from "@/services/shared/errors";
 
@@ -14,6 +14,10 @@ const nativeFetch = vi.hoisted(() => {
 });
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: vi.fn() }));
 const plugin = vi.mocked(pluginFetch);
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 beforeEach(() => {
   nativeFetch.mockClear();
@@ -66,6 +70,20 @@ describe("fetch global", () => {
     expect(String(error)).toContain("https://pirate.example");
     expect(String(error)).not.toContain("abc123");
   });
+
+  it("rejette une URL invalide au lieu de lever l'erreur", async () => {
+    const response = fetch("http://[");
+    await expect(response).rejects.toThrow(TypeError);
+  });
+
+  it("rend l'AbortError d'une requête annulée, pas une panne", async () => {
+    plugin.mockRejectedValue("Request cancelled");
+    const error = await fetch("https://exemple.fr/", {
+      signal: AbortSignal.abort(),
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(DOMException);
+    expect(error).toHaveProperty("name", "AbortError");
+  });
 });
 
 describe("fetcher", () => {
@@ -100,6 +118,25 @@ describe("fetcher", () => {
     const headers = new Headers(plugin.mock.calls[0][1]?.headers);
     expect(headers.get("User-Agent")).toContain("PRONOTE Mobile APP");
     expect(headers.get("Content-Type")).toBe("text/plain");
+  });
+
+  it("traduit un délai dépassé en ServiceUnavailable", async () => {
+    vi.spyOn(AbortSignal, "timeout").mockReturnValue(
+      AbortSignal.abort(new DOMException("", "TimeoutError"))
+    );
+    plugin.mockRejectedValue("Request cancelled");
+    await expect(fetcher({ url })).rejects.toThrow(ServiceUnavailable);
+  });
+
+  it("traduit une réponse coupée en ServiceUnavailable", async () => {
+    plugin.mockResolvedValue(
+      new Response(
+        new ReadableStream({
+          start: controller => controller.error(new Error("coupé")),
+        })
+      )
+    );
+    await expect(fetcher({ url })).rejects.toThrow(ServiceUnavailable);
   });
 
   it("rend le contenu, le statut et Set-Cookie", async () => {
