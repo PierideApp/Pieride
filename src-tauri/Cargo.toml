@@ -15,7 +15,9 @@ serde_json = "1"
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite"] }
 tauri = { version = "2", features = ["tray-icon"] }
 # Sans la fonctionnalité `cookies` : elle écrit les cookies de session en clair sur le disque.
-tauri-plugin-http = { version = "2", default-features = false, features = ["rustls-tls", "http2", "charset", "system-proxy"] }
+# `unsafe-headers` : pawnote envoie `Cookie: appliMobile=1` pour la connexion par jeton, que
+# le plugin retire sinon (en-tête interdit par fetch). Les domaines restent limités.
+tauri-plugin-http = { version = "2", default-features = false, features = ["rustls-tls", "http2", "charset", "system-proxy", "unsafe-headers"] }
 tauri-plugin-notification = "2"
 tauri-plugin-opener = "2"
 
