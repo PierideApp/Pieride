@@ -2,8 +2,9 @@
 
 Les stores [Zustand](https://zustand.docs.pmnd.rs). Enregistrés dans le stockage de la WebView :
 
-- `settings.ts` : thème, langue et modules masqués de chaque compte.
-- `accounts.ts` : l'`id` du compte affiché.
+- `settings.ts` : thème, couleur d'accentuation, langue, réglages des modules (Fonctionnalités), barre latérale, démarrage, notifications, et modules masqués et ordre des modules de chaque compte.
+- `wallpaper.ts` : fond d'écran de l'accueil (dégradé ou image choisie), à part car l'image pèse quelques centaines de Ko.
+- `accounts.ts` : l'`id` du compte affiché, et les services supprimés dont le secret reste à effacer du trousseau (retenté au démarrage).
 
 En mémoire seulement :
 

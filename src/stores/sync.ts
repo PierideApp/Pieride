@@ -2,6 +2,7 @@
 // (ou `reload`) : les hooks de données relisent alors la base.
 import { create } from "zustand";
 
+import { log } from "@/lib/log";
 import { accountManager } from "@/services";
 
 interface SyncState {
@@ -27,8 +28,15 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
     try {
       await accountManager.refreshAll(accountId);
       set({ failed: false });
-    } catch {
+      log("info", "sync", "Synchronisation terminée");
+    } catch (error) {
       set({ failed: true });
+      // Le type d'erreur seulement : le détail de chaque service est dans `sync_state`.
+      log(
+        "error",
+        "sync",
+        `Synchronisation en échec : ${error instanceof Error ? error.name : "Unknown"}`
+      );
     } finally {
       set(state => ({ syncing: false, version: state.version + 1 }));
     }

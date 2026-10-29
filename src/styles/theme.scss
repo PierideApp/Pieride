@@ -80,11 +80,15 @@
   --on-brand: #ffffff;
   --on-brand-soft: #ffffff1f;
   --on-brand-active: #ffffff21;
+  // Action destructrice posée sur la marque (« Se déconnecter »).
+  --on-brand-danger: #ff8a95;
   // Fond assombri sous la palette et ombre du panneau détail.
   --color-overlay: #0e0b4d59;
 
   --font-text: "SN Pro", system-ui, sans-serif;
   --font-display: "Unbounded", "SN Pro", system-ui, sans-serif;
+  // Journaux (Paramètres > Développeur) : la police à chasse fixe du système.
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", monospace;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -113,6 +117,29 @@
 
 [data-theme="dark"] {
   @include dark;
+}
+
+// Couleur d'accentuation choisie (Paramètres > Personnalisation, hooks/useTheme.ts) : les
+// teintes se déduisent de `--accent`, plus claires en sombre pour rester lisibles.
+:root[data-accent] {
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent);
+  --color-accent-soft: color-mix(
+    in oklab,
+    var(--accent) 12%,
+    var(--color-surface)
+  );
+  --color-on-accent: var(--accent-on, #ffffff);
+}
+
+:root[data-accent][data-theme="dark"] {
+  --color-accent: color-mix(in oklab, var(--accent) 75%, #ffffff);
+  --color-accent-text: color-mix(in oklab, var(--accent) 50%, #ffffff);
+  --color-accent-soft: color-mix(
+    in oklab,
+    var(--color-accent-text) 22%,
+    var(--color-surface)
+  );
 }
 
 *,
