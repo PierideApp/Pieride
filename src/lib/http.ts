@@ -66,7 +66,10 @@ async function externalFetch(
     // Annulée par l'appelant : la même erreur que le fetch natif (AbortError, TimeoutError).
     const signal =
       init?.signal ?? (input instanceof Request ? input.signal : null);
-    signal?.throwIfAborted();
+    // Pas `throwIfAborted()` : absent du WebKit de Safari 15 (macOS 12 pas à jour).
+    if (signal?.aborted) {
+      throw signal.reason ?? new DOMException("Requête annulée", "AbortError");
+    }
     // Les erreurs du plugin recopient l'URL complète : on garde la raison, pas l'URL.
     const reason = String(error).replace(
       /\b[a-z][a-z0-9+.-]*:\/\/\S+/gi,
@@ -105,7 +108,10 @@ function createFetcher(userAgent?: string): Fetcher {
     if (userAgent) {
       finalHeaders.set("User-Agent", userAgent);
     }
-    const signal = AbortSignal.timeout(TIMEOUT);
+    // Pas `AbortSignal.timeout()` : absent du WebKit de Safari 15 (macOS 12 pas à jour).
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT);
+    const { signal } = controller;
     try {
       const response = await externalFetch(url, {
         method,
@@ -127,6 +133,8 @@ function createFetcher(userAgent?: string): Fetcher {
       throw new ServiceUnavailable(
         signal.aborted ? "Pas de réponse du serveur" : "Réponse interrompue"
       );
+    } finally {
+      clearTimeout(timer);
     }
   };
 }
