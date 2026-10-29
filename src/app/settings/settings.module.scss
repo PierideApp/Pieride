@@ -554,7 +554,43 @@ li[draggable] {
   }
 }
 
-// Matières : la couleur arrive par `--subject`, éclaircie de 30 % en sombre (maquettes).
+// Matières : la couleur arrive par `--subject`, et `--subject-dark` en sombre (lib/subjects.ts,
+// `subjectStyle`). Pas de color-mix() : le WebKit de certains Mac ne le résout pas avec une
+// variable. Les fonds teintés sont un calque de la couleur, peu opaque.
+
+.subjectTile,
+.subjectDot,
+.coursePreview {
+  --subject-shown: var(--subject);
+}
+
+:global(:root[data-theme="dark"]) {
+  .subjectTile,
+  .subjectDot,
+  .coursePreview {
+    --subject-shown: var(--subject-dark);
+  }
+
+  .subjectTile::before {
+    opacity: 0.22;
+  }
+}
+
+// Calque de la couleur sous le contenu (emoji, texte) : `opacity` dose la teinte.
+@mixin tint($opacity) {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--subject-shown);
+    opacity: $opacity;
+  }
+}
 
 .subjectTile {
   display: grid;
@@ -564,7 +600,8 @@ li[draggable] {
   height: 36px;
   border-radius: var(--radius-s);
   font-size: 20px;
-  background: color-mix(in oklab, var(--subject) 18%, var(--color-surface));
+
+  @include tint(0.18);
 }
 
 .subjectDot {
@@ -572,36 +609,16 @@ li[draggable] {
   width: 18px;
   height: 18px;
   border-radius: var(--radius-round);
-  background: var(--subject-shown, var(--subject));
-}
-
-:global(:root[data-theme="dark"]) {
-  .subjectTile {
-    background: color-mix(
-      in oklab,
-      color-mix(in oklab, var(--subject) 70%, #ffffff) 22%,
-      var(--color-surface)
-    );
-  }
-
-  .subjectDot,
-  .coursePreview {
-    --subject-shown: color-mix(in oklab, var(--subject) 70%, #ffffff);
-  }
+  background: var(--subject-shown);
 }
 
 // Aperçu d'un cours, sur la couleur de la matière.
 .coursePreview {
-  --subject-shown: var(--subject);
-
   max-width: 420px;
   padding: var(--space-3);
   border-radius: var(--radius-m);
-  background: color-mix(
-    in oklab,
-    var(--subject-shown) 10%,
-    var(--color-surface)
-  );
+
+  @include tint(0.1);
 }
 
 .emojis {

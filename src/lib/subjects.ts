@@ -1,5 +1,8 @@
 // Apparence d'une matière : le nom, la couleur et l'emoji choisis dans Paramètres > Matières,
 // sinon des valeurs par défaut stables, déduites du nom donné par le service.
+import type { CSSProperties } from "react";
+
+import { mix } from "./color";
 
 /** Couleurs proposées (maquette 06-modifier-matiere), éclaircies en thème sombre (CSS). */
 export const SUBJECT_COLORS = [
@@ -83,6 +86,14 @@ export function defaultSubjectColor(name: string): string {
     hash = (hash * 31 + (char.codePointAt(0) ?? 0)) % 1_000_003;
   }
   return SUBJECT_COLORS[hash % SUBJECT_COLORS.length] ?? SUBJECT_COLORS[0];
+}
+
+/**
+ * Les variables CSS d'une couleur de matière : `--subject`, et `--subject-dark` éclaircie de
+ * 30 % pour le thème sombre (maquettes), calculée ici car `color-mix()` ne marche pas partout.
+ */
+export function subjectStyle(color: string): CSSProperties {
+  return { "--subject": color, "--subject-dark": mix(color, "#ffffff", 0.7) };
 }
 
 /** Le premier caractère visible (un emoji peut faire plusieurs points de code). */

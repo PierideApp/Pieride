@@ -4,8 +4,9 @@ import "react";
 
 declare module "react" {
   interface CSSProperties {
-    /** Couleur d'une matière (lib/subjects.ts), éclaircie en thème sombre. */
+    /** Couleur d'une matière, puis sa version éclaircie pour le thème sombre (lib/subjects.ts). */
     "--subject"?: string;
+    "--subject-dark"?: string;
     /** Taille d'un avatar, en pixels (components/Avatar). */
     "--avatar-size"?: string;
   }

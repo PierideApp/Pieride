@@ -119,28 +119,8 @@
   @include dark;
 }
 
-// Couleur d'accentuation choisie (Paramètres > Personnalisation, hooks/useTheme.ts) : les
-// teintes se déduisent de `--accent`, plus claires en sombre pour rester lisibles.
-:root[data-accent] {
-  --color-accent: var(--accent);
-  --color-accent-text: var(--accent);
-  --color-accent-soft: color-mix(
-    in oklab,
-    var(--accent) 12%,
-    var(--color-surface)
-  );
-  --color-on-accent: var(--accent-on, #ffffff);
-}
-
-:root[data-accent][data-theme="dark"] {
-  --color-accent: color-mix(in oklab, var(--accent) 75%, #ffffff);
-  --color-accent-text: color-mix(in oklab, var(--accent) 50%, #ffffff);
-  --color-accent-soft: color-mix(
-    in oklab,
-    var(--color-accent-text) 22%,
-    var(--color-surface)
-  );
-}
+// Une couleur d'accentuation autre que l'indigo (Paramètres > Personnalisation) remplace
+// `--color-accent*` en ligne sur la racine : hooks/useTheme.ts calcule ses teintes.
 
 *,
 *::before,

@@ -22,6 +22,7 @@ import {
   simplify,
   SUBJECT_COLORS,
   SUBJECT_EMOJIS,
+  subjectStyle,
   type SubjectView,
 } from "@/lib/subjects";
 import { accountManager } from "@/services";
@@ -40,7 +41,7 @@ function SubjectTile({ subject }: { subject: SubjectView }) {
   return (
     <span
       className={styles.subjectTile}
-      style={{ "--subject": subject.color }}
+      style={subjectStyle(subject.color)}
       aria-hidden="true"
     >
       {subject.emoji}
@@ -77,7 +78,7 @@ function SubjectEditor({
         <Card className={styles.padded}>
           <SettingRow
             className={styles.coursePreview}
-            style={{ "--subject": subject.color }}
+            style={subjectStyle(subject.color)}
             media={<SubjectTile subject={subject} />}
             title={subject.label}
             text={subject.teacher ?? t("settings.subjects.previewText")}
@@ -294,7 +295,7 @@ export function SubjectsSettings({ account }: SettingsSectionProps) {
               >
                 <span
                   className={styles.subjectDot}
-                  style={{ "--subject": item.color }}
+                  style={subjectStyle(item.color)}
                   aria-hidden="true"
                 />
                 <ChevronRight size={14} aria-hidden="true" />
