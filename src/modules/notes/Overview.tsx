@@ -1,5 +1,7 @@
 // Haut de l'onglet Matières (maquette 05-notes/01-matieres) : la moyenne générale et sa
 // courbe, la méthode de calcul sous le chiffre, les statistiques, puis les nouvelles notes.
+// La moyenne de l'établissement passe avant celle calculée par Piéride, qui n'est qu'estimée :
+// la méthode suit alors l'estimation, à droite.
 import {
   Apple,
   ArrowDown,
@@ -42,6 +44,8 @@ export function AverageCard({
   const formats = useDateFormats();
   const score = useScore();
   const value = average(grades, method);
+  const official = period?.average;
+  const shown = official ?? value;
   const points = history(grades, method);
   const monthStart = new Date();
   monthStart.setDate(1);
@@ -53,6 +57,30 @@ export function AverageCard({
     day: "numeric",
     month: "long",
   });
+  const methodMenu = (
+    label: string,
+    align: "start" | "end",
+    estimate?: string
+  ) => (
+    <Menu
+      label={label}
+      value={estimate}
+      variant="inline"
+      align={align}
+      stacked
+      items={[
+        { kind: "heading", label: t("notes.methodsTitle") },
+        ...AVERAGE_METHODS.map(option => ({
+          kind: "option" as const,
+          label: t(`notes.methods.${option}.title`),
+          hint: t(`notes.methods.${option}.text`),
+          checked: option === method,
+          onSelect: () =>
+            setPreference("averageMethod", option satisfies AverageMethod),
+        })),
+      ]}
+    />
+  );
 
   return (
     <Card className={styles.averageCard}>
@@ -67,29 +95,19 @@ export function AverageCard({
       <div className={styles.averageFoot}>
         <div>
           <p className={styles.averageValue}>
-            {value === undefined ? "-" : score.format(value)}
+            {shown === undefined ? "-" : score.format(shown)}
             <small>/{score.scale}</small>
           </p>
-          <Menu
-            label={t(`notes.methods.${method}.title`)}
-            variant="inline"
-            align="start"
-            stacked
-            items={[
-              { kind: "heading", label: t("notes.methodsTitle") },
-              ...AVERAGE_METHODS.map(option => ({
-                kind: "option" as const,
-                label: t(`notes.methods.${option}.title`),
-                hint: t(`notes.methods.${option}.text`),
-                checked: option === method,
-                onSelect: () =>
-                  setPreference(
-                    "averageMethod",
-                    option satisfies AverageMethod
-                  ),
-              })),
-            ]}
-          />
+          {official === undefined ? (
+            methodMenu(
+              t("notes.estimated", {
+                method: t(`notes.methods.${method}.title`),
+              }),
+              "start"
+            )
+          ) : (
+            <p className={styles.averageLabel}>{t("notes.overall")}</p>
+          )}
         </div>
         <div className={styles.averageAside}>
           {delta !== undefined && (
@@ -112,11 +130,9 @@ export function AverageCard({
               })}
             </span>
           )}
-          {period?.average !== undefined && (
-            <small>
-              {t("notes.bySchool", { value: score.format(period.average) })}
-            </small>
-          )}
+          {official !== undefined &&
+            value !== undefined &&
+            methodMenu(t("notes.estimatedBy"), "end", score.format(value))}
         </div>
       </div>
     </Card>

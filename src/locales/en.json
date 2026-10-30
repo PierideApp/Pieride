@@ -326,7 +326,9 @@
       }
     },
     "since": "{{delta}} since {{date}}",
-    "bySchool": "by your school: {{value}}",
+    "estimated": "{{method}} (estimate)",
+    "estimatedBy": "Estimated by Piéride",
+    "fromSchool": "From your school",
     "stats": {
       "title": "Statistics",
       "class": "Class average",

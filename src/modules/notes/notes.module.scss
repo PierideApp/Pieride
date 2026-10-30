@@ -96,6 +96,16 @@
   }
 }
 
+// À la place du menu de méthode quand la moyenne vient de l'établissement : même place, même
+// texte.
+.averageLabel {
+  margin: 0;
+  padding: 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
 .averageAside {
   display: flex;
   flex-direction: column;

@@ -392,6 +392,9 @@ export function AverageWidget({
   const formats = useDateFormats();
   const score = useScore();
   const value = average(grades, method);
+  // Celle de l'établissement d'abord : celle de Piéride n'est qu'estimée.
+  const official = period?.average;
+  const shown = official ?? value;
   const points = history(grades, method);
   const monthStart = startOfDay(new Date());
   monthStart.setDate(1);
@@ -407,9 +410,9 @@ export function AverageWidget({
         tone="accent"
         title={t("accueil.average")}
         text={
-          value === undefined
+          shown === undefined
             ? t("notes.empty.title")
-            : `${score.format(value)}/${score.scale}${
+            : `${score.format(shown)}/${score.scale}${
                 delta === undefined ? "" : ` · ${score.delta(delta)}`
               }`
         }
@@ -424,7 +427,7 @@ export function AverageWidget({
   const figure = (
     <div>
       <p className={styles.averageValue}>
-        {value === undefined ? "-" : score.format(value)}
+        {shown === undefined ? "-" : score.format(shown)}
         <small>/{score.scale}</small>
       </p>
       {delta !== undefined && (
@@ -474,7 +477,7 @@ export function AverageWidget({
           <WidgetLink to="/notes" label={t("modules.notes")} />
         )}
       </WidgetHead>
-      {value === undefined ? (
+      {shown === undefined ? (
         <WidgetEmpty
           icon={Pie}
           title={t("notes.empty.title")}
@@ -507,7 +510,11 @@ export function AverageWidget({
         </div>
       )}
       <small className={styles.averageFoot}>
-        {t(`notes.methods.${method}.title`)}
+        {official === undefined
+          ? t("notes.estimated", {
+              method: t(`notes.methods.${method}.title`),
+            })
+          : t("notes.fromSchool")}
         {period && ` · ${period.name}`}
       </small>
     </Card>

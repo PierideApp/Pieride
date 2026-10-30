@@ -326,7 +326,9 @@
       }
     },
     "since": "{{delta}} depuis le {{date}}",
-    "bySchool": "par l'établissement : {{value}}",
+    "estimated": "{{method}} (estimée)",
+    "estimatedBy": "Estimée par Piéride",
+    "fromSchool": "Donnée par ton établissement",
     "stats": {
       "title": "Statistiques",
       "class": "Moyenne de classe",
