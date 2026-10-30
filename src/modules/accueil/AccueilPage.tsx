@@ -55,6 +55,7 @@ import {
   GradesWidget,
   NewsWidget,
   TasksWidget,
+  WidgetWaiting,
 } from "./Widgets";
 
 /** Temps laissé pour annuler le retrait d'un widget. */
@@ -224,6 +225,19 @@ export function AccueilPage() {
     item => !period || (item.from >= period.start && item.from <= period.end)
   );
   const background = wallpaperBackground(wallpaper);
+  const newsItems = news.status === "ready" ? news.data : [];
+  /** Le widget n'a rien à montrer, mais ses données sont en route. */
+  const waiting: Record<HomeWidget, boolean> = {
+    attendance: attendance.fetching && absences.length === 0,
+    news: news.fetching && newsItems.length === 0,
+    courses:
+      (week.fetching || nextWeek.fetching) &&
+      remaining.length === 0 &&
+      nextCourses.length === 0,
+    average: grades.fetching && periodGrades.length === 0,
+    tasks: homework.fetching && tasks.length === 0,
+    grades: grades.fetching && periodGrades.length === 0,
+  };
 
   const widget = (id: HomeWidget, size: WidgetSize): ReactNode => {
     const level = levelOf(size);
@@ -231,12 +245,7 @@ export function AccueilPage() {
       case "attendance":
         return <AttendanceWidget level={level} items={absences} now={now} />;
       case "news":
-        return (
-          <NewsWidget
-            level={level}
-            items={news.status === "ready" ? news.data : []}
-          />
-        );
+        return <NewsWidget level={level} items={newsItems} />;
       case "courses":
         return (
           <CoursesWidget
@@ -284,7 +293,9 @@ export function AccueilPage() {
         onResize={resizeWidget}
         onRemove={removeWidget}
       >
-        {widget(item.id, item.size)}
+        <WidgetWaiting value={waiting[item.id]}>
+          {widget(item.id, item.size)}
+        </WidgetWaiting>
       </WidgetSlot>
     );
 

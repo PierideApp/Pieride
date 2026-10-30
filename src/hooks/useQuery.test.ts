@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { Source } from "./useQuery";
+import { isStale, Source } from "./useQuery";
 
 const flush = () => new Promise(resolve => setTimeout(resolve));
 
@@ -54,8 +54,20 @@ describe("Source", () => {
       source.refresh(String(week), "0", () => Promise.resolve(week));
     }
     await flush();
-    expect(listener).toHaveBeenCalledTimes(20);
+    // Au départ de chaque lecture, puis à chaque résultat, sauf celui de la clé oubliée.
+    expect(listener).toHaveBeenCalledTimes(41);
     expect(source.get("0")).toBeUndefined();
     expect(source.get("20")).toEqual({ status: "ready", data: 20 });
+  });
+
+  it("dit qu'une lecture est en route jusqu'au résultat de la base", async () => {
+    const source = new Source<number>("grades");
+    expect(isStale(source.entry("a"), "0")).toBe(true);
+    source.refresh("a", "0", () => Promise.resolve(1));
+    expect(isStale(source.entry("a"), "0")).toBe(true);
+    await flush();
+    expect(isStale(source.entry("a"), "0")).toBe(false);
+    // Les sujets ont changé (synchro) : relue, même avant que l'écran ne la redemande.
+    expect(isStale(source.entry("a"), "1")).toBe(true);
   });
 });

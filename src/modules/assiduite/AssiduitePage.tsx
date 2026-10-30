@@ -19,6 +19,7 @@ import { Menu } from "@/components/Menu/Menu";
 import { Page } from "@/components/Page/Page";
 import { Segmented } from "@/components/Segmented/Segmented";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { type AttendanceView, useAttendance } from "@/hooks/useAttendance";
 import { capitalize, hoursMinutes, useDateFormats } from "@/hooks/useFormats";
 import { currentPeriod, useGrades } from "@/hooks/useGrades";
@@ -207,12 +208,16 @@ export function AssiduitePage({ module }: ModulePageProps) {
   ];
 
   const body =
-    items.status === "loading" ? null : items.status === "error" ? (
+    items.status === "error" ? (
       <EmptyState
         icon={module.icon}
         title={t("assiduite.error")}
         text={t("errors.database")}
       />
+    ) : items.fetching && all.length === 0 ? (
+      <div className={styles.empty}>
+        <Spinner size="large" label={t("app.loading")} fill />
+      </div>
     ) : (
       <>
         <ul className={styles.stats}>

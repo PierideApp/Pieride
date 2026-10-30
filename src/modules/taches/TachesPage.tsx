@@ -12,6 +12,7 @@ import { Menu } from "@/components/Menu/Menu";
 import { Page } from "@/components/Page/Page";
 import { SearchField } from "@/components/SearchField/SearchField";
 import { Segmented } from "@/components/Segmented/Segmented";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import { useDateFormats } from "@/hooks/useFormats";
 import { type HomeworkView, useHomework } from "@/hooks/useHomework";
@@ -188,12 +189,14 @@ export function TachesPage({ module }: ModulePageProps) {
   );
 
   const body =
-    tasks.status === "loading" ? null : tasks.status === "error" ? (
+    tasks.status === "error" ? (
       <EmptyState
         icon={module.icon}
         title={t("taches.error")}
         text={t("errors.database")}
       />
+    ) : tasks.fetching && all.length === 0 ? (
+      <Spinner size="large" label={t("app.loading")} fill />
     ) : all.length === 0 ? (
       <Card className={styles.emptyWeek}>
         <EmptyState

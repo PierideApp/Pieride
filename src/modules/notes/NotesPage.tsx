@@ -11,6 +11,7 @@ import { Menu } from "@/components/Menu/Menu";
 import { Page } from "@/components/Page/Page";
 import { SearchField } from "@/components/SearchField/SearchField";
 import { Segmented } from "@/components/Segmented/Segmented";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import { useDateFormats } from "@/hooks/useFormats";
 import {
@@ -172,12 +173,16 @@ export function NotesPage({ module }: ModulePageProps) {
   const selectedNow = detailOpen ? selected : null;
 
   const body =
-    data.status === "loading" ? null : data.status === "error" ? (
+    data.status === "error" ? (
       <EmptyState
         icon={module.icon}
         title={t("notes.error")}
         text={t("errors.database")}
       />
+    ) : data.fetching && periodGrades.length === 0 ? (
+      <div className={styles.empty}>
+        <Spinner size="large" label={t("app.loading")} fill />
+      </div>
     ) : periodGrades.length === 0 ? (
       <Card className={styles.empty}>
         <EmptyState

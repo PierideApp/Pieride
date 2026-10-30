@@ -12,6 +12,7 @@ import { Menu } from "@/components/Menu/Menu";
 import { Page } from "@/components/Page/Page";
 import { SearchField } from "@/components/SearchField/SearchField";
 import { Segmented } from "@/components/Segmented/Segmented";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { useDateFormats } from "@/hooks/useFormats";
 import { type NewsView, useNews } from "@/hooks/useNews";
 import { log } from "@/lib/log";
@@ -105,12 +106,14 @@ export function ActualitesPage({ module }: ModulePageProps) {
   );
 
   const body =
-    items.status === "loading" ? null : items.status === "error" ? (
+    items.status === "error" ? (
       <EmptyState
         icon={module.icon}
         title={t("actualites.error")}
         text={t("errors.database")}
       />
+    ) : items.fetching && all.length === 0 ? (
+      <Spinner size="large" label={t("app.loading")} fill />
     ) : all.length === 0 ? (
       <Card className={styles.empty}>
         <EmptyState

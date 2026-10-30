@@ -13,7 +13,7 @@ import {
   Tasks,
   UserCross,
 } from "@getpapillon/papicons";
-import type { ReactNode } from "react";
+import { createContext, type ReactNode, use } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -21,6 +21,7 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { LineChart } from "@/components/LineChart/LineChart";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import type { AttendanceView } from "@/hooks/useAttendance";
 import {
@@ -44,6 +45,12 @@ import { useSettingsStore } from "@/stores/settings";
 
 import styles from "./accueil.module.scss";
 import type { WidgetLevel } from "./layout";
+
+/**
+ * Vrai quand le widget n'a rien à montrer et que ses données sont en route (lecture de la base,
+ * synchro) : son état vide devient un cercle d'attente, son raccourci dit « Chargement… ».
+ */
+export const WidgetWaiting = createContext(false);
 
 const minutesBetween = (from: Date, to: Date) =>
   Math.round((to.getTime() - from.getTime()) / 60_000);
@@ -79,14 +86,24 @@ function WidgetEmpty({
   text: string;
   small?: boolean;
 }) {
+  const { t } = useTranslation();
+  const waiting = use(WidgetWaiting);
   return (
     <div className={styles.widgetEmpty}>
-      <EmptyState
-        icon={icon}
-        title={title}
-        text={text}
-        size={small ? "small" : "medium"}
-      />
+      {waiting ? (
+        <Spinner
+          size={small ? "small" : "large"}
+          label={t("app.loading")}
+          fill
+        />
+      ) : (
+        <EmptyState
+          icon={icon}
+          title={title}
+          text={text}
+          size={small ? "small" : "medium"}
+        />
+      )}
     </div>
   );
 }
@@ -132,7 +149,9 @@ function Shortcut({
   title: string;
   text: string;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const waiting = use(WidgetWaiting);
   return (
     <button
       type="button"
@@ -144,7 +163,7 @@ function Shortcut({
         <Icon size={20} />
       </span>
       <strong>{title}</strong>
-      <small>{text}</small>
+      <small>{waiting ? t("app.loading") : text}</small>
     </button>
   );
 }
@@ -750,6 +769,7 @@ export function AttendanceWidget({
 }) {
   const { t } = useTranslation();
   const formats = useDateFormats();
+  const waiting = use(WidgetWaiting);
   const absences = items.filter(item => item.kind === "absence");
   const missed = absences.reduce((sum, item) => sum + item.durationMinutes, 0);
   const unjustified = items
@@ -789,19 +809,23 @@ export function AttendanceWidget({
       <WidgetHead icon={UserCross} title={t("modules.assiduite")}>
         <WidgetLink to="/assiduite" label={t("accueil.more")} />
       </WidgetHead>
-      <ul className={styles.stats} data-level={level}>
-        {stats.map(stat => (
-          <li key={stat.label}>
-            <strong data-alert={stat.alert || undefined}>{stat.value}</strong>
-            <small>{stat.label}</small>
-          </li>
-        ))}
-      </ul>
-      {level === "large" && items.length === 0 && (
+      {/* Des zéros pendant l'attente laisseraient croire qu'il n'y a rien. */}
+      {!waiting && (
+        <ul className={styles.stats} data-level={level}>
+          {stats.map(stat => (
+            <li key={stat.label}>
+              <strong data-alert={stat.alert || undefined}>{stat.value}</strong>
+              <small>{stat.label}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(level === "large" || waiting) && items.length === 0 && (
         <WidgetEmpty
           icon={UserCross}
           title={t("assiduite.empty.title")}
           text={t("assiduite.empty.text")}
+          small={level === "compact"}
         />
       )}
       {level === "large" && items.length > 0 && (

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { useDateFormats } from "@/hooks/useFormats";
 import type { CourseView } from "@/hooks/useTimetable";
 import { hourRange, minutesOf, placeDay, withBreaks } from "@/lib/timetable";
@@ -18,6 +19,7 @@ import { CourseCard } from "./CourseCard";
 export function WeekView({
   days,
   courses,
+  waiting,
   now,
   selected,
   onOpen,
@@ -25,6 +27,8 @@ export function WeekView({
 }: {
   days: readonly Date[];
   courses: readonly CourseView[];
+  /** Pas de cours, mais ils sont en route (synchro, semaine demandée) : on attend. */
+  waiting: boolean;
   now: Date;
   /** Le cours dont le détail est ouvert. */
   selected: string | null;
@@ -151,13 +155,17 @@ export function WeekView({
         })}
         {shown.length === 0 && (
           <div className={styles.weekEmpty}>
-            <Card className={styles.weekEmptyCard}>
-              <EmptyState
-                icon={Sun}
-                title={t("cours.empty.title")}
-                text={t("cours.empty.text")}
-              />
-            </Card>
+            {waiting ? (
+              <Spinner size="large" label={t("app.loading")} fill />
+            ) : (
+              <Card className={styles.weekEmptyCard}>
+                <EmptyState
+                  icon={Sun}
+                  title={t("cours.empty.title")}
+                  text={t("cours.empty.text")}
+                />
+              </Card>
+            )}
           </div>
         )}
       </div>

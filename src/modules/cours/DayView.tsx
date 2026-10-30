@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { MiniCalendar } from "@/components/MiniCalendar/MiniCalendar";
+import { Spinner } from "@/components/Spinner/Spinner";
 import {
   capitalize,
   useDateFormats,
@@ -32,6 +33,7 @@ export function DayView({
   accountId,
   day,
   courses,
+  waiting,
   now,
   selected,
   icon,
@@ -41,6 +43,8 @@ export function DayView({
   accountId: string | undefined;
   day: Date;
   courses: readonly CourseView[];
+  /** Pas de cours, mais ils sont en route (synchro, semaine demandée) : on attend. */
+  waiting: boolean;
   now: Date;
   selected: string | null;
   icon: ModuleManifest["icon"];
@@ -87,7 +91,9 @@ export function DayView({
               ` · ${t("cours.endsAt", { time: formats.time.format(end) })}`}
           </p>
         )}
-        {list.length === 0 ? (
+        {waiting ? (
+          <Spinner size="large" label={t("app.loading")} fill />
+        ) : list.length === 0 ? (
           <Card className={styles.dayEmpty}>
             <EmptyState
               icon={icon}

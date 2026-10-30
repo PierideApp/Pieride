@@ -8,6 +8,7 @@ import { DateNav } from "@/components/DateNav/DateNav";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { Page } from "@/components/Page/Page";
 import { Segmented } from "@/components/Segmented/Segmented";
+import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
 import { useNow } from "@/hooks/useNow";
@@ -107,10 +108,13 @@ export function CoursPage({ module }: ModulePageProps) {
           title={t("cours.error")}
           text={t("errors.database")}
         />
-      ) : timetable.status === "loading" ? null : week ? (
+      ) : timetable.status === "loading" ? (
+        <Spinner size="large" label={t("app.loading")} fill />
+      ) : week ? (
         <WeekView
           days={weekDays(date, weekend)}
           courses={timetable.data}
+          waiting={timetable.fetching && timetable.data.length === 0}
           now={now}
           selected={detailOpen ? selected : null}
           onOpen={open}
@@ -124,6 +128,7 @@ export function CoursPage({ module }: ModulePageProps) {
           accountId={accountId}
           day={date}
           courses={timetable.data}
+          waiting={timetable.fetching && timetable.data.length === 0}
           now={now}
           selected={detailOpen ? selected : null}
           icon={module.icon}
