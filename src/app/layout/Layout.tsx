@@ -13,6 +13,7 @@ import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useTrayGlance } from "@/hooks/useTrayGlance";
 import { modulePath, visibleModules } from "@/modules/registry";
+import { SYNC_INTERVAL } from "@/services/account-manager";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
@@ -56,6 +57,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [current, hidden, order]
   );
   const sync = useSyncStore(state => state.sync);
+  const syncing = useSyncStore(state => state.syncing);
   const currentAccountId = current?.id;
   const syncCurrent = useCallback(() => {
     if (currentAccountId) {
@@ -65,6 +67,15 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   // Au lancement et au changement de compte. Une donnée de moins de 30 minutes n'est pas
   // redemandée (`SYNC_INTERVAL`).
   useEffect(syncCurrent, [syncCurrent]);
+  // Puis 30 minutes après la fin de chaque synchro, tant que l'app est ouverte. Compter depuis
+  // la fin plutôt qu'à heure fixe : la suivante trouve toujours ses données assez vieilles.
+  useEffect(() => {
+    if (syncing) {
+      return;
+    }
+    const timer = setTimeout(syncCurrent, SYNC_INTERVAL);
+    return () => clearTimeout(timer);
+  }, [syncing, syncCurrent]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
 
