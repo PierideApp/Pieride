@@ -5,6 +5,8 @@ fn main() {
         tauri_build::AppManifest::new().commands(&[
             "allow_instance",
             "pronote_login",
+            "show_app",
+            "is_minimized",
             "secret_get",
             "secret_set",
             "secret_delete",

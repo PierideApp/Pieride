@@ -17,6 +17,8 @@
     "core:app:allow-default-window-icon",
     "allow-allow-instance",
     "allow-pronote-login",
+    "allow-show-app",
+    "allow-is-minimized",
     "allow-secret-get",
     "allow-secret-set",
     "allow-secret-delete",

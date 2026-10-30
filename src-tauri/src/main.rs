@@ -9,7 +9,6 @@ use std::{collections::HashSet, sync::Mutex};
 
 use tauri::{AppHandle, Manager, State, Url, ipc::CapabilityBuilder};
 use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_window_state::StateFlags;
 
 /// Argument du lancement à l'ouverture de session : Piéride démarre dans la barre des tâches.
 const MINIMIZED: &str = "--minimized";
@@ -17,6 +16,23 @@ const MINIMIZED: &str = "--minimized";
 /// Origines ouvertes au plugin http pendant cette session.
 #[derive(Default)]
 struct AllowedInstances(Mutex<HashSet<String>>);
+
+#[tauri::command]
+async fn show_app(app: AppHandle) -> Result<(), String> {
+    let main = app
+        .get_webview_window("main")
+        .ok_or_else(|| {
+            eprintln!("[show_app] Fenêtre main introuvable");
+            "Fenêtre 'main' introuvable".to_string()
+        })?;
+
+    main.show().map_err(|e| {
+        eprintln!("[show_app] Échec de show(): {e}");
+        e.to_string()
+    })?;
+
+    Ok(())
+}
 
 /// Ouvre au plugin http l'adresse propre à un compte (instance PRONOTE, URL iCal…).
 /// Les domaines fixes des services, eux, sont déclarés dans `capabilities/`.
@@ -40,6 +56,13 @@ fn allow_instance(
     .map_err(|_| "instance_capability")?;
     allowed.insert(origin);
     Ok(())
+}
+
+/// L'utilisateur peut choisir d'ouvrir l'appli en mode réduit au démarrage du PC.
+/// Cette commande permet au frontend de savoir si l'argument qui le permet a été spécifié.
+#[tauri::command]
+fn is_minimized() -> bool {
+    std::env::args().any(|arg| arg == MINIMIZED)
 }
 
 /// Origine d'une URL HTTPS vers un nom de domaine public. Les erreurs sont des codes,
@@ -89,7 +112,7 @@ fn main() {
         // Sans la visibilité : c'est le lancement qui décide de montrer la fenêtre (`setup`).
         .plugin(
             tauri_plugin_window_state::Builder::new()
-                .with_state_flags(StateFlags::all().difference(StateFlags::VISIBLE))
+                .skip_initial_state("main")
                 .build(),
         )
         .plugin(tauri_plugin_http::init())
@@ -108,16 +131,14 @@ fn main() {
                 }
                 Err(error) => eprintln!("base locale impossible à ouvrir : {error}"),
             }
-            // La fenêtre est créée cachée (tauri.conf.json). Lancée à l'ouverture de session,
-            // elle le reste ; le front la montre si l'utilisateur ne veut pas démarrer réduit.
-            if !std::env::args().any(|arg| arg == MINIMIZED) {
-                show_main_window(app.handle());
-            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             allow_instance,
             pronote_login::pronote_login,
+            show_app,
+            is_minimized,
             secrets::secret_get,
             secrets::secret_set,
             secrets::secret_delete,
