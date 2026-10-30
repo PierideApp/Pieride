@@ -131,7 +131,7 @@ describe("toCourse", () => {
 });
 
 describe("toHomework", () => {
-  it("reprend le devoir et ses pièces jointes", () => {
+  it("reprend le devoir et ses pièces jointes, sans l'identifiant de session", () => {
     const assignment: Assignment = {
       id: "h1",
       subject: MATHS,
@@ -149,7 +149,7 @@ describe("toHomework", () => {
         {
           kind: AttachmentKind.File,
           name: "sujet.pdf",
-          url: "https://exemple.fr/f",
+          url: "https://exemple.fr/f/sujet.pdf?Session=1234",
           id: "f1",
         },
       ],
@@ -165,7 +165,11 @@ describe("toHomework", () => {
       done: true,
       attachments: [
         { kind: "link", name: "Cours", url: "https://exemple.fr/cours" },
-        { kind: "file", name: "sujet.pdf", url: "https://exemple.fr/f" },
+        {
+          kind: "file",
+          name: "sujet.pdf",
+          url: "https://exemple.fr/f/sujet.pdf",
+        },
       ],
     });
   });

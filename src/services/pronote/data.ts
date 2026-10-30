@@ -94,11 +94,18 @@ export function toCourse(item: TimetableItem): Course {
   };
 }
 
-const toAttachment = (attachment: PronoteAttachment): Attachment => ({
-  kind: attachment.kind === AttachmentKind.Link ? "link" : "file",
-  name: attachment.name,
-  url: attachment.url,
-});
+/**
+ * L'adresse d'un fichier porte l'identifiant de la session PRONOTE (`?Session=`) : on ne le
+ * garde pas. Elle ne sert plus de toute façon une fois la session finie.
+ */
+const toAttachment = (attachment: PronoteAttachment): Attachment =>
+  attachment.kind === AttachmentKind.Link
+    ? { kind: "link", name: attachment.name, url: attachment.url }
+    : {
+        kind: "file",
+        name: attachment.name,
+        url: attachment.url.split("?")[0] ?? "",
+      };
 
 export function toHomework(assignment: Assignment): Homework {
   return {
