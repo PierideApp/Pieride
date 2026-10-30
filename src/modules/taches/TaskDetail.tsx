@@ -1,10 +1,11 @@
 // Détail d'un devoir dans le panneau de droite (maquette 04-taches/02-tableau-detail,
 // `task_inspector`) : état (Espace le change), consigne, pièces jointes, date et enseignant.
 // Relu dans la base à chaque synchro : il suit le devoir coché depuis le tableau.
-import { Calendar, Check, Paper, User } from "@getpapillon/papicons";
+import { Calendar, Check, User } from "@getpapillon/papicons";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AttachmentList } from "@/components/AttachmentList/AttachmentList";
 import { Card } from "@/components/Card/Card";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
@@ -108,20 +109,7 @@ export function TaskDetail({
       </Section>
       {item.attachments.length > 0 && (
         <Section title={t("taches.attachments")}>
-          <Card rows>
-            {item.attachments.map(attachment => (
-              <SettingRow
-                key={attachment.url}
-                media={
-                  <span className={styles.fileIcon} aria-hidden="true">
-                    <Paper size={18} />
-                  </span>
-                }
-                title={attachment.name}
-                text={t(`taches.attachment.${attachment.kind}`)}
-              />
-            ))}
-          </Card>
+          <AttachmentList attachments={item.attachments} />
         </Section>
       )}
       <Section title={t("taches.information")}>

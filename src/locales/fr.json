@@ -172,6 +172,10 @@
     "cancel": "Annuler",
     "confirm": "Utiliser cette partie"
   },
+  "attachmentList": {
+    "file": "Fichier",
+    "link": "Lien"
+  },
   "cours": {
     "view": "Affichage",
     "day": "Jour",
@@ -210,6 +214,7 @@
     "room": "Salle",
     "group": "Groupe",
     "duration": "Durée",
+    "contents": "Contenu du cours",
     "homeworkForCourse": "À faire pour ce cours",
     "noHomeworkForCourse": "Rien à rendre pour ce cours.",
     "homeworkTomorrow": "À faire pour demain",
@@ -270,10 +275,6 @@
     "space": "Espace",
     "description": "Description du devoir",
     "attachments": "Pièces jointes",
-    "attachment": {
-      "file": "Fichier",
-      "link": "Lien"
-    },
     "information": "Informations",
     "givenAt": "Donné le",
     "dueAt": "À rendre le",

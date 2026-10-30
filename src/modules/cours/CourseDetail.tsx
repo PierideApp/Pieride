@@ -1,9 +1,12 @@
 // Détail d'un cours dans le panneau de droite (maquette 03-cours/02-semaine-detail-cours) : le
-// temps restant s'il a lieu en ce moment, son statut, ses informations, les devoirs de la
-// matière à rendre ce jour-là et l'heure de la dernière synchro de la semaine en cours.
+// temps restant s'il a lieu en ce moment, son statut, ses informations, le cahier de textes
+// (comme la description d'un devoir, 04-taches/02-tableau-detail), les devoirs de la matière à
+// rendre ce jour-là et l'heure de la dernière synchro de la semaine en cours.
 import { Clock, MapPin, User } from "@getpapillon/papicons";
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AttachmentList } from "@/components/AttachmentList/AttachmentList";
 import { Card } from "@/components/Card/Card";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
@@ -86,6 +89,26 @@ export function CourseDetail({
           {row(Clock, t("cours.duration"), duration(length))}
         </Card>
       </Section>
+      {course.contents && course.contents.length > 0 && (
+        <Section title={t("cours.contents")}>
+          <div className={styles.contents}>
+            {course.contents.map((content, index) => (
+              <Fragment key={index}>
+                {(content.category || content.title || content.description) && (
+                  <Card className={styles.contentCard}>
+                    {content.category && <small>{content.category}</small>}
+                    {content.title && <strong>{content.title}</strong>}
+                    {content.description && <p>{content.description}</p>}
+                  </Card>
+                )}
+                {content.attachments.length > 0 && (
+                  <AttachmentList attachments={content.attachments} />
+                )}
+              </Fragment>
+            ))}
+          </div>
+        </Section>
+      )}
       <Section title={t("cours.homeworkForCourse")}>
         <Card className={styles.detailCard}>
           {homework.status === "error" ? (

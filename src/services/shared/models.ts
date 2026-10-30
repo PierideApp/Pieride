@@ -69,6 +69,18 @@ export interface Course {
   teacher?: string;
   group?: string;
   status?: "canceled" | "edited" | "online" | "evaluated";
+  /** Le cahier de textes de la séance, quand le service le fournit. */
+  contents?: CourseContent[];
+}
+
+/** Ce que l'enseignant a noté pour une séance (cahier de textes). */
+export interface CourseContent {
+  title?: string;
+  /** HTML venant du service (PRONOTE) ou texte simple : à nettoyer avant affichage. */
+  description?: string;
+  /** « Cours », « Correction »… tel que le service le nomme. */
+  category?: string;
+  attachments: Attachment[];
 }
 
 export interface Homework {

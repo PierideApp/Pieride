@@ -80,6 +80,16 @@ describe("toCourse", () => {
     });
   });
 
+  it("joint à la séance son cahier de textes", () => {
+    const contents = new Map([
+      ["r1", [{ title: "Les suites", category: "Cours", attachments: [] }]],
+    ]);
+    expect(
+      toCourse(lesson({ lessonResourceID: "r1" }), contents).contents
+    ).toEqual([{ title: "Les suites", category: "Cours", attachments: [] }]);
+    expect(toCourse(lesson(), contents).contents).toBeUndefined();
+  });
+
   it("distingue les séances d'un cours qui revient chaque semaine", () => {
     const nextWeek = new Date(2026, 10, 2, 8);
     expect(toCourse(lesson({ startDate: nextWeek })).id).not.toBe(

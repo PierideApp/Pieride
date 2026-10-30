@@ -31,6 +31,7 @@ describe("migrate", () => {
       ["0001_parametres"],
       ["0002_moyennes"],
       ["0003_vie_scolaire"],
+      ["0004_contenu_cours"],
     ]);
   });
 

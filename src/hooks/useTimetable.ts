@@ -1,9 +1,11 @@
 // Les cours d'une semaine pour un compte, avec le nom, la couleur et l'emoji de chaque
-// matière (Paramètres > Matières). Relus après chaque synchronisation.
+// matière (Paramètres > Matières). Relus après chaque synchronisation. Le cahier de textes
+// arrive en texte, jamais en HTML.
 import { and, eq, gte, lt } from "drizzle-orm";
 
 import { db } from "@/database";
 import { courses, services, subjects } from "@/database/schema";
+import { htmlToText } from "@/lib/html";
 import { subjectLook } from "@/lib/subjects";
 import type { Course, ServiceKind } from "@/services/shared/models";
 
@@ -60,6 +62,10 @@ async function loadCourses(
     teacher: course.teacher ?? undefined,
     group: course.group ?? undefined,
     status: course.status ?? undefined,
+    contents: course.contents?.map(content => ({
+      ...content,
+      description: content.description && htmlToText(content.description),
+    })),
     serviceId: course.serviceId,
     service,
     ...subjectLook(course.subject, chosen),

@@ -15,6 +15,7 @@ import type {
   Attachment,
   Attendance,
   Course,
+  CourseContent,
   ServiceKind,
 } from "@/services/shared/models";
 import type { Capability } from "@/services/shared/plugin";
@@ -159,6 +160,7 @@ export const courses = sqliteTable(
     teacher: text("teacher"),
     group: text("group"),
     status: text("status").$type<NonNullable<Course["status"]>>(),
+    contents: text("contents", { mode: "json" }).$type<CourseContent[]>(),
   },
   t => [
     primaryKey({ columns: [t.serviceId, t.id] }),

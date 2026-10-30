@@ -29,6 +29,13 @@
       "when": 1793306521929,
       "tag": "0003_vie_scolaire",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793373234539,
+      "tag": "0004_contenu_cours",
+      "breakpoints": true
     }
   ]
 }

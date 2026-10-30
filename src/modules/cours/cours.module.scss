@@ -749,6 +749,38 @@ $status-colors: (
   line-height: 26px;
 }
 
+// Cahier de textes, comme la description d'un devoir : la catégorie, le titre, puis le texte ;
+// les pièces jointes de chaque contenu juste dessous.
+.contents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contentCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) 18px;
+
+  small {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--subject-shown);
+  }
+
+  strong {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    line-height: 21px;
+    white-space: pre-line;
+  }
+}
+
 .detailCard {
   padding: var(--space-4);
 

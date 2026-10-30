@@ -1,6 +1,6 @@
 // Données PRONOTE vers les modèles communs : emploi du temps, devoirs et notes d'après
-// services/pronote/timetable.ts, homework.ts et grades.ts de Papillon (GPLv3) ; actualités et
-// carnet (absences, retards) d'après les types de pawnote.
+// services/pronote/timetable.ts, homework.ts et grades.ts de Papillon (GPLv3) ; cahier de
+// textes, actualités et carnet (absences, retards) d'après les types de pawnote.
 import {
   type Assignment,
   assignmentsFromWeek,
@@ -17,6 +17,8 @@ import {
   type Notebook,
   notebook,
   parseTimetable,
+  type ResourceContent,
+  resourcesFromWeek,
   type SessionHandle,
   TabLocation,
   type Timetable,
@@ -28,6 +30,7 @@ import type {
   Attachment,
   Attendance,
   Course,
+  CourseContent,
   Grade,
   Homework,
   News,
@@ -65,7 +68,11 @@ function courseStatus(lesson: Lesson): Course["status"] {
   return lesson.virtualClassrooms.length > 0 ? "online" : undefined;
 }
 
-export function toCourse(item: TimetableItem): Course {
+/** `contents` : le cahier de textes de la semaine, par identifiant PRONOTE. */
+export function toCourse(
+  item: TimetableItem,
+  contents?: ReadonlyMap<string, CourseContent[]>
+): Course {
   // Un cours qui revient chaque semaine garde son identifiant PRONOTE : l'heure de début en
   // fait une séance unique.
   const base = {
@@ -91,6 +98,10 @@ export function toCourse(item: TimetableItem): Course {
     teacher: joined(item.teacherNames),
     group: joined(item.groupNames),
     status: courseStatus(item),
+    contents:
+      item.lessonResourceID === undefined
+        ? undefined
+        : contents?.get(item.lessonResourceID),
   };
 }
 
@@ -106,6 +117,13 @@ const toAttachment = (attachment: PronoteAttachment): Attachment =>
         name: attachment.name,
         url: attachment.url.split("?")[0] ?? "",
       };
+
+const toCourseContent = (content: ResourceContent): CourseContent => ({
+  title: content.title,
+  description: content.description,
+  category: content.categoryText,
+  attachments: content.files.map(toAttachment),
+});
 
 export function toHomework(assignment: Assignment): Homework {
   return {
@@ -208,16 +226,24 @@ export function capabilities(
   const timetable: CapabilityMethods["TIMETABLE"] = {
     getWeeklyTimetable: weekStart =>
       session.run(async handle => {
-        const found = await timetableFromWeek(
-          handle,
-          weekNumber(handle, weekStart)
-        );
+        const week = weekNumber(handle, weekStart);
+        const found = await timetableFromWeek(handle, week);
         parseTimetable(handle, found, {
           withSuperposedCanceledClasses: false,
           withCanceledClasses: true,
           withPlannedClasses: true,
         });
-        return found.classes.map(toCourse);
+        // Le cahier de textes de toute la semaine en une requête, si l'élève y a accès.
+        const resources = tabs.includes(TabLocation.Resources)
+          ? await resourcesFromWeek(handle, week)
+          : [];
+        const contents = new Map(
+          resources.map(resource => [
+            resource.id,
+            resource.contents.map(toCourseContent),
+          ])
+        );
+        return found.classes.map(item => toCourse(item, contents));
       }),
   };
   const homework: CapabilityMethods["HOMEWORK"] = {

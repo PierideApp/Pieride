@@ -4,6 +4,7 @@
 // établissement sont inventés, comme sur les maquettes (Camille Martin, 1re G3).
 import type {
   Course,
+  CourseContent,
   Grade,
   Homework,
   Period,
@@ -51,6 +52,50 @@ const WEEK: readonly [
   [4, 11, 12, "Espagnol LV2"],
   [4, 14, 16, "SVT"],
 ];
+
+/** Le cahier de textes de quelques cours, par leur place dans `WEEK`. */
+const CONTENTS: ReadonlyMap<number, CourseContent[]> = new Map([
+  [
+    0,
+    [
+      {
+        category: "Cours",
+        title: "Les suites arithmétiques",
+        description:
+          "<p>Définition, terme général et somme des premiers termes.</p><p>Exemples 1 à 3 du manuel.</p>",
+        attachments: [
+          { kind: "file", name: "Fiche suites.pdf", url: "mock:fiche-suites" },
+        ],
+      },
+    ],
+  ],
+  [
+    4,
+    [
+      {
+        category: "Cours",
+        title: "Le Malade imaginaire, acte I",
+        description: "Lecture analytique de la scène 1.",
+        attachments: [],
+      },
+    ],
+  ],
+  [
+    13,
+    [
+      {
+        category: "Devoir surveillé",
+        title: "Évaluation sur les dosages",
+        attachments: [],
+      },
+      {
+        category: "Correction",
+        description: "Correction du TP 4 en classe.",
+        attachments: [],
+      },
+    ],
+  ],
+]);
 
 /** Les devoirs de la semaine : [jour du rendu, matière, consigne, fait]. */
 const HOMEWORK: readonly [number, SubjectName, string, boolean][] = [
@@ -205,13 +250,14 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
       },
       TIMETABLE: {
         getWeeklyTimetable: async weekStart =>
-          WEEK.map(([day, from, to, subject, status]) => ({
+          WEEK.map(([day, from, to, subject, status], index) => ({
             id: `mock-course-${at(weekStart, day, from).getTime()}`,
             subject,
             from: at(weekStart, day, from),
             to: at(weekStart, day, to),
             ...SUBJECTS[subject],
             status,
+            contents: CONTENTS.get(index),
           })),
       },
       HOMEWORK: {

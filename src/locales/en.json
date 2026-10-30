@@ -172,6 +172,10 @@
     "cancel": "Cancel",
     "confirm": "Use this part"
   },
+  "attachmentList": {
+    "file": "File",
+    "link": "Link"
+  },
   "cours": {
     "view": "View",
     "day": "Day",
@@ -210,6 +214,7 @@
     "room": "Room",
     "group": "Group",
     "duration": "Duration",
+    "contents": "Lesson content",
     "homeworkForCourse": "Due for this class",
     "noHomeworkForCourse": "Nothing due for this class.",
     "homeworkTomorrow": "Due tomorrow",
@@ -270,10 +275,6 @@
     "space": "Space",
     "description": "Description",
     "attachments": "Attachments",
-    "attachment": {
-      "file": "File",
-      "link": "Link"
-    },
     "information": "Details",
     "givenAt": "Given on",
     "dueAt": "Due on",

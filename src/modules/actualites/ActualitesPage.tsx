@@ -195,7 +195,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
                     </span>
                     <span>
                       <strong>{attachment.name}</strong>
-                      <small>{t(`taches.attachment.${attachment.kind}`)}</small>
+                      <small>{t(`attachmentList.${attachment.kind}`)}</small>
                     </span>
                   </li>
                 ))}
