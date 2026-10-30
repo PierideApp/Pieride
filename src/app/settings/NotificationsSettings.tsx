@@ -26,6 +26,7 @@ import { Section } from "@/components/Section/Section";
 import { Select } from "@/components/Select/Select";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Tip } from "@/components/Tip/Tip";
+import { report } from "@/lib/log";
 import { isMac } from "@/lib/platform";
 import { REMINDER_TIMES, useSettingsStore } from "@/stores/settings";
 
@@ -60,8 +61,7 @@ export function NotificationsSettings() {
       });
     } catch (error) {
       // Un code d'erreur du système, jamais une donnée.
-      // eslint-disable-next-line no-console
-      console.error(error);
+      report("settings", error);
       setProblem("settings.notifications.failed");
     }
   };

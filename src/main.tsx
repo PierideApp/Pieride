@@ -10,13 +10,28 @@ import { WindowControls } from "@/app/layout/WindowControls";
 import { createTray } from "@/app/tray";
 import { migrateDatabase } from "@/database";
 import i18n from "@/lib/i18n";
-import { log } from "@/lib/log";
+import { report } from "@/lib/log";
 import { isMac } from "@/lib/platform";
 import { accountManager } from "@/services";
 import { forgetOrphanSecrets } from "@/stores/accounts";
 import { useSettingsStore } from "@/stores/settings";
 
 document.documentElement.dataset.platform = isMac ? "mac" : "other";
+
+// Hors dev, pas de menu du navigateur au clic droit (Recharger, Retour, Imprimer…) : il
+// casserait l'app. Les champs de texte le gardent, pour copier et coller. « Inspecter »
+// n'existe qu'en dev : sans la fonctionnalité `devtools` (Cargo.toml), Tauri ne compile pas
+// les outils de développement dans l'app publiée.
+if (import.meta.env.PROD) {
+  window.addEventListener("contextmenu", event => {
+    const field =
+      event.target instanceof Element &&
+      event.target.closest("input, textarea, [contenteditable]");
+    if (!field) {
+      event.preventDefault();
+    }
+  });
+}
 
 // Lancée à l'ouverture de session, la fenêtre reste cachée (main.rs) : on la montre si
 // l'utilisateur ne veut pas démarrer dans la barre des tâches. Sans effet sinon.
@@ -34,15 +49,15 @@ const startScreen = (text: string, role: "status" | "alert") => (
   </>
 );
 
-const root = createRoot(document.getElementById("root") as HTMLElement);
+const container = document.getElementById("root");
+if (!container) {
+  throw new Error("index.html n'a pas d'élément #root");
+}
+const root = createRoot(container);
 root.render(startScreen(i18n.t("app.loading"), "status"));
 
 // Le détail ne contient que du SQL ou un code d'erreur, utile pour un signalement.
-const report = (error: unknown) => {
-  // eslint-disable-next-line no-console
-  console.error(error);
-  log("error", "app", error instanceof Error ? error.name : String(error));
-};
+const fail = (error: unknown) => report("app", error);
 
 // La base doit être à jour avant le premier écran qui la lit.
 migrateDatabase().then(
@@ -52,12 +67,12 @@ migrateDatabase().then(
         <App />
       </StrictMode>
     );
-    accountManager.start().catch(report);
-    forgetOrphanSecrets().catch(report);
-    createTray().catch(report);
+    accountManager.start().catch(fail);
+    forgetOrphanSecrets().catch(fail);
+    createTray().catch(fail);
   },
   (error: unknown) => {
-    report(error);
+    fail(error);
     root.render(startScreen(i18n.t("errors.database"), "alert"));
   }
 );

@@ -11,12 +11,13 @@ import icon from "@/assets/brand/icon.svg";
 import { Avatar } from "@/components/Avatar/Avatar";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { useLastSync } from "@/hooks/useLastSync";
-import { type Loaded, useLoaded } from "@/hooks/useLoaded";
+import type { Loaded } from "@/hooks/useLoaded";
+import { Source, useQuery } from "@/hooks/useQuery";
 import { MOD } from "@/lib/platform";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
 import { useSettingsStore } from "@/stores/settings";
-import { useSyncStore } from "@/stores/sync";
+import { TOPICS, useSyncStore } from "@/stores/sync";
 
 import styles from "./layout.module.scss";
 
@@ -82,7 +83,9 @@ function AccountSwitcher({
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const { t, i18n } = useTranslation();
   const lastSync = useLastSync(account?.id);
-  const { syncing, failed, sync } = useSyncStore();
+  const syncing = useSyncStore(state => state.syncing);
+  const failed = useSyncStore(state => state.failed);
+  const sync = useSyncStore(state => state.sync);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -116,7 +119,10 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   );
 }
 
-/** Les pastilles des modules qui en ont une, relues après chaque synchronisation. */
+/** Chaque module compte ce qu'il veut : les pastilles sont relues dès que la base change. */
+const badgeCounts = new Source<Map<string, number>>(...TOPICS);
+
+/** Les pastilles des modules qui en ont une. */
 function useBadges(
   modules: ModuleManifest[],
   accountId: string | undefined
@@ -128,14 +134,15 @@ function useBadges(
           badge ? [{ id, count: () => badge(accountId) }] : []
         )
       : [];
-  const badges = useLoaded(
+  const badges = useQuery(
+    badgeCounts,
+    `${accountId}:${counted.map(({ id }) => id).join()}`,
     async () =>
       new Map(
         await Promise.all(
           counted.map(async ({ id, count }) => [id, await count()] as const)
         )
-      ),
-    `${accountId}:${counted.map(({ id }) => id).join()}`
+      )
   );
   return badges.status === "ready" ? badges.data : new Map();
 }

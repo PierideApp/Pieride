@@ -3,7 +3,7 @@ import { db } from "@/database";
 import { accounts, services } from "@/database/schema";
 import type { Account, ServiceKind } from "@/services/shared/models";
 
-import { useLoaded } from "./useLoaded";
+import { Source, useQuery } from "./useQuery";
 
 export interface AccountService {
   id: string;
@@ -55,4 +55,6 @@ async function loadAccounts(): Promise<AccountSummary[]> {
   });
 }
 
-export const useAccounts = () => useLoaded(loadAccounts, "accounts");
+const source = new Source<AccountSummary[]>("accounts");
+
+export const useAccounts = () => useQuery(source, "", loadAccounts);

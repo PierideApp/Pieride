@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import type { AccountService, AccountSummary } from "@/hooks/useAccounts";
+import { report } from "@/lib/log";
 import { accountManager } from "@/services";
 import { SERVICE_GROUPS, SERVICE_NAMES } from "@/services/shared/plugin";
 import { removeAccount, useAccountStore } from "@/stores/accounts";
@@ -97,8 +98,7 @@ export function LinkedAccountsSettings({
       setMessage(await task());
     } catch (failure) {
       // Un code du trousseau ou de la base, jamais un secret.
-      // eslint-disable-next-line no-console
-      console.error(failure);
+      report("settings", failure);
       setMessage("settings.linked.failed");
     } finally {
       setBusy(false);

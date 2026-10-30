@@ -20,6 +20,7 @@ import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { TextField } from "@/components/TextField/TextField";
 import { IMAGE_TYPES, ImageError, resizeImage } from "@/lib/image";
+import { report } from "@/lib/log";
 import { accountManager } from "@/services";
 import { SERVICE_GROUPS, SERVICE_NAMES } from "@/services/shared/plugin";
 import { useSyncStore } from "@/stores/sync";
@@ -93,11 +94,10 @@ export function AccountSettings({ account }: SettingsSectionProps) {
     setError(null);
     try {
       await accountManager.updateAccount(account.id, profile);
-      reload();
+      reload("accounts");
     } catch (failure) {
       // Seul un code d'erreur de la base remonte ici.
-      // eslint-disable-next-line no-console
-      console.error(failure);
+      report("settings", failure);
       setError("errors.database");
     }
   };

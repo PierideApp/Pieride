@@ -16,6 +16,7 @@ import { Card } from "@/components/Card/Card";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { openLink } from "@/lib/links";
+import { report } from "@/lib/log";
 
 import styles from "./settings.module.scss";
 
@@ -55,10 +56,9 @@ export function PrivacySettings() {
       <Button
         trailingIcon={ExternalLink}
         onClick={() =>
-          openLink("repository").catch((error: unknown) => {
-            // eslint-disable-next-line no-console
-            console.error(error);
-          })
+          openLink("repository").catch((error: unknown) =>
+            report("settings", error)
+          )
         }
       >
         {t("settings.privacy.source")}

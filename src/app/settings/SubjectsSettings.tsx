@@ -17,6 +17,7 @@ import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { SubPageHeader } from "@/components/SubPageHeader/SubPageHeader";
 import { TextField } from "@/components/TextField/TextField";
 import { useSubjects } from "@/hooks/useSubjects";
+import { report } from "@/lib/log";
 import { matches } from "@/lib/search";
 import {
   firstGrapheme,
@@ -215,11 +216,10 @@ export function SubjectsSettings({ account }: SettingsSectionProps) {
     setFailed(false);
     try {
       await task();
-      reload();
+      reload("subjects");
     } catch (error) {
       // Seul un code d'erreur de la base remonte ici.
-      // eslint-disable-next-line no-console
-      console.error(error);
+      report("settings", error);
       setFailed(true);
     }
   };

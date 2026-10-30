@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
 import { TextField } from "@/components/TextField/TextField";
+import { report } from "@/lib/log";
 import { accountManager } from "@/services";
 import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
@@ -45,8 +46,7 @@ export function OfflineAccountStep({
       });
     } catch (error) {
       // Seul un code d'erreur de la base remonte ici, utile pour un signalement.
-      // eslint-disable-next-line no-console
-      console.error(error);
+      report("onboarding", error);
       setFailed(true);
       setSaving(false);
       return;

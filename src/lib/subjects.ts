@@ -110,11 +110,24 @@ export interface SubjectView {
   teacher?: string;
 }
 
-interface SubjectRow {
+/** Ce que l'élève a choisi pour une matière (Paramètres > Matières) ; vide : rien. */
+interface SubjectChoice {
+  displayName?: string | null;
+  color?: string | null;
+  emoji?: string | null;
+}
+
+interface SubjectRow extends SubjectChoice {
   name: string;
-  displayName: string | null;
-  color: string | null;
-  emoji: string | null;
+}
+
+/** Nom, couleur et emoji affichés d'une matière : le choix de l'élève, sinon ceux par défaut. */
+export function subjectLook(name: string, chosen: SubjectChoice) {
+  return {
+    label: chosen.displayName ?? name,
+    color: chosen.color ?? defaultSubjectColor(name),
+    emoji: chosen.emoji ?? defaultSubjectEmoji(name),
+  };
 }
 
 /**
@@ -137,9 +150,7 @@ export function resolveSubjects(
       const emoji = same.find(row => row.emoji)?.emoji;
       return {
         name,
-        label: displayName ?? name,
-        color: color ?? defaultSubjectColor(name),
-        emoji: emoji ?? defaultSubjectEmoji(name),
+        ...subjectLook(name, { displayName, color, emoji }),
         customized: Boolean(displayName ?? color ?? emoji),
         teacher:
           taught.find(course => course.subject === name && course.teacher)

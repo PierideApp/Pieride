@@ -11,7 +11,7 @@ import { BackButton } from "./BackButton";
 import { OfflineAccountStep } from "./OfflineAccountStep";
 import styles from "./onboarding.module.scss";
 import { ProfileStep } from "./ProfileStep";
-import { PronoteFlow } from "./pronote/PronoteFlow";
+import { PronoteFlow } from "./pronote";
 import { ServiceStep } from "./ServiceStep";
 import { Welcome } from "./Welcome";
 

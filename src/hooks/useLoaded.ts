@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { useSyncStore } from "@/stores/sync";
-
 export type Loaded<T> =
   { status: "loading" } | { status: "error" } | { status: "ready"; data: T };
 
 /**
- * Lit la base pour un écran : lance `load` au montage, puis quand `key` change ou après
- * chaque synchronisation (version des données).
+ * Lit une valeur du système (version de l'app, démarrage automatique) au montage, puis quand
+ * `key` change. Pour la base, `useQuery` garde les résultats et les relit après une synchro.
  */
 export function useLoaded<T>(load: () => Promise<T>, key: string): Loaded<T> {
-  const version = useSyncStore(state => state.version);
   const [state, setState] = useState<Loaded<T>>({ status: "loading" });
   useEffect(() => {
     let current = true;
@@ -23,6 +20,6 @@ export function useLoaded<T>(load: () => Promise<T>, key: string): Loaded<T> {
     };
     // `load` est recréée à chaque rendu : `key` dit quand elle change vraiment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, version]);
+  }, [key]);
   return state;
 }

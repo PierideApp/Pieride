@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 
 import { db } from "@/database";
 import { courses, services, subjects } from "@/database/schema";
-import { resolveSubjects } from "@/lib/subjects";
+import { resolveSubjects, type SubjectView } from "@/lib/subjects";
 
-import { useLoaded } from "./useLoaded";
+import { Source, useQuery } from "./useQuery";
 
 async function loadSubjects(accountId: string, locale: string) {
   const [rows, taught] = await Promise.all([
@@ -31,11 +31,12 @@ async function loadSubjects(accountId: string, locale: string) {
   return resolveSubjects(rows, taught, locale);
 }
 
+// Les enseignants viennent des cours.
+const source = new Source<SubjectView[]>("subjects", "courses");
+
 export function useSubjects(accountId: string | undefined) {
   const { i18n } = useTranslation();
-  return useLoaded(
-    () =>
-      accountId ? loadSubjects(accountId, i18n.language) : Promise.resolve([]),
-    `${accountId}:${i18n.language}`
+  return useQuery(source, `${accountId}:${i18n.language}`, () =>
+    accountId ? loadSubjects(accountId, i18n.language) : Promise.resolve([])
   );
 }

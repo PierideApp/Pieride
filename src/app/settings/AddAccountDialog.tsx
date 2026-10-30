@@ -6,8 +6,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OfflineAccountStep } from "@/app/onboarding/OfflineAccountStep";
+import { PronoteFlow } from "@/app/onboarding/pronote";
 import type { Relink } from "@/app/onboarding/pronote/ConnectStep";
-import { PronoteFlow } from "@/app/onboarding/pronote/PronoteFlow";
 import { ServiceStep } from "@/app/onboarding/ServiceStep";
 import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
 

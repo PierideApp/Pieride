@@ -1,17 +1,19 @@
 // Met à jour le coup d'œil de la barre des tâches pour le compte affiché : chaque minute,
-// après chaque synchronisation, et quand le réglage ou la langue changent.
+// quand les cours ou les matières changent dans la base, et quand le réglage ou la langue
+// changent.
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { glanceCourses } from "@/app/glance";
 import { setTrayGlance } from "@/app/tray";
+import { report } from "@/lib/log";
 import { useSettingsStore } from "@/stores/settings";
-import { useSyncStore } from "@/stores/sync";
+import { stampOf, useSyncStore } from "@/stores/sync";
 
 export function useTrayGlance(accountId: string | undefined) {
   const { t, i18n } = useTranslation();
   const enabled = useSettingsStore(state => state.trayGlance);
-  const version = useSyncStore(state => state.version);
+  const version = useSyncStore(stampOf(["courses", "subjects"]));
 
   useEffect(() => {
     if (!enabled || !accountId) {
@@ -41,13 +43,10 @@ export function useTrayGlance(accountId: string | undefined) {
           : t("tray.noNext"),
       ]);
     };
-    const report = (error: unknown) => {
-      // Un code d'erreur de la base ou du menu, jamais une donnée.
-      // eslint-disable-next-line no-console
-      console.error(error);
-    };
-    update().catch(report);
-    const timer = setInterval(() => update().catch(report), 60_000);
+    // Un code d'erreur de la base ou du menu, jamais une donnée.
+    const fail = (error: unknown) => report("tray", error);
+    update().catch(fail);
+    const timer = setInterval(() => update().catch(fail), 60_000);
     return () => {
       active = false;
       clearInterval(timer);

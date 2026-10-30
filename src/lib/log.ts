@@ -100,3 +100,14 @@ export function logText(): string {
     )
     .join("\n");
 }
+
+/**
+ * Signale une erreur attrapée : en entier dans la console de la WebView, pour déboguer, et
+ * masquée dans le journal (`redact`), pour un signalement. Seulement pour les erreurs de la base
+ * ou du système, qui ne portent qu'un code : celles d'un service passent par leur type.
+ */
+export function report(source: string, error: unknown): void {
+  // eslint-disable-next-line no-console
+  console.error(error);
+  log("error", source, error instanceof Error ? error.name : String(error));
+}

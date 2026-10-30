@@ -11,7 +11,7 @@ import { Card } from "@/components/Card/Card";
 import { Notice } from "@/components/Notice/Notice";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
-import { getLog, logText, subscribeLog } from "@/lib/log";
+import { getLog, logText, report, subscribeLog } from "@/lib/log";
 import { accountManager } from "@/services";
 import { useSyncStore } from "@/stores/sync";
 
@@ -38,8 +38,7 @@ function MockData({ account }: SettingsSectionProps) {
     try {
       await task();
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
+      report("settings", error);
       setFailed(true);
     } finally {
       setBusy(false);

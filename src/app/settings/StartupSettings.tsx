@@ -22,6 +22,7 @@ import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Switch } from "@/components/Switch/Switch";
 import { useLoaded } from "@/hooks/useLoaded";
 import { openLink } from "@/lib/links";
+import { report } from "@/lib/log";
 import { MOD } from "@/lib/platform";
 import { visibleModules } from "@/modules/registry";
 import { capabilitiesOf } from "@/services/shared/plugin";
@@ -31,11 +32,8 @@ import type { SettingsSectionProps } from "./Settings";
 import styles from "./settings.module.scss";
 import { SwitchRow } from "./SwitchRow";
 
-const report = (error: unknown) => {
-  // Un code d'erreur du système, jamais une donnée.
-  // eslint-disable-next-line no-console
-  console.error(error);
-};
+// Un code d'erreur du système, jamais une donnée.
+const fail = (error: unknown) => report("settings", error);
 
 function Keys({ keys }: { keys: readonly string[] }) {
   return keys.map(key => <kbd key={key}>{key}</kbd>);
@@ -84,7 +82,7 @@ export function StartupSettings({ account }: SettingsSectionProps) {
                 (on ? enable() : disable()).then(
                   () => setLaunch(on),
                   (error: unknown) => {
-                    report(error);
+                    fail(error);
                     setFailed(true);
                   }
                 );
@@ -121,7 +119,7 @@ export function StartupSettings({ account }: SettingsSectionProps) {
           >
             <Button
               trailingIcon={ExternalLink}
-              onClick={() => openLink("releases").catch(report)}
+              onClick={() => openLink("releases").catch(fail)}
             >
               {t("settings.startup.releases")}
             </Button>

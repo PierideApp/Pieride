@@ -22,6 +22,7 @@ import { Card } from "@/components/Card/Card";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { useLoaded } from "@/hooks/useLoaded";
 import { LINKS, openLink } from "@/lib/links";
+import { report } from "@/lib/log";
 import { platformName } from "@/lib/platform";
 
 import styles from "./settings.module.scss";
@@ -34,11 +35,8 @@ const CARDS: readonly { link: keyof typeof LINKS; icon: typeof Home }[] = [
   { link: "papillon", icon: Butterfly },
 ];
 
-const report = (error: unknown) => {
-  // Un code d'erreur du système, jamais une donnée.
-  // eslint-disable-next-line no-console
-  console.error(error);
-};
+// Un code d'erreur du système, jamais une donnée.
+const fail = (error: unknown) => report("settings", error);
 
 export function AboutSettings() {
   const { t } = useTranslation();
@@ -71,7 +69,7 @@ export function AboutSettings() {
               icon={icon}
               title={t(`settings.about.links.${link}.title`)}
               text={t(`settings.about.links.${link}.text`)}
-              onClick={() => openLink(link).catch(report)}
+              onClick={() => openLink(link).catch(fail)}
             >
               <ExternalLink size={16} aria-hidden="true" />
             </SettingRow>
@@ -97,7 +95,7 @@ export function AboutSettings() {
         >
           <Button
             trailingIcon={ExternalLink}
-            onClick={() => openLink("license").catch(report)}
+            onClick={() => openLink("license").catch(fail)}
           >
             {t("settings.about.readLicense")}
           </Button>
