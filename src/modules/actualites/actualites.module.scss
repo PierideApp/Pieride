@@ -29,7 +29,7 @@
 
 .list {
   padding: var(--space-1) 0;
-  overflow-y: auto;
+  overflow: hidden auto;
 
   li + li {
     border-top: 1px solid var(--color-border);
@@ -133,7 +133,7 @@
 
 .reader {
   padding: var(--space-6);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .readerHead {

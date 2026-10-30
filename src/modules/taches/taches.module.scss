@@ -166,7 +166,7 @@
   gap: 14px;
   min-width: 0;
   min-height: 0;
-  overflow-x: auto;
+  overflow: auto hidden;
 }
 
 // `scroll_hint` : un rond de 40 px à cheval sur le bord du tableau, au milieu de sa hauteur,
@@ -206,7 +206,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   border-radius: var(--radius-l);
 
   &::before {
@@ -446,7 +446,7 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .listHeading {

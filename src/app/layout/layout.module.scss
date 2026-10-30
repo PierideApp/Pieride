@@ -60,7 +60,7 @@
   width: 400px;
   // Sous les boutons de la fenêtre, comme dans les maquettes (`inspector`).
   padding: var(--space-8) var(--space-5) var(--space-5);
-  overflow-y: auto;
+  overflow: hidden auto;
   border-left: 1px solid var(--color-border);
   background: var(--color-surface);
 
@@ -188,7 +188,7 @@
   flex: 1 1 auto;
   min-height: 0;
   padding: var(--space-2);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .paletteGroup {

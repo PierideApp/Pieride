@@ -489,7 +489,7 @@
 .scroll {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 // Large : deux colonnes (cours d'aujourd'hui et du lendemain).
@@ -499,7 +499,7 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--space-5);
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .columnTitle {
@@ -898,7 +898,7 @@
   min-height: 0;
   margin: var(--space-4) 0 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   list-style: none;
 
   li {
@@ -931,7 +931,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   column-gap: var(--space-5);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 // Assiduité : les quatre chiffres, puis les dernières absences.
@@ -976,7 +976,7 @@
   min-height: 0;
   margin: var(--space-4) 0 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   list-style: none;
 
   li {
@@ -1067,7 +1067,7 @@
   min-height: 0;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   list-style: none;
 
   button {

@@ -262,7 +262,7 @@
   margin: var(--space-2) var(--space-2) var(--space-2) 0;
   padding: var(--space-5) var(--space-6) var(--space-6);
   border-radius: var(--radius-l);
-  overflow-y: auto;
+  overflow: hidden auto;
   color: var(--color-text);
   background: var(--color-bg);
 }

@@ -164,6 +164,14 @@ body,
   margin: 0;
 }
 
+// La fenêtre ne défile jamais et ne rebondit pas au pavé tactile : seules les zones de l'app
+// défilent, et en hauteur seulement (`overflow: hidden auto`, car `overflow-y: auto` seul
+// rend l'autre axe défilant lui aussi).
+html {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   background: var(--brand-ink);
   color: var(--color-text);

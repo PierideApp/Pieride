@@ -34,7 +34,7 @@
 .schools {
   flex: 0 1 auto;
   min-height: 160px;
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 // Le filtre par nom, au-dessus de la liste.
