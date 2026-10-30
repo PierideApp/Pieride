@@ -5,8 +5,8 @@ import { capabilitiesOf } from "@/services/shared/plugin";
 
 import {
   isPaletteShortcut,
-  isReloadShortcut,
   isSettingsShortcut,
+  isSyncShortcut,
   shortcutModule,
 } from "./useShortcuts";
 
@@ -41,15 +41,15 @@ describe("shortcutModule", () => {
   });
 });
 
-describe("isReloadShortcut", () => {
+describe("isSyncShortcut", () => {
   it("reconnaît Ctrl/⌘ R, mais pas Ctrl Maj R (rechargement forcé)", () => {
-    expect(isReloadShortcut(keys("KeyR"))).toBe(true);
+    expect(isSyncShortcut(keys("KeyR"))).toBe(true);
     expect(
-      isReloadShortcut(keys("KeyR", { ctrlKey: false, metaKey: true }))
+      isSyncShortcut(keys("KeyR", { ctrlKey: false, metaKey: true }))
     ).toBe(true);
-    expect(isReloadShortcut(keys("KeyR", { shiftKey: true }))).toBe(false);
-    expect(isReloadShortcut(keys("KeyR", { ctrlKey: false }))).toBe(false);
-    expect(isReloadShortcut(keys("KeyT"))).toBe(false);
+    expect(isSyncShortcut(keys("KeyR", { shiftKey: true }))).toBe(false);
+    expect(isSyncShortcut(keys("KeyR", { ctrlKey: false }))).toBe(false);
+    expect(isSyncShortcut(keys("KeyT"))).toBe(false);
   });
 });
 

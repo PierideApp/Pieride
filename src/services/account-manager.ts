@@ -58,6 +58,12 @@ export type SyncedCapability = (typeof SYNCED)[number];
  */
 export const SYNC_INTERVAL = 30 * 60_000;
 
+/**
+ * Synchro demandée (`Ctrl R`) : une donnée de moins de 5 minutes n'est pas redemandée, et le
+ * store n'en accepte qu'une toutes les 5 minutes (`stores/sync.ts`).
+ */
+export const MANUAL_SYNC_INTERVAL = 5 * 60_000;
+
 /** Les données rangées par semaine : `loadWeek` les charge pour une autre semaine. */
 const WEEKLY = ["TIMETABLE", "HOMEWORK"] as const;
 
@@ -258,11 +264,15 @@ export class AccountManager {
     await this.db.delete(services).where(eq(services.id, serviceId));
   }
 
-  async refreshAll(accountId: string, now = new Date()): Promise<void> {
+  async refreshAll(
+    accountId: string,
+    now = new Date(),
+    interval = SYNC_INTERVAL
+  ): Promise<void> {
     const errors: unknown[] = [];
     for (const capability of SYNCED) {
-      await this.refresh(accountId, capability, now).catch((error: unknown) =>
-        errors.push(error)
+      await this.refresh(accountId, capability, now, interval).catch(
+        (error: unknown) => errors.push(error)
       );
     }
     if (errors.length > 0) {
@@ -272,14 +282,15 @@ export class AccountManager {
 
   /**
    * Synchronise une capability pour chaque service du compte qui la fournit, s'il n'a pas
-   * réussi depuis `SYNC_INTERVAL`.
+   * réussi depuis `interval` (`SYNC_INTERVAL`, ou `MANUAL_SYNC_INTERVAL` pour `Ctrl R`).
    * Un service en panne garde ses données en base ; l'erreur est notée dans `sync_state`.
    * Ne rejette que si la base elle-même refuse d'écrire.
    */
   async refresh(
     accountId: string,
     capability: SyncedCapability,
-    now = new Date()
+    now = new Date(),
+    interval = SYNC_INTERVAL
   ): Promise<void> {
     const linked = await this.db
       .select({ service: services, lastSync: syncState.lastSync })
@@ -295,8 +306,7 @@ export class AccountManager {
     // `abs` : une horloge reculée ne bloque pas la synchro jusqu'à ce qu'elle rattrape.
     const due = linked.filter(
       ({ lastSync }) =>
-        !lastSync ||
-        Math.abs(now.getTime() - lastSync.getTime()) >= SYNC_INTERVAL
+        !lastSync || Math.abs(now.getTime() - lastSync.getTime()) >= interval
     );
     await settleAll(
       due.map(({ service }) => this.refreshService(service, capability, now))

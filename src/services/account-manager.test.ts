@@ -19,7 +19,11 @@ import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { addDays } from "@/lib/week";
 
-import { AccountManager, SYNC_INTERVAL } from "./account-manager";
+import {
+  AccountManager,
+  MANUAL_SYNC_INTERVAL,
+  SYNC_INTERVAL,
+} from "./account-manager";
 import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
 import type { Course } from "./shared/models";
 import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
@@ -190,6 +194,28 @@ describe("AccountManager", () => {
     );
     expect(fetchTimetable).toHaveBeenCalledOnce();
     await manager.refresh("camille", "TIMETABLE", LATER);
+    expect(fetchTimetable).toHaveBeenCalledTimes(2);
+  });
+
+  it("redemande à `Ctrl R` une donnée de 5 minutes, pas avant", async () => {
+    const { manager } = await setup();
+    const fetchTimetable = vi.fn(timetable);
+    timetable = fetchTimetable;
+    await manager.refresh("camille", "TIMETABLE", NOW);
+    const after = (delay: number) => new Date(NOW.getTime() + delay);
+    await manager.refresh(
+      "camille",
+      "TIMETABLE",
+      after(MANUAL_SYNC_INTERVAL - 1),
+      MANUAL_SYNC_INTERVAL
+    );
+    expect(fetchTimetable).toHaveBeenCalledOnce();
+    await manager.refresh(
+      "camille",
+      "TIMETABLE",
+      after(MANUAL_SYNC_INTERVAL),
+      MANUAL_SYNC_INTERVAL
+    );
     expect(fetchTimetable).toHaveBeenCalledTimes(2);
   });
 

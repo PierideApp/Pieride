@@ -8,7 +8,7 @@ Les stores [Zustand](https://zustand.docs.pmnd.rs). Enregistrés dans le stockag
 
 En mémoire seulement :
 
-- `sync.ts` : synchronisation en cours, échec, version des données (`reload` la change après un compte créé).
+- `sync.ts` : synchronisation en cours, échec, version des données (`reload` la change après un compte créé), et le dernier `Ctrl R` (un toutes les 5 minutes au plus).
 - `detail.ts` : contenu du panneau détail.
 
 Les comptes et leurs données sont dans la base SQLite (voir [`../database`](../database) et l'AccountManager), leurs secrets dans le trousseau. Jamais de secret dans un store.

@@ -24,8 +24,8 @@ export function shortcutModule(
   return digit && command(event) ? modules[Number(digit) - 1] : undefined;
 }
 
-/** `Ctrl/⌘ R` : sans effet, pour ne pas recharger la page. La synchro est automatique. */
-export const isReloadShortcut = (event: Keys) =>
+/** `Ctrl/⌘ R` : synchroniser (et non recharger la page). */
+export const isSyncShortcut = (event: Keys) =>
   event.code === "KeyR" && command(event);
 
 /** `Ctrl/⌘ K` : palette de commandes. */
@@ -38,7 +38,11 @@ export const isSettingsShortcut = (event: Keys) =>
 
 export function useShortcuts(
   modules: readonly ModuleManifest[],
-  { palette, settings }: { palette: () => void; settings: () => void }
+  {
+    sync,
+    palette,
+    settings,
+  }: { sync: () => void; palette: () => void; settings: () => void }
 ) {
   const navigate = useNavigate();
   useEffect(() => {
@@ -47,8 +51,9 @@ export function useShortcuts(
       if (module) {
         event.preventDefault();
         void navigate(modulePath(module));
-      } else if (isReloadShortcut(event)) {
+      } else if (isSyncShortcut(event)) {
         event.preventDefault();
+        sync();
       } else if (isPaletteShortcut(event)) {
         event.preventDefault();
         palette();
@@ -59,5 +64,5 @@ export function useShortcuts(
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [modules, navigate, palette, settings]);
+  }, [modules, navigate, sync, palette, settings]);
 }

@@ -57,6 +57,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [current, hidden, order]
   );
   const sync = useSyncStore(state => state.sync);
+  const syncNow = useSyncStore(state => state.syncNow);
   const syncing = useSyncStore(state => state.syncing);
   const currentAccountId = current?.id;
   const syncCurrent = useCallback(() => {
@@ -76,6 +77,12 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     const timer = setTimeout(syncCurrent, SYNC_INTERVAL);
     return () => clearTimeout(timer);
   }, [syncing, syncCurrent]);
+  // `Ctrl R`, seule synchro à la demande : au plus toutes les 5 minutes (`syncNow`).
+  const syncManually = useCallback(() => {
+    if (currentAccountId) {
+      syncNow(currentAccountId);
+    }
+  }, [currentAccountId, syncNow]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
 
@@ -87,6 +94,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [showSettings, pathname]
   );
   useShortcuts(modules, {
+    sync: syncManually,
     palette: openPalette,
     settings: openSettings,
   });

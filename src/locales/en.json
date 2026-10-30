@@ -39,7 +39,9 @@
     "never": "Not synced yet",
     "running": "Syncing…",
     "failed": "Sync failed",
-    "done": "Synced {{when}}"
+    "done": "Synced {{when}}",
+    "wait": "Try again {{when}}",
+    "hint": "{{keys}} to sync (at most every 5 minutes)"
   },
   "placeholder": {
     "title": "Coming soon",
@@ -735,6 +737,7 @@
       "shortcut": {
         "palette": "Command palette",
         "sections": "Go to a section",
+        "sync": "Sync (at most every 5 minutes)",
         "settings": "Settings",
         "close": "Close a panel or window"
       }

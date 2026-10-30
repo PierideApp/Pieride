@@ -5,6 +5,7 @@ import { create } from "zustand";
 
 import { log } from "@/lib/log";
 import { accountManager } from "@/services";
+import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 
 /** Ce que les écrans lisent dans la base ; `sync` : les dates de dernière synchro. */
 export const TOPICS = [
@@ -27,7 +28,16 @@ interface SyncState {
   syncing: boolean;
   /** Vrai si la base a refusé d'écrire ; un service en panne est noté dans `sync_state`. */
   failed: boolean;
-  sync: (accountId: string) => Promise<void>;
+  /** Redemande les données plus vieilles que `interval` (30 minutes par défaut). */
+  sync: (accountId: string, interval?: number) => Promise<void>;
+  /** Le dernier `Ctrl R` accepté, et le dernier refusé (moins de 5 minutes après). */
+  manualAt: number | null;
+  refusedAt: number | null;
+  /**
+   * `Ctrl R` : une synchro au plus toutes les 5 minutes, même quand le service échoue (une
+   * synchro en échec ne date rien dans la base : sans ce délai, chaque appui le redemanderait).
+   */
+  syncNow: (accountId: string, now?: number) => void;
   /** La base a changé hors synchro : ces sujets sont relus, tous si on n'en donne aucun. */
   reload: (...topics: Topic[]) => void;
 }
@@ -57,17 +67,32 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
   },
   syncing: false,
   failed: false,
+  manualAt: null,
+  refusedAt: null,
   reload: (...topics) =>
     set(state => ({
       versions: bump(state.versions, topics.length > 0 ? topics : TOPICS),
     })),
-  sync: async accountId => {
+  syncNow: (accountId, now = Date.now()) => {
+    const { syncing, manualAt } = get();
+    if (syncing) {
+      return;
+    }
+    // `abs` : une horloge reculée ne bloque pas `Ctrl R` jusqu'à ce qu'elle rattrape.
+    if (manualAt !== null && Math.abs(now - manualAt) < MANUAL_SYNC_INTERVAL) {
+      set({ refusedAt: now });
+      return;
+    }
+    set({ manualAt: now, refusedAt: null });
+    void get().sync(accountId, MANUAL_SYNC_INTERVAL);
+  },
+  sync: async (accountId, interval) => {
     if (get().syncing) {
       return;
     }
     set({ syncing: true });
     try {
-      await accountManager.refreshAll(accountId);
+      await accountManager.refreshAll(accountId, new Date(), interval);
       set({ failed: false });
       log("info", "sync", "Synchronisation terminée");
     } catch (error) {

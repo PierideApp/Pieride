@@ -39,7 +39,9 @@
     "never": "Pas encore synchronisé",
     "running": "Synchronisation…",
     "failed": "Échec de la synchronisation",
-    "done": "Synchronisé {{when}}"
+    "done": "Synchronisé {{when}}",
+    "wait": "Réessaie {{when}}",
+    "hint": "{{keys}} pour synchroniser (au plus toutes les 5 minutes)"
   },
   "placeholder": {
     "title": "Bientôt ici",
@@ -735,6 +737,7 @@
       "shortcut": {
         "palette": "Palette de commandes",
         "sections": "Aller à une section",
+        "sync": "Synchroniser (au plus toutes les 5 minutes)",
         "settings": "Paramètres",
         "close": "Fermer un panneau ou une fenêtre"
       }
