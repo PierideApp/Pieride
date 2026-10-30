@@ -62,6 +62,9 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
       void sync(currentAccountId);
     }
   }, [currentAccountId, sync]);
+  // Au lancement et au changement de compte. Une donnée de moins de 30 minutes n'est pas
+  // redemandée (`SYNC_INTERVAL`).
+  useEffect(syncCurrent, [syncCurrent]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
 

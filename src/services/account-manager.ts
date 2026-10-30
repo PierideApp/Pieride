@@ -93,6 +93,8 @@ export class AccountManager {
   private readonly plugins = new Map<string, Promise<SchoolServicePlugin>>();
   /** Semaines chargées par `loadWeek` pendant la session, par service et par lundi. */
   private readonly weeks = new Map<string, Promise<boolean>>();
+  /** Les adresses rouvertes par `start` : une connexion les attend. */
+  private started: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly db: Db,
@@ -101,15 +103,19 @@ export class AccountManager {
 
   /**
    * Au démarrage : rouvre au réseau l'adresse de chaque service enregistré. Une adresse
-   * refusée n'empêche pas d'ouvrir l'app : ce service sera en erreur à la synchro.
+   * refusée n'empêche pas d'ouvrir l'app : ce service sera en erreur à la synchro. La synchro
+   * du lancement part avant la fin : ses connexions attendent.
    */
   async start(): Promise<void> {
-    const rows = await this.db
+    this.started = this.db
       .select({ url: services.instanceUrl })
-      .from(services);
-    await Promise.allSettled(
-      rows.flatMap(({ url }) => (url ? [allowInstance(url)] : []))
-    );
+      .from(services)
+      .then(rows =>
+        Promise.allSettled(
+          rows.flatMap(({ url }) => (url ? [allowInstance(url)] : []))
+        )
+      );
+    await this.started;
   }
 
   async addAccount(account: Account): Promise<void> {
@@ -497,6 +503,7 @@ export class AccountManager {
   }
 
   private async connect(service: ServiceRow): Promise<SchoolServicePlugin> {
+    await this.started;
     const connect = this.connectors[service.kind];
     if (!connect) {
       throw new UnsupportedService(

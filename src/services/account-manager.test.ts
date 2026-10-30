@@ -527,4 +527,19 @@ describe("AccountManager", () => {
     await manager.start();
     expect(allowInstance).toHaveBeenCalledOnce();
   });
+
+  it("attend l'adresse rouverte avant de se connecter (synchro du lancement)", async () => {
+    const { manager } = await setup();
+    let open: () => void = () => undefined;
+    vi.mocked(allowInstance).mockImplementationOnce(
+      () => new Promise(resolve => (open = () => resolve(undefined)))
+    );
+    const starting = manager.start();
+    const syncing = manager.refresh("camille", "TIMETABLE", NOW);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(connect).not.toHaveBeenCalled();
+    open();
+    await Promise.all([starting, syncing]);
+    expect(connect).toHaveBeenCalledOnce();
+  });
 });
