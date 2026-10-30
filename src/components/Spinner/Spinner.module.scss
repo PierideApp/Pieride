@@ -23,8 +23,24 @@
   border-width: 4px;
 }
 
+// Une lecture rapide de la base ne fait pas clignoter le cercle : il reste caché 300 ms.
+.fill {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  height: 100%;
+  padding: var(--space-6);
+  animation: appear 0s 300ms backwards;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes appear {
+  from {
+    visibility: hidden;
   }
 }
