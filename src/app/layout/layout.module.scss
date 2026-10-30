@@ -457,6 +457,16 @@
     cursor: default;
   }
 
+  // L'état de la synchro : aligné sur les liens, mais rien à cliquer.
+  &.status {
+    margin: 0;
+    cursor: default;
+
+    &:hover {
+      color: inherit;
+    }
+  }
+
   @include rail {
     justify-content: center;
     padding-inline: 0;

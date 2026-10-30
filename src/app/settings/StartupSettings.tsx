@@ -59,7 +59,6 @@ export function StartupSettings({ account }: SettingsSectionProps) {
   const shortcuts: { id: string; keys: string[]; to?: string }[] = [
     { id: "palette", keys: [MOD, "K"] },
     { id: "sections", keys: [MOD, "1"], to: String(Math.min(sections, 9)) },
-    { id: "sync", keys: [MOD, "R"] },
     { id: "settings", keys: [MOD, ","] },
     { id: "close", keys: [t("keys.escape")] },
   ];

@@ -87,7 +87,6 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [showSettings, pathname]
   );
   useShortcuts(modules, {
-    sync: syncCurrent,
     palette: openPalette,
     settings: openSettings,
   });
@@ -143,7 +142,6 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         modules={modules}
         accounts={list}
         current={current}
-        onSync={syncCurrent}
         onSettings={openSettings}
       />
       <Settings

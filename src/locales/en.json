@@ -39,8 +39,7 @@
     "never": "Not synced yet",
     "running": "Syncing…",
     "failed": "Sync failed",
-    "done": "Synced {{when}}",
-    "action": "Sync"
+    "done": "Synced {{when}}"
   },
   "placeholder": {
     "title": "Coming soon",
@@ -77,7 +76,6 @@
     "placeholder": "Go to a page, run an action…",
     "goto": "Go to",
     "actions": "Actions",
-    "sync": "Sync now",
     "switchAccount": "Switch account",
     "empty": "No results",
     "navigate": "navigate",
@@ -737,7 +735,6 @@
       "shortcut": {
         "palette": "Command palette",
         "sections": "Go to a section",
-        "sync": "Sync",
         "settings": "Settings",
         "close": "Close a panel or window"
       }

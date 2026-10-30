@@ -1,8 +1,8 @@
-// Palette de commandes (UX §5, `Ctrl/⌘ K`) : aller à un module, synchroniser, changer de compte,
-// ouvrir les Paramètres.
+// Palette de commandes (UX §5, `Ctrl/⌘ K`) : aller à un module, changer de compte, ouvrir les
+// Paramètres.
 // Elle cherchera aussi dans les notes, tâches et cours quand leurs écrans existeront (M3).
 // `<dialog>` natif : focus gardé dans la palette, `Échap` et fond assombri fournis.
-import { Check, Gears, type Home, Search, User } from "@getpapillon/papicons";
+import { Gears, type Home, Search, User } from "@getpapillon/papicons";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -51,7 +51,6 @@ export function CommandPalette({
   modules,
   accounts,
   current,
-  onSync,
   onSettings,
 }: {
   open: boolean;
@@ -59,7 +58,6 @@ export function CommandPalette({
   modules: readonly ModuleManifest[];
   accounts: readonly AccountSummary[];
   current: AccountSummary | undefined;
-  onSync: () => void;
   onSettings: () => void;
 }) {
   const { t } = useTranslation();
@@ -75,18 +73,6 @@ export function CommandPalette({
         keys: [MOD, String(index + 1)],
         run: () => void navigate(modulePath(module)),
       })),
-      ...(current
-        ? [
-            {
-              id: "sync",
-              group: "actions" as const,
-              title: t("palette.sync"),
-              icon: Check,
-              keys: [MOD, "R"],
-              run: onSync,
-            },
-          ]
-        : []),
       ...accounts
         .filter(account => account.id !== current?.id)
         .map(account => ({
@@ -111,7 +97,7 @@ export function CommandPalette({
         run: onSettings,
       },
     ],
-    [modules, current, accounts, t, navigate, onSync, onSettings, setCurrent]
+    [modules, current, accounts, t, navigate, onSettings, setCurrent]
   );
   const dialog = useModalDialog(open);
   const [query, setQuery] = useState("");

@@ -80,13 +80,12 @@ function AccountSwitcher({
   );
 }
 
-/** « Synchronisé il y a 2 minutes » ; un clic relance la synchronisation. */
+/** « Synchronisé il y a 2 minutes ». La synchro est automatique : rien à cliquer. */
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const { t, i18n } = useTranslation();
   const lastSync = useLastSync(account?.id);
   const syncing = useSyncStore(state => state.syncing);
   const failed = useSyncStore(state => state.failed);
-  const sync = useSyncStore(state => state.sync);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -107,13 +106,7 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   }
 
   return (
-    <button
-      type="button"
-      className={styles.item}
-      disabled={!account || syncing}
-      title={t("sync.action")}
-      onClick={() => account && void sync(account.id)}
-    >
+    <p className={`${styles.item} ${styles.status}`}>
       {syncing ? (
         <span className={styles.syncSpinner}>
           <Spinner />
@@ -122,7 +115,7 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
         <Check size={20} className={styles.syncIcon} />
       )}
       <span className={styles.label}>{label}</span>
-    </button>
+    </p>
   );
 }
 
