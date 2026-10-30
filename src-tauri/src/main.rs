@@ -24,7 +24,6 @@ async fn show_app(app: AppHandle) -> Result<(), String> {
         "Fenêtre 'main' introuvable".to_string()
     })?;
 
-
     main.show().map_err(|e| {
         eprintln!("[show_app] Échec de show(): {e}");
         e.to_string()
