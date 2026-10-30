@@ -271,7 +271,8 @@
   gap: var(--space-2);
   width: var(--sidebar-width);
   padding: var(--space-5) var(--space-3) var(--space-4);
-  overflow-y: auto;
+  // En hauteur seulement, comme les pages (components/Page).
+  overflow: hidden auto;
   color: var(--brand-lavender);
 
   // Trame de papillons du bas, qui s'estompe vers le haut (maquettes, « Motif Piéride »).

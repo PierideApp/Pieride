@@ -39,7 +39,9 @@
   margin: 0 var(--space-6) var(--space-6);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-l);
-  overflow: auto;
+  // En hauteur seulement : un élément qui dépasse de quelques pixels laissait glisser toute la
+  // page de gauche à droite (pavé tactile sous Windows, barres de défilement cachées).
+  overflow: hidden auto;
   background: var(--color-surface);
 }
 
@@ -48,5 +50,5 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden auto;
 }
