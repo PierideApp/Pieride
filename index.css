@@ -1,0 +1,208 @@
+@font-face {
+    font-family: "SN Pro";
+    font-weight: 400;
+    src: url("@/assets/fonts/SNPro-Regular.ttf") format("truetype");
+}
+@font-face {
+    font-family: "SN Pro";
+    font-weight: 500;
+    src: url("@/assets/fonts/SNPro-Medium.ttf") format("truetype");
+}
+@font-face {
+    font-family: "SN Pro";
+    font-weight: 600;
+    src: url("@/assets/fonts/SNPro-Semibold.ttf") format("truetype");
+}
+@font-face {
+    font-family: "SN Pro";
+    font-weight: 700;
+    src: url("@/assets/fonts/SNPro-Bold.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Unbounded";
+    font-weight: 700;
+    src: url("@/assets/fonts/Unbounded-Bold.ttf") format("truetype");
+}
+
+@keyframes backgroundFadeIn {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes mark-arrive {
+    from {
+        offset-distance: 0%;
+    }
+
+    to {
+        offset-distance: 100%;
+    }
+}
+
+@keyframes butterfly-flap {
+    from {
+        transform: translate(-50%, -50%) scale(1, 1);
+    }
+
+    to {
+        transform: translate(-50%, -50%) scale(0.70, 1.12);
+    }
+}
+
+@keyframes logo-zoom-in {
+    from {
+        transform: translate(-50%, -50%) scale(0);
+    }
+
+    to {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes title-appear {
+    from {
+        max-width: 0;
+        opacity: 0;
+        transform: translateX(-100px);
+        margin-left: 0px;
+        font-size: 30px;
+    }
+
+    to {
+        max-width: 258px;
+        opacity: 1;
+        transform: translateX(0);
+        margin-left: 50px;
+        font-size: 60px;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+    opacity: 0;
+    }
+
+    to {
+    opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+    opacity: 1;
+    }
+    to {
+    opacity: 0;
+    }
+}
+
+:root {
+    --brand-surface: linear-gradient(160deg, #1d1a96 0%, var(--brand-ink) 100%);
+    --brand-glow: radial-gradient(circle at 15% 5%, #5566f273, transparent 60%);
+    --brand-ink: #0e0b4d;
+}
+
+body {
+    background: var(--brand-glow), var(--brand-surface);
+    color: white;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+#root {
+    opacity: 0;
+}
+
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    isolation: isolate;
+}
+
+#splash-screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: #000010;
+    opacity: 1;
+    animation: backgroundFadeIn 4s ease forwards 0.3s;
+}
+
+.splash-screen-content {
+    display: flex;
+    align-items: center;
+}
+
+.splash-screen-content h1 {
+    font-family: "Unbounded", sans-serif;
+    font-size: 60px;
+    color: white;
+    margin: 0;
+    margin-left: 50px;
+    opacity: 0;
+    animation: title-appear 1s ease-in-out both;
+    animation-delay: 2.25s;
+}
+
+.splash-screen-logo {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    transition: all ease-in-out;
+}
+
+.splash-screen-logo > img,
+.div-mark .mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.splash-screen-logo > img {
+    transform: translate(-50%, -50%);
+}
+
+.icon-background {
+    animation: logo-zoom-in 1s ease-in-out both 1s;
+    z-index: 1;
+}
+
+.div-mark {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    offset-path: path("M 75 -380 C 160 -340, 320 -230, 250 -160 C 180 -30, 80 -90, -50 -25 C -80 40, 20 130, 75 75");
+
+    offset-rotate: 0deg;
+    animation: mark-arrive 2.25s ease-in-out both;
+}
+
+.mark {
+    animation: butterfly-flap 75ms ease-in-out alternate forwards;
+    animation-iteration-count: 30;
+    min-width: 130px;
+}
+
+#splash-screen *,
+#splash-screen::before {
+    animation-play-state: paused;
+}
+
+#splash-screen.ready *,
+#splash-screen.ready::before {
+    animation-play-state: running;
+}
