@@ -522,6 +522,15 @@
   color: var(--color-success);
 }
 
+// À la place de l'icône pendant la synchro, sur la même place.
+.syncSpinner {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
 // Dans le rail, les libellés restent lus par les lecteurs d'écran.
 .label,
 .accountText,

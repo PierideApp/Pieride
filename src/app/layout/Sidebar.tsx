@@ -9,6 +9,7 @@ import { NavLink } from "react-router";
 
 import icon from "@/assets/brand/icon.svg";
 import { Avatar } from "@/components/Avatar/Avatar";
+import { Spinner } from "@/components/Spinner/Spinner";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { useLastSync } from "@/hooks/useLastSync";
 import type { Loaded } from "@/hooks/useLoaded";
@@ -113,7 +114,13 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
       title={t("sync.action")}
       onClick={() => account && void sync(account.id)}
     >
-      <Check size={20} className={styles.syncIcon} />
+      {syncing ? (
+        <span className={styles.syncSpinner}>
+          <Spinner />
+        </span>
+      ) : (
+        <Check size={20} className={styles.syncIcon} />
+      )}
       <span className={styles.label}>{label}</span>
     </button>
   );
