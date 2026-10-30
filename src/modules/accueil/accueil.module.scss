@@ -1,0 +1,1160 @@
+// Accueil, d'après la maquette 02-accueil et son générateur (pieride_design/design/_src,
+// `banner`, `courses_widget`, `average_widget`, `tasks_widget`, `grades_widget`). Les widgets
+// se placent sur une grille de 12 colonnes et de lignes de 66 px (modules/accueil/layout.ts).
+@use "../../styles/subject" as *;
+
+.page {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+// ---------- Bandeau ----------
+
+.banner {
+  position: relative;
+  padding: 50px var(--space-6) 28px;
+}
+
+// Le fond d'écran déborde sous les widgets et s'efface vers le fond de la page.
+.wallpaper {
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(100% + 120px);
+  background-position: center;
+  background-size: cover;
+
+  &[data-brand] {
+    background: var(--brand-glow), var(--brand-surface);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 45%,
+      var(--color-bg) 100%
+    );
+  }
+}
+
+// Voile sombre derrière le texte blanc : plus fort en haut à gauche (bonjour, résumé) et le
+// long du haut (boutons), il s'efface vers la droite et le bas. Sa force (`--shade`) dépend de
+// la clarté du fond : mesurée sur une image, nulle sur le fond de la marque.
+.scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg, var(--brand-ink) 0%, transparent 70%),
+    linear-gradient(to bottom, var(--brand-ink) 0%, transparent 55%);
+  opacity: var(--shade);
+}
+
+.hello,
+.summary {
+  position: relative;
+  color: var(--on-brand);
+  text-shadow:
+    0 1px 2px var(--color-overlay),
+    0 2px 16px var(--color-overlay);
+}
+
+.hello {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+
+.summary {
+  margin: var(--space-2) 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+// Widget en carte d'une ligne : le raccourci de la maquette, en verre clair sur le fond
+// d'écran (flouté derrière lui), teinté de sa couleur.
+.shortcut {
+  position: relative;
+  isolation: isolate;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-surface);
+  border-radius: var(--radius-l);
+  text-align: left;
+  background: none;
+  cursor: pointer;
+
+  // Fond de verre, puis la teinte de la couleur du raccourci.
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+  }
+
+  &::before {
+    background: var(--color-surface);
+    opacity: 0.78;
+  }
+
+  &::after {
+    background: currentColor;
+    opacity: 0.06;
+  }
+
+  > span {
+    position: relative;
+    display: grid;
+    grid-row: 1 / 3;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-round);
+      background: currentColor;
+      opacity: 0.16;
+    }
+  }
+
+  strong {
+    align-self: end;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  small {
+    align-self: start;
+    font-size: 12.5px;
+    color: var(--color-text-2);
+  }
+
+  &[data-tone="accent"] {
+    color: var(--color-accent-text);
+  }
+
+  &[data-tone="success"] {
+    color: var(--color-success);
+  }
+
+  &[data-tone="warning"] {
+    color: var(--color-warning);
+  }
+
+  &[data-tone="info"] {
+    color: var(--color-info);
+  }
+
+  &[data-tone="sulfur"] {
+    color: var(--color-sulfur-icon);
+  }
+
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// Rangée du haut : les cartes d'une ligne, trois par rangée comme la maquette.
+.strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  padding: 0 var(--space-6) 20px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slot {
+    grid-row: auto;
+    grid-column: auto;
+    height: 66px;
+  }
+
+  // Un widget glissé au-dessus : il deviendra une carte ici.
+  &[data-drop] {
+    border-radius: 20px;
+    outline: 2px dashed var(--color-accent);
+    outline-offset: -2px;
+  }
+}
+
+// Rangée du haut vide, en modification : on y dépose un widget pour en faire une carte.
+.stripHint {
+  display: grid;
+  grid-column: 1 / -1;
+  place-items: center;
+  height: 66px;
+  margin: 0;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-l);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+}
+
+// ---------- Tableau de bord ----------
+
+// 12 colonnes, lignes de 66 px : chaque widget prend `--cols` colonnes et `--rows` lignes
+// (posées par son emplacement), dans l'ordre choisi. En fenêtre étroite, 6 colonnes.
+.dashboard {
+  position: relative;
+  display: grid;
+  grid-auto-rows: 66px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  padding: 0 var(--space-6) var(--space-3);
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.slot {
+  position: relative;
+  z-index: 1;
+  grid-row: span var(--rows);
+  grid-column: span var(--cols);
+  min-width: 0;
+
+  @media (max-width: 1100px) {
+    grid-column: span var(--cols-narrow);
+  }
+
+  // En modification : contour pointillé, poignée en haut, coin pour la taille, bouton retirer.
+  // On glisse le widget entier ; le texte ne se sélectionne pas.
+  &[data-editing] {
+    border-radius: 20px;
+    outline: 2px dashed var(--color-accent);
+    outline-offset: 3px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  // Sa place pendant qu'on le glisse : un emplacement vide, la copie suit le pointeur.
+  &[data-placeholder] {
+    outline-style: solid;
+    background: var(--color-accent-soft);
+
+    .slotContent,
+    .handle,
+    .toolbar,
+    .remove {
+      visibility: hidden;
+    }
+  }
+}
+
+// La copie du widget glissé, au-dessus de tout, un peu soulevée.
+// Déplacée par `translate` : le compositeur suffit, rien n'est remis en page à chaque mouvement.
+.dragCopy {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  translate: var(--drag-x) var(--drag-y);
+  width: var(--drag-w);
+  height: var(--drag-h);
+  border-radius: var(--radius-l);
+  opacity: 0.95;
+  box-shadow: 0 18px 40px var(--color-overlay);
+  transform: rotate(1deg) scale(1.02);
+  pointer-events: none;
+
+  > * {
+    height: 100%;
+  }
+}
+
+// Barre des tailles : une icône par forme, au survol du widget (ou au clavier).
+.toolbar {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px var(--color-overlay);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 0.15s;
+  cursor: default;
+
+  .slot:hover &,
+  .slot:focus-within & {
+    opacity: 1;
+  }
+
+  [data-gesture] & {
+    opacity: 0;
+  }
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-s);
+    color: var(--color-text-2);
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-text);
+      background: var(--color-bg);
+    }
+
+    &[aria-checked="true"] {
+      color: var(--color-accent-text);
+      background: var(--color-accent-soft);
+    }
+  }
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+.iconFrame {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  opacity: 0.45;
+}
+
+.slotContent {
+  height: 100%;
+
+  > * {
+    height: 100%;
+  }
+}
+
+.handle {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-s);
+  color: var(--color-text-3);
+  background: none;
+  transform: translateX(-50%);
+  cursor: grab;
+
+  svg {
+    fill: currentColor;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-text-2);
+    background: var(--color-accent-soft);
+  }
+}
+
+.remove {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  // Sans le padding du navigateur, l'icône débordait à droite et sortait du centre.
+  padding: 0;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+}
+
+// Comme la maquette (`accueil`, mode modification) : centre à 2 px dans le coin du widget,
+// sur l'arrondi du pointillé.
+.remove {
+  top: -11px;
+  right: -11px;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-border);
+  color: var(--color-error);
+  background: var(--color-surface);
+}
+
+// Six lignes de la grille : une hauteur minimale ne suffit pas, les lignes ont une taille fixe.
+.empty {
+  display: grid;
+  grid-row: span 6;
+  grid-column: 1 / -1;
+  place-items: center;
+}
+
+// Barre « Modifier l'accueil », en bas de la page.
+.editBar {
+  position: sticky;
+  bottom: var(--space-4);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(860px, calc(100% - 2 * var(--space-6)));
+  min-height: 58px;
+  margin: var(--space-4) auto 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) 28px;
+  border-radius: 20px;
+  color: var(--on-brand);
+  background: var(--brand-ink);
+  box-shadow: 0 6px 24px var(--color-overlay);
+
+  p {
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+// Boutons du bandeau : verre clair sur le fond d'écran.
+.bannerActions {
+  position: absolute;
+  top: 52px;
+  right: var(--space-6);
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+}
+
+.glass,
+.glassIcon {
+  height: 38px;
+  border-radius: var(--radius-round);
+  // Verre teinté et flouté : lisible même sur une image claire.
+  background: var(--color-overlay);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.glassIcon {
+  width: 38px;
+  padding: 0;
+}
+
+.error {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+// Ce qui dépasse d'un widget défile en lui.
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+// Large : deux colonnes (cours d'aujourd'hui et du lendemain).
+.columns {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-5);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.columnTitle {
+  margin: var(--space-1) 0 var(--space-3);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+// Réduit : la suite en une ligne.
+.then {
+  margin: var(--space-2) 0 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-2);
+}
+
+.bigCount {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--color-accent-text);
+
+  small {
+    font-family: var(--font-text);
+    font-size: 14px;
+    letter-spacing: 0;
+    color: var(--color-text-2);
+  }
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.widgetHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding-left: 2px;
+
+  svg {
+    color: var(--color-text-2);
+  }
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+  }
+}
+
+.widgetLink {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-round);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+}
+
+.countChip {
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
+.widgetEmpty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.footLink {
+  margin-top: auto;
+  padding: var(--space-3) 0 0;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  background: none;
+  cursor: pointer;
+}
+
+// ---------- Aujourd'hui ----------
+
+.courses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.courseItem {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  column-gap: var(--space-4);
+
+  > :last-child {
+    min-height: 80px;
+  }
+}
+
+.courseTime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 15px;
+  font-size: 14px;
+
+  strong {
+    font-weight: 700;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--color-text-3);
+  }
+}
+
+.courseDuration {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+// Progression du cours en cours, au pied de sa carte.
+.courseProgress {
+  position: absolute;
+  right: var(--space-5);
+  bottom: var(--space-2);
+  left: var(--space-5);
+  height: 3px;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 2px;
+    background: var(--subject-shown);
+  }
+
+  &::before {
+    right: 0;
+    opacity: 0.2;
+  }
+
+  &::after {
+    width: calc(100% * var(--progress));
+  }
+}
+
+.ongoingBadge {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--color-on-accent);
+  background: var(--subject-shown);
+}
+
+.lunch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 34px;
+  margin-left: 64px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  span {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--color-text-3);
+  }
+}
+
+.nextCourse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: auto 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  svg {
+    color: var(--color-text-3);
+  }
+}
+
+// ---------- Moyenne ----------
+
+.averageBody {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 20px;
+  min-height: 0;
+  padding-top: var(--space-2);
+}
+
+.averageValue {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  color: var(--color-accent-text);
+
+  small {
+    margin-left: 2px;
+    font-family: var(--font-text);
+    font-size: 16px;
+    letter-spacing: 0;
+    color: var(--color-text-3);
+  }
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-success);
+  background: var(--color-success-bg);
+
+  &[data-down] {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+  }
+}
+
+.averageChart {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  color: var(--color-accent);
+}
+
+.averageFoot {
+  padding: var(--space-2) 2px 0;
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+// ---------- Tâches et notes ----------
+
+.tasks,
+.grades {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tasks {
+  gap: 14px;
+
+  li {
+    @include subject-shown;
+
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  small {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--subject-shown);
+  }
+
+  [data-done] p {
+    color: var(--color-text-3);
+    text-decoration: line-through;
+  }
+}
+
+.grades {
+  li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+  }
+
+  li > span:nth-child(2) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    font-size: 11.5px;
+    color: var(--color-text-3);
+  }
+
+  b {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  li > small {
+    margin-left: -8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+// ---------- Tailles larges ----------
+
+// Moyenne : chiffre et courbe en haut, puis la moyenne de chaque matière.
+.averageTop {
+  display: flex;
+  gap: 20px;
+  height: 120px;
+  padding-top: var(--space-2);
+}
+
+.subjectAverages {
+  display: grid;
+  flex: 1;
+  grid-auto-rows: min-content;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-2) var(--space-5);
+  min-height: 0;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  li {
+    @include subject-shown;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  b {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--subject-shown);
+  }
+}
+
+// Nouvelles notes en grand : sur deux colonnes quand la place le permet.
+.grades[data-level="large"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  column-gap: var(--space-5);
+  overflow-y: auto;
+}
+
+// Assiduité : les quatre chiffres, puis les dernières absences.
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+
+  &[data-level="large"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+  }
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+
+    &[data-alert] {
+      color: var(--color-error);
+    }
+  }
+
+  small {
+    font-size: 12px;
+    color: var(--color-text-2);
+  }
+}
+
+.absences {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 48px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  li > span:first-child {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  small {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-3);
+  }
+}
+
+.status {
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+
+  &[data-ok] {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+  }
+}
+
+// Actualités : la dernière en avant (taille large), puis une ligne par actualité.
+.featured {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 var(--space-3);
+  padding: var(--space-3) 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  text-align: left;
+  background: var(--color-bg);
+  cursor: pointer;
+
+  small {
+    font-size: 12px;
+    color: var(--color-text-2);
+  }
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 19px;
+    color: var(--color-text-2);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+}
+
+.news {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 0 0 14px;
+    border: none;
+    text-align: left;
+    background: none;
+    cursor: pointer;
+
+    // Non lue : un point d'accent à gauche, le titre en gras.
+    &[data-unread]::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 2px;
+      width: 7px;
+      height: 7px;
+      margin-top: -3.5px;
+      border-radius: var(--radius-round);
+      background: var(--color-accent);
+    }
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    [data-unread] & {
+      font-weight: 700;
+    }
+  }
+
+  small {
+    overflow: hidden;
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-3);
+  }
+}
+
+// Boutons verre de la barre de modification.
+.barButton {
+  height: 36px;
+  border-radius: var(--radius-round);
+}
+
+// « Widget retiré · Annuler », au-dessus de la barre de modification.
+.toast {
+  position: sticky;
+  bottom: 90px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: fit-content;
+  margin: var(--space-4) auto 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) 20px;
+  border-radius: var(--radius-round);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-brand);
+  background: var(--brand-ink);
+  box-shadow: 0 6px 24px var(--color-overlay);
+
+  button {
+    height: 30px;
+    padding: 0 14px;
+    border: none;
+    border-radius: var(--radius-round);
+    font-weight: 700;
+    color: var(--brand-ink);
+    background: var(--brand-sulfur);
+    cursor: pointer;
+  }
+}

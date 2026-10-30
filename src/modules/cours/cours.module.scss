@@ -1,0 +1,764 @@
+// Cours, d'après les maquettes 03-cours et leur générateur (pieride_design/design/_src,
+// `week_grid`, `course_card`, `jour`, `semaine_detail`). La grille place chaque élément par des
+// variables posées en ligne : `--hours` (nombre d'heures), `--from` et `--to` (minutes depuis
+// sa première heure), `--column` et `--columns` (cours qui se chevauchent).
+@use "sass:list";
+@use "../../styles/subject" as *;
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Position verticale dans la grille, en pourcentage de sa hauteur.
+@function grid-y($minutes) {
+  @return calc(100% * (#{$minutes}) / (var(--hours) * 60));
+}
+
+// ---------- Carte de cours ----------
+
+.course {
+  @include subject-shown;
+  @include subject-gradient(0.12, 0.26);
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 7px 6px 6px 20px;
+  border: none;
+  border-radius: var(--radius-m);
+  font: inherit;
+  text-align: left;
+  color: var(--subject-shown);
+  background: var(--color-bg);
+  cursor: pointer;
+
+  // Bord de la couleur à 22 %.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--subject-shown);
+    border-radius: inherit;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  &:hover::after {
+    opacity: 0.6;
+  }
+
+  &[data-selected] {
+    box-shadow:
+      0 0 0 1px var(--color-bg),
+      0 0 0 3px var(--color-accent);
+  }
+
+  &[data-status="canceled"] {
+    --subject-shown: var(--color-text-3);
+
+    &::before {
+      background: var(--color-muted);
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    &::after {
+      border-color: var(--color-muted-border);
+      opacity: 1;
+    }
+
+    .courseName {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.courseBar {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 8px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--subject-shown);
+}
+
+.courseHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.courseName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  flex-shrink: 0;
+  height: 18px;
+  margin-top: -1px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  background: var(--color-surface);
+}
+
+.courseMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  margin-top: var(--space-1);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+
+  > span {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+}
+
+.courseTeacher {
+  opacity: 0.85;
+}
+
+// Grille : la salle et l'enseignant selon la place (durée du cours), jamais l'enseignant d'un
+// cours annulé.
+.course[data-size="s"] .courseMeta,
+.course[data-size="m"] .courseTeacher,
+.course[data-variant="compact"][data-status="canceled"] .courseTeacher {
+  display: none;
+}
+
+// Liste du jour : carte plus grande, salle et enseignant sur une ligne, puis la durée.
+.course[data-variant="full"] {
+  padding: 11px var(--space-3) 10px var(--space-5);
+
+  .courseBar {
+    top: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+
+  .courseName {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .status {
+    height: 22px;
+    margin-top: 0;
+    font-size: 11px;
+    line-height: 22px;
+  }
+
+  .courseMeta {
+    flex-direction: row;
+    gap: var(--space-2);
+    margin-top: 2px;
+    font-size: 12px;
+
+    > span {
+      gap: var(--space-1);
+    }
+  }
+
+  .courseTeacher {
+    opacity: 1;
+  }
+
+  .courseRoom + .courseTeacher::before {
+    content: "";
+    width: 1px;
+    height: 12px;
+    margin-right: var(--space-1);
+    background: currentColor;
+    opacity: 0.4;
+  }
+}
+
+.courseExtra {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+// Couleur du statut : pastille d'une carte (sur la surface) ou du détail (sur sa teinte).
+$status-colors: (
+  canceled: (
+    var(--color-error),
+    var(--color-error-bg),
+  ),
+  edited: (
+    var(--color-warning),
+    var(--color-warning-bg),
+  ),
+  online: (
+    var(--color-success),
+    var(--color-success-bg),
+  ),
+  evaluated: (
+    var(--color-accent-text),
+    var(--color-accent-soft),
+  ),
+);
+
+@each $status, $colors in $status-colors {
+  .course[data-status="#{$status}"] .status {
+    color: list.nth($colors, 1);
+  }
+
+  .detailStatus[data-status="#{$status}"] {
+    color: list.nth($colors, 1);
+    background: list.nth($colors, 2);
+  }
+}
+
+// ---------- Vue semaine ----------
+
+.week {
+  --gutter: 54px;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: var(--space-3) var(--space-6) var(--space-3);
+}
+
+.weekHead,
+.weekBody {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  padding-left: var(--gutter);
+}
+
+.weekHead {
+  height: 46px;
+  margin-bottom: var(--space-3);
+}
+
+.weekDay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 var(--space-1);
+  border: none;
+  border-radius: var(--radius-m);
+  font: inherit;
+  font-size: 13px;
+  background: none;
+  cursor: pointer;
+
+  span {
+    font-weight: 600;
+    color: var(--color-text-2);
+    text-transform: capitalize;
+  }
+
+  strong {
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  &:hover {
+    background: var(--color-fill);
+  }
+
+  &[data-today] {
+    gap: var(--space-2);
+    background: var(--color-accent-soft);
+
+    span {
+      font-weight: 700;
+      color: var(--color-accent-text);
+    }
+
+    strong {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-round);
+      color: var(--color-on-accent);
+      background: var(--color-accent);
+    }
+  }
+}
+
+// Une ligne de grille d'au moins 52 px par heure : la hauteur des colonnes reste définie même
+// quand WebKit ne résout pas celle venue du flex (les cours y sont placés en pourcentage).
+.weekBody {
+  position: relative;
+  flex: 1;
+  grid-template-rows: minmax(calc(var(--hours) * 52px), 1fr);
+}
+
+// Lignes des heures sur toute la largeur : pleine pour la première, en pointillés ensuite.
+.hours {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hour {
+  position: absolute;
+  top: grid-y(var(--from));
+  right: 0;
+  left: var(--gutter);
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    var(--color-border) 50%,
+    transparent 50%
+  );
+  background-size: 8px 1px;
+
+  &:first-child {
+    background: var(--color-border);
+  }
+
+  span {
+    position: absolute;
+    right: calc(100% + 10px);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-3);
+    white-space: nowrap;
+    transform: translateY(-50%);
+  }
+}
+
+.nowLabel {
+  position: absolute;
+  top: grid-y(var(--from));
+  left: 2px;
+  z-index: 3;
+  width: calc(var(--gutter) - 8px);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+  color: var(--color-on-accent);
+  background: var(--color-error);
+  transform: translateY(-50%);
+}
+
+// Une colonne par jour, séparées par un trait léger.
+.dayColumn {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &::before,
+  &:last-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: var(--color-border);
+    opacity: 0.6;
+  }
+
+  &:last-child::after {
+    right: 0;
+    left: auto;
+  }
+}
+
+.slot {
+  position: absolute;
+  top: calc(#{grid-y(var(--from))} + 2px);
+  left: calc(100% * var(--column) / var(--columns) + var(--space-1));
+  z-index: 1;
+  width: calc(100% / var(--columns) - var(--space-2));
+  height: calc(#{grid-y("var(--to) - var(--from)")} - 4px);
+  container-type: inline-size;
+}
+
+// Une carte étroite n'a pas la place pour la pastille du statut (maquettes : moins de 180 px).
+@container (max-width: 179px) {
+  .status {
+    display: none;
+  }
+}
+
+.lunchBand {
+  position: absolute;
+  top: calc(#{grid-y(var(--from))} + 1px);
+  right: 1px;
+  left: 1px;
+  display: grid;
+  place-items: center;
+  height: calc(#{grid-y("var(--to) - var(--from)")} - 2px);
+  color: var(--color-text-3);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-fill);
+    opacity: 0.55;
+  }
+
+  svg {
+    position: relative;
+    opacity: 0.7;
+  }
+}
+
+.nowLine {
+  position: absolute;
+  top: grid-y(var(--from));
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--color-error);
+  pointer-events: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-round);
+    background: var(--color-error);
+  }
+}
+
+.weekEmpty {
+  position: absolute;
+  inset: 0 0 0 var(--gutter);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+}
+
+.weekEmptyCard {
+  width: min(560px, 90%);
+  padding: var(--space-3);
+  border-radius: var(--radius-l);
+}
+
+// ---------- Vue jour ----------
+
+.dayLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 392px);
+  align-items: start;
+  gap: 28px;
+  padding: var(--space-5) var(--space-6);
+
+  @media (max-width: 1100px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dayHeading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.daySummary {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.dayEmpty {
+  margin-top: var(--space-4);
+}
+
+.dayList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dayItem {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  column-gap: var(--space-4);
+
+  .course {
+    min-height: 78px;
+  }
+
+  &[data-long] .course {
+    min-height: 92px;
+  }
+}
+
+.dayTime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-top: 15px;
+  font-size: 14px;
+
+  strong {
+    font-weight: 700;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--color-text-3);
+  }
+}
+
+// En cours : pastille pleine de la couleur de la matière.
+.ongoingBadge {
+  flex-shrink: 0;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--color-on-accent);
+  background: var(--subject-shown);
+}
+
+.break {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 34px;
+  margin-left: 70px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+}
+
+.breakDuration {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.daySide {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sideCard {
+  padding: 18px;
+}
+
+.sideTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--space-4);
+  font-size: 14px;
+  font-weight: 700;
+
+  svg {
+    color: var(--color-text-2);
+  }
+}
+
+// ---------- Devoirs (vue jour, détail d'un cours) ----------
+
+.homework {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.homeworkItem {
+  @include subject-shown;
+
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.homeworkCheck {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--color-control);
+  border-radius: var(--radius-round);
+  color: var(--color-on-accent);
+  background: var(--color-surface);
+
+  &[data-done] {
+    border-color: var(--subject-shown);
+    background: var(--subject-shown);
+  }
+}
+
+.homeworkText {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.homeworkCaption {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--subject-shown);
+}
+
+.homeworkEmpty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+// ---------- Détail d'un cours ----------
+
+.detail {
+  @include subject-shown;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.ongoing {
+  @include subject-gradient(0.1, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-5);
+  padding: 18px 18px var(--space-4);
+  border-radius: var(--radius-l);
+
+  small {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--subject-shown);
+  }
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    color: var(--subject-shown);
+  }
+}
+
+.ongoingTrack {
+  @include tint(0.2);
+
+  display: block;
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 2px;
+
+  progress {
+    display: block;
+    width: 100%;
+    height: 4px;
+    border: none;
+    background: transparent;
+    appearance: none;
+
+    &::-webkit-progress-bar {
+      background: transparent;
+    }
+
+    &::-webkit-progress-value {
+      border-radius: 2px;
+      background: var(--subject-shown);
+    }
+
+    &::-moz-progress-bar {
+      border-radius: 2px;
+      background: var(--subject-shown);
+    }
+  }
+}
+
+.detailStatus {
+  align-self: flex-start;
+  margin: 0 0 var(--space-5);
+  padding: 0 10px;
+  border-radius: var(--radius-round);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.detailCard {
+  padding: var(--space-4);
+
+  .homeworkItem {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .homeworkCheck {
+    width: 22px;
+    height: 22px;
+  }
+
+  .homeworkText {
+    font-size: 13.5px;
+  }
+
+  .homeworkCaption {
+    font-size: 12px;
+  }
+}
+
+.detailUpdated {
+  margin: var(--space-6) 0 0;
+  font-size: 12px;
+  color: var(--color-text-3);
+}

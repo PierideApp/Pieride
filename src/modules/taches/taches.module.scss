@@ -1,0 +1,649 @@
+// Tâches, d'après les maquettes 04-taches et leur générateur (pieride_design/design/_src,
+// `summary`, `board_columns`, `task_card`, `list_row_task`, `task_inspector`).
+@use "../../styles/subject" as *;
+
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  padding: var(--space-2) var(--space-6) var(--space-3);
+}
+
+.search {
+  width: 220px;
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-error);
+}
+
+.kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-2);
+  background: var(--color-surface);
+}
+
+// ---------- Résumé de la semaine ----------
+
+.summary {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 76px;
+  padding: 0 var(--space-4) 0 22px;
+}
+
+.summaryCount {
+  min-width: 30px;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--color-accent-text);
+}
+
+.summaryText {
+  display: flex;
+  flex-direction: column;
+  width: 172px;
+
+  b {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  small {
+    font-size: 13px;
+    color: var(--color-text-2);
+  }
+}
+
+.summaryProgress {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 640px;
+  padding-top: var(--space-3);
+
+  small {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-2);
+  }
+}
+
+.segments {
+  display: flex;
+  gap: 6px;
+}
+
+.segment {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--color-track);
+
+  &[data-done] {
+    background: var(--color-accent);
+  }
+}
+
+.segmentFill {
+  display: block;
+  width: calc(100% * var(--progress));
+  height: 100%;
+  background: var(--color-accent);
+}
+
+// Prochain rendu, sur le jaune de la marque.
+.next {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 198px;
+  height: 48px;
+  margin-left: auto;
+  padding: 0 14px;
+  border-radius: 14px;
+  color: var(--color-sulfur-icon);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--brand-sulfur);
+    opacity: 0.22;
+  }
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    color: var(--color-sulfur-text);
+  }
+
+  b {
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  small {
+    font-size: 12px;
+  }
+}
+
+// ---------- Tableau ----------
+
+// Les colonnes, et sur leurs bords les flèches vers les jours cachés.
+.boardFrame {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.board {
+  display: grid;
+  flex: 1;
+  grid-auto-columns: minmax(220px, 1fr);
+  grid-auto-flow: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+}
+
+// `scroll_hint` : un rond de 40 px à cheval sur le bord du tableau, au milieu de sa hauteur,
+// avec une ombre d'encre décalée de 2 px vers le bas. Absent de la maquette, le bord droit
+// reprend la même flèche, retournée.
+.scrollHint {
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-round);
+  color: var(--color-text-2);
+  background: var(--color-surface);
+  box-shadow: 0 2px 0 2px var(--color-shadow);
+  cursor: pointer;
+  translate: 0 -50%;
+
+  &[data-side="after"] {
+    right: -20px;
+    left: auto;
+  }
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.column {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: var(--radius-l);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--color-column);
+    opacity: 0.6;
+  }
+
+  &[data-today]::before {
+    background: var(--color-accent-soft);
+    opacity: 0.7;
+  }
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-2) 14px;
+
+  h3 {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+  }
+
+  [data-today] & h3 {
+    color: var(--color-accent-text);
+  }
+}
+
+.todayChip,
+.countChip {
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.todayChip {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+
+.countChip {
+  color: var(--color-text-2);
+  background: var(--color-surface);
+}
+
+.columnEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin: 62px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-2);
+  list-style: none;
+}
+
+// Carte d'un devoir : la couleur de la matière en haut, qui s'efface à mi-hauteur.
+.task {
+  @include subject-shown;
+  @include subject-gradient(0.1, 0, to bottom, 50%);
+
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  background: var(--color-surface);
+
+  &[data-selected] {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+
+  // Fait : replié sur une ligne, sans dégradé.
+  &[data-done] {
+    &::before {
+      content: none;
+    }
+
+    .taskOpen {
+      opacity: 0.7;
+    }
+
+    .taskText {
+      margin-top: var(--space-2);
+      color: var(--color-text-3);
+      text-decoration: line-through;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 1;
+    }
+  }
+}
+
+.taskHead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+}
+
+// Le nom de la matière ouvre le détail ; son calque couvre toute la carte.
+.taskOpen {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--subject-shown);
+  background: none;
+  cursor: pointer;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-l);
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--brand-sulfur);
+    }
+  }
+}
+
+.taskDue {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+
+.taskText {
+  display: -webkit-box;
+  margin: 11px 0 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 20px;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+
+.taskFoot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.taskDone {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-round);
+  color: var(--color-text-3);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--subject-shown);
+    color: var(--subject-shown);
+  }
+}
+
+// Case ronde : pleine de la couleur de la matière quand le devoir est fait.
+.check {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--color-control);
+  border-radius: var(--radius-round);
+  color: var(--color-on-accent);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &[data-size="24"] {
+    width: 24px;
+    height: 24px;
+  }
+
+  &[data-done] {
+    border-color: var(--subject-shown);
+    background: var(--subject-shown);
+  }
+
+  &:hover:not(:disabled, [data-done]) {
+    border-color: var(--subject-shown);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+// ---------- Liste ----------
+
+.list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.listHeading {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 var(--space-1) var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  span + span {
+    color: var(--color-text-3);
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  @include subject-shown;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 0 14px 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+
+  &[data-selected] {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowOpen {
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+  background: none;
+  cursor: pointer;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--brand-sulfur);
+    }
+  }
+
+  [data-done] & {
+    color: var(--color-text-3);
+    text-decoration: line-through;
+  }
+}
+
+.rowSubject {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--subject-shown);
+
+  span {
+    font-size: 11px;
+  }
+}
+
+.rowDue {
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--subject-shown);
+  background: var(--color-surface);
+
+  [data-done] & {
+    color: var(--color-text-2);
+    background: var(--color-chip);
+  }
+}
+
+.listEmpty {
+  margin: var(--space-6) 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--color-text-2);
+}
+
+// ---------- Semaine vide ----------
+
+.emptyWeek {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.keys {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+
+// ---------- Détail d'un devoir ----------
+
+.detail {
+  @include subject-shown;
+}
+
+.stateCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-4) var(--space-2) 18px;
+
+  strong {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+  }
+}
+
+.softButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.descriptionCard {
+  padding: var(--space-4) 18px;
+
+  p {
+    margin: 0;
+    line-height: 21px;
+    white-space: pre-line;
+  }
+}
+
+.fileIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}

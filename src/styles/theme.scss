@@ -44,6 +44,22 @@
   --color-error-bg: #fdecee;
   --color-warning: #e8901c;
   --color-warning-bg: #fff3e3;
+  // Retards (Assiduité) : le bleu des maquettes.
+  --color-info: #007fda;
+  // Gris des maquettes (DARK_MAP) : fond d'un sélecteur ou de la pause de midi, cours
+  // annulé et son bord, bord d'une case à cocher vide.
+  --color-fill: #e9ebf5;
+  --color-muted: #f1f2f7;
+  --color-muted-border: #e2e4ee;
+  --color-control: #cdd0e2;
+  // Piste d'une barre de progression, colonne du tableau des tâches, pastille grise, texte et
+  // icône sur le jaune soufre de la marque.
+  --color-track: #e3e5f2;
+  --color-column: #eceef7;
+  --color-chip: #eef0f7;
+  --color-sulfur-text: #6b5f00;
+  --color-sulfur-icon: #8a7a00;
+  --color-table-head: #f8f9fd;
 
   color-scheme: light;
 }
@@ -64,6 +80,17 @@
   --color-error-bg: #33161e;
   --color-warning: #ffb547;
   --color-warning-bg: #32240f;
+  --color-info: #4da5e5;
+  --color-fill: #201f3b;
+  --color-muted: #1c1b35;
+  --color-muted-border: #2e2d50;
+  --color-control: #4a4972;
+  --color-track: #2c2b52;
+  --color-column: #15142c;
+  --color-chip: #24233f;
+  --color-sulfur-text: #f1e25b;
+  --color-sulfur-icon: #f1e25b;
+  --color-table-head: #1d1c39;
 
   color-scheme: dark;
 }
@@ -84,6 +111,8 @@
   --on-brand-danger: #ff8a95;
   // Fond assombri sous la palette et ombre du panneau détail.
   --color-overlay: #0e0b4d59;
+  // Ombre douce sous un bouton rond posé sur le contenu (flèche du tableau des tâches).
+  --color-shadow: #0e0b4d14;
 
   --font-text: "SN Pro", system-ui, sans-serif;
   --font-display: "Unbounded", "SN Pro", system-ui, sans-serif;
@@ -148,6 +177,16 @@ body {
 button {
   font: inherit;
   color: inherit;
+}
+
+// Pas de barre de défilement visible : on défile à la molette, au pavé tactile ou au clavier.
+// `::-webkit-scrollbar` pour les WebKit sans `scrollbar-width` (macOS avant Safari 18.2).
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 // Une touche du clavier (« Ctrl », « Échap ») dans un texte d'aide.

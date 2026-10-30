@@ -58,7 +58,8 @@
   flex-direction: column;
   flex-shrink: 0;
   width: 400px;
-  padding: var(--space-4) var(--space-5) var(--space-5);
+  // Sous les boutons de la fenêtre, comme dans les maquettes (`inspector`).
+  padding: var(--space-8) var(--space-5) var(--space-5);
   overflow-y: auto;
   border-left: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -81,19 +82,18 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 40px;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .detailClose {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border);
+  width: 30px;
+  height: 30px;
+  border: none;
   border-radius: var(--radius-s);
   color: var(--color-text-2);
-  background: var(--color-surface);
+  background: var(--color-bg);
   cursor: pointer;
 
   &:hover {
@@ -106,14 +106,29 @@
   color: var(--color-text-3);
 }
 
+// Titre, sous-titre et à droite l'image de l'élément (emoji d'une matière…).
+.detailHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .detailTitle {
-  margin: 0;
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .detailSubtitle {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
   color: var(--color-text-2);
 }
 
@@ -563,13 +578,29 @@
   }
 }
 
+// Sur le bandeau de l'Accueil (`data-window-banner`, AccueilPage.tsx) : blancs comme le texte
+// du bandeau, avec son ombre, lisibles sur une image claire que le voile assombrit en haut.
+.shell:has([data-window-banner]) .controls {
+  color: var(--on-brand);
+
+  svg {
+    filter: drop-shadow(0 1px 2px var(--color-overlay));
+  }
+}
+
+.shell:has([data-window-banner]) .button:hover {
+  color: var(--on-brand);
+  background: var(--on-brand-soft);
+}
+
 // Convention de Windows : la fermeture devient rouge au survol.
 .close {
   composes: button;
   border-top-right-radius: var(--radius-l);
 
   &:hover,
-  .onBrand &:hover {
+  .onBrand &:hover,
+  .shell:has([data-window-banner]) &:hover {
     color: var(--color-on-accent);
     background: var(--color-error);
   }

@@ -1,0 +1,319 @@
+// Assiduité, d'après la maquette 06-vie-scolaire/02-assiduite (pieride_design/design/_src,
+// `assiduite`).
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-6) var(--space-5);
+}
+
+// Grille centrée : en flex (rangée), l'état vide ne prenait que sa largeur, collé à gauche.
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+}
+
+// ---------- Chiffres ----------
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 112px;
+  padding: 18px;
+
+  strong {
+    grid-column: 1 / -1;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+
+    &[data-alert] {
+      color: var(--color-error);
+    }
+  }
+}
+
+.statLabel {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+$tones: (
+  accent: var(--color-accent-text),
+  error: var(--color-error),
+  warning: var(--color-warning),
+  info: var(--color-info),
+);
+
+.statIcon,
+.kind > span {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0.12;
+  }
+}
+
+.statIcon {
+  @each $tone, $color in $tones {
+    &[data-tone="#{$tone}"] {
+      color: $color;
+    }
+  }
+}
+
+// ---------- Alerte ----------
+
+.alert {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 0 18px;
+  border-radius: var(--radius-l);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--color-error);
+    border-radius: inherit;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  > span {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-round);
+      background: currentColor;
+      opacity: 0.15;
+    }
+  }
+
+  p {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  strong {
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+}
+
+// ---------- Tableau ----------
+
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0 var(--space-5);
+    text-align: left;
+    white-space: nowrap;
+
+    &[data-end] {
+      text-align: right;
+    }
+  }
+
+  th {
+    height: 52px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-2);
+  }
+
+  td {
+    font-size: 13.5px;
+    font-weight: 600;
+
+    &[data-muted] {
+      font-weight: 500;
+      color: var(--color-text-3);
+    }
+  }
+
+  tbody tr {
+    height: 64px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: var(--color-bg);
+    }
+
+    &[data-selected] {
+      background: var(--color-accent-soft);
+    }
+  }
+}
+
+.kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+
+  > span {
+    width: 32px;
+    height: 32px;
+  }
+
+  &[data-kind="absence"] > span {
+    color: var(--color-warning);
+  }
+
+  &[data-kind="delay"] > span {
+    color: var(--color-info);
+  }
+
+  button {
+    padding: 0;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    background: none;
+    cursor: pointer;
+  }
+}
+
+.soft {
+  font-weight: 500;
+  color: var(--color-text-2);
+}
+
+.duration {
+  font-size: 14px;
+
+  &[data-alert] {
+    color: var(--color-error);
+  }
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+
+  &[data-ok] {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+  }
+}
+
+// ---------- Par mois ----------
+
+.months {
+  padding: 20px var(--space-5);
+
+  h2 {
+    margin: 0 0 var(--space-4);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-2);
+
+    > span:first-child {
+      width: 94px;
+    }
+  }
+
+  b {
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+}
+
+// La barre des heures manquées, la part injustifiée en rouge à son bout.
+.bar {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  width: calc((100% - 220px) * var(--progress));
+  min-width: 16px;
+  height: 16px;
+  overflow: hidden;
+  border-radius: var(--radius-s);
+  background: var(--color-accent);
+
+  span {
+    width: calc(100% * var(--progress));
+    background: var(--color-error);
+  }
+}

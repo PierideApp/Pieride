@@ -10,6 +10,7 @@ import { ColorSwatches } from "@/components/ColorSwatches/ColorSwatches";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { ACCENTS, type Theme, useSettingsStore } from "@/stores/settings";
+import { useSettingsDialog } from "@/stores/settingsDialog";
 import { useWallpaperStore, wallpaperBackground } from "@/stores/wallpaper";
 
 import styles from "./settings.module.scss";
@@ -35,7 +36,10 @@ export function AppearanceSettings() {
   const accent = useSettingsStore(state => state.accent);
   const setPreference = useSettingsStore(state => state.setPreference);
   const wallpaper = useWallpaperStore();
-  const [choosingWallpaper, setChoosingWallpaper] = useState(false);
+  // Ouverts depuis le bouton « Fond d'écran » de l'accueil : directement sur sa page.
+  const [choosingWallpaper, setChoosingWallpaper] = useState(
+    () => useSettingsDialog.getState().wallpaper
+  );
 
   if (choosingWallpaper) {
     return <WallpaperSettings onBack={() => setChoosingWallpaper(false)} />;

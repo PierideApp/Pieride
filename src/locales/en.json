@@ -92,6 +92,364 @@
     "close": "Close the panel",
     "hint": "Esc to close"
   },
+  "accueil": {
+    "hello": "Hello, {{name}} 👋",
+    "helloAnonymous": "Hello 👋",
+    "coursesLeft_one": "You have {{count}} class left today",
+    "coursesLeft_other": "You have {{count}} classes left today",
+    "noMoreCourses": "No more classes today",
+    "more": "Show more",
+    "average": "Overall average",
+    "tasks": "To do",
+    "left_one": "{{count}} left",
+    "left_other": "{{count}} left",
+    "noTasks": "Nothing to do for now.",
+    "allTasks": "See all tasks",
+    "allGrades": "See all grades",
+    "nextCourse": "{{day}}, first class at {{time}}: {{subject}}",
+    "nextCourseRoom": "{{day}}, first class at {{time}}: {{subject}} in {{room}}",
+    "unjustified": "{{duration}} unexcused",
+    "allJustified": "All excused",
+    "unread_one": "{{count}} unread",
+    "unread_other": "{{count}} unread",
+    "allRead": "All read",
+    "edit": "Edit home",
+    "wallpaper": "Change wallpaper",
+    "editHint": "Drag a widget, resize it with its bar, or drop it at the top for a card.",
+    "addWidget": "Add a widget",
+    "done": "Done",
+    "allShown": "Everything is already shown",
+    "widgets": {
+      "attendance": "Attendance",
+      "news": "News",
+      "courses": "Today's classes",
+      "average": "Overall average",
+      "tasks": "To do",
+      "grades": "Recent grades"
+    },
+    "remove": "Remove {{name}}",
+    "move": "Move {{name}}",
+    "moveHint": "Drag the widget, or use the arrow keys (Shift + arrows: size)",
+    "empty": {
+      "title": "Nothing to show",
+      "text": "Nothing to show here yet. Add widgets to build your home."
+    },
+    "sizes": {
+      "mini": "card",
+      "compact": "small",
+      "normal": "normal",
+      "large": "large",
+      "full": "full"
+    },
+    "then": "Then {{subject}} at {{time}}",
+    "classAverage": "class {{value}}",
+    "allNews": "See all news",
+    "mini": {
+      "course": "{{subject}} at {{time}}",
+      "nextCourse": "{{day}}: {{subject}} at {{time}}",
+      "grade": "{{value}} in {{subject}}"
+    },
+    "cancel": "Cancel",
+    "reset": "Default",
+    "removed": "“{{name}}” removed",
+    "undo": "Undo",
+    "sizeOf": "Size of {{name}}",
+    "stripHint": "Drop a widget here to make it a card",
+    "dayOverText": "Enjoy the rest of your day!"
+  },
+  "dateNav": {
+    "previous": "Previous",
+    "next": "Next",
+    "today": "Today"
+  },
+  "miniCalendar": {
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "imageCropper": {
+    "frame": "Kept area: move it with the mouse or the arrow keys",
+    "zoom": "Zoom",
+    "cancel": "Cancel",
+    "confirm": "Use this part"
+  },
+  "cours": {
+    "view": "View",
+    "day": "Day",
+    "week": "Week",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "time": "{{from}} to {{to}}",
+    "count_one": "{{count}} class",
+    "count_other": "{{count}} classes",
+    "canceledCount_one": "{{count}} canceled",
+    "canceledCount_other": "{{count}} canceled",
+    "endsAt": "ends at {{time}}",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "hoursMinutes": "{{hours}} h {{minutes}}",
+    "now": "Now",
+    "remaining": "{{duration}} left",
+    "break": "Break",
+    "lunch": "Lunch break",
+    "status": {
+      "canceled": "Canceled",
+      "edited": "Changed",
+      "online": "Online",
+      "evaluated": "Test"
+    },
+    "statusLong": {
+      "canceled": "Class canceled",
+      "edited": "Class changed",
+      "online": "Online",
+      "evaluated": "Test"
+    },
+    "details": "Class details",
+    "teacher": "Teacher",
+    "room": "Room",
+    "group": "Group",
+    "duration": "Duration",
+    "homeworkForCourse": "Due for this class",
+    "noHomeworkForCourse": "Nothing due for this class.",
+    "homeworkTomorrow": "Due tomorrow",
+    "homeworkFor": "Due {{day}}",
+    "noHomework": "Nothing due that day.",
+    "done": "Done",
+    "todo": "To do",
+    "error": "Timetable unreadable",
+    "empty": {
+      "title": "No classes this week",
+      "text": "Nothing in the timetable this week: holidays, or a week your school has not published yet."
+    },
+    "emptyDay": {
+      "title": "No classes that day",
+      "text": "Enjoy your day!"
+    },
+    "recess": "Recess",
+    "dueToday": "Due today",
+    "dueTomorrow": "Due tomorrow",
+    "dueOn": "Due {{day}}",
+    "wholeClass": "Whole class",
+    "updated": "Updated by {{service}} at {{time}}"
+  },
+  "taches": {
+    "search": "Search tasks",
+    "filter": "Show",
+    "filters": {
+      "todo": "To do",
+      "done": "Done",
+      "all": "All"
+    },
+    "display": "View",
+    "layout": "Layout",
+    "boardHint": "one column per day",
+    "previousDays": "Previous days",
+    "nextDays": "Next days",
+    "listHint": "by due date",
+    "sortBy": "Sort by",
+    "sort": {
+      "due": "Due date",
+      "subject": "Subject"
+    },
+    "hideDone": "Hide completed tasks",
+    "left_one": "task left",
+    "left_other": "tasks left",
+    "thisWeek": "this week",
+    "doneOf": "{{done}} of {{total}} done",
+    "dueFor": "Due {{day}}",
+    "count_one": "{{count}} task",
+    "count_other": "{{count}} tasks",
+    "none": "No tasks",
+    "noMatch": "No task matches.",
+    "markDone": "Done",
+    "markTodo": "Not done",
+    "state": "Status",
+    "done": "Done",
+    "notDone": "Not done",
+    "space": "Space",
+    "description": "Description",
+    "attachments": "Attachments",
+    "attachment": {
+      "file": "File",
+      "link": "Link"
+    },
+    "information": "Details",
+    "givenAt": "Given on",
+    "dueAt": "Due on",
+    "error": "Tasks unreadable",
+    "empty": {
+      "title": "No tasks for week {{week}}",
+      "text": "Nothing planned this week. Time to rest!"
+    },
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week"
+  },
+  "notes": {
+    "period": "Period",
+    "view": "View",
+    "tabs": {
+      "subjects": "Subjects",
+      "latest": "Recent grades"
+    },
+    "search": "Search a grade, a subject",
+    "sort": "Sort",
+    "sortTitle": "Sort subjects by",
+    "sorts": {
+      "date": {
+        "title": "Date",
+        "text": "latest grade first"
+      },
+      "average": {
+        "title": "Averages",
+        "text": "highest to lowest"
+      },
+      "alphabetical": {
+        "title": "Alphabetical",
+        "text": "A to Z"
+      }
+    },
+    "evolution": "Average over time",
+    "methodsTitle": "Calculation methods",
+    "methods": {
+      "weighted": {
+        "title": "Weighted average",
+        "text": "Weighted average of every grade"
+      },
+      "subjects": {
+        "title": "Subject average",
+        "text": "Average of the subject averages"
+      },
+      "median": {
+        "title": "Median grade",
+        "text": "Median of every grade"
+      }
+    },
+    "since": "{{delta}} since {{date}}",
+    "bySchool": "by your school: {{value}}",
+    "stats": {
+      "title": "Statistics",
+      "class": "Class average",
+      "best": "Best: {{subject}}",
+      "worst": "To work on: {{subject}}",
+      "count": "Grades this period"
+    },
+    "latest": "Recent grades",
+    "best": "Best grade in the group",
+    "subjectsCount_one": "{{count}} subject",
+    "subjectsCount_other": "{{count}} subjects",
+    "gradesCount_one": "{{count}} grade",
+    "gradesCount_other": "{{count}} grades",
+    "subjectSubtitle_one": "Subject details · {{count}} grade",
+    "subjectSubtitle_other": "Subject details · {{count}} grades",
+    "coefficient": "Coefficient {{value}}",
+    "groupAverage": "Group avg. {{value}}",
+    "details": "Details",
+    "scaled": "On another scale",
+    "scaledText": "Converted to {{scale}}",
+    "highest": "Highest grade",
+    "highestText": "Best in the group",
+    "lowest": "Lowest grade",
+    "lowestText": "Lowest in the group",
+    "influenceTitle": "Impact",
+    "overall": "Overall average",
+    "toGroup": "Gap with the group",
+    "studentAverage": "Your average",
+    "subjectStats": {
+      "class": "Class average",
+      "classText": "Class average in this subject",
+      "max": "Highest average",
+      "maxText": "Best average in the group",
+      "min": "Lowest average",
+      "minText": "Lowest average in the group"
+    },
+    "table": {
+      "subject": "Subject",
+      "title": "Assignment",
+      "date": "Date",
+      "coefficient": "Coef.",
+      "class": "Class avg.",
+      "influence": "Impact",
+      "value": "Grade"
+    },
+    "error": "Grades unreadable",
+    "empty": {
+      "title": "No grades",
+      "text": "You have not been graded in this period yet.",
+      "action": "See {{period}}"
+    },
+    "monthStart": "{{month}} 1"
+  },
+  "actualites": {
+    "search": "Search news",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "theme": "Reading theme",
+    "themes": {
+      "normal": "Normal text",
+      "large": "Large text"
+    },
+    "error": "News unreadable",
+    "empty": {
+      "title": "No news",
+      "text": "Your school has not published anything yet."
+    },
+    "untitled": "Untitled",
+    "hasAttachments": "Attachments",
+    "noMatch": "No news matches.",
+    "publishedAt": "{{date}} at {{time}}"
+  },
+  "assiduite": {
+    "year": "Whole year",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "absence": "Absences",
+      "delay": "Late arrivals"
+    },
+    "stats": {
+      "missed": "Hours missed",
+      "unjustified": "Unexcused hours",
+      "absences": "Absences",
+      "delays": "Late arrivals"
+    },
+    "alert": {
+      "title": "{{duration}} unexcused",
+      "text": "Remember to excuse your absences and late arrivals with your school."
+    },
+    "table": {
+      "kind": "Type",
+      "reason": "Reason",
+      "date": "Date",
+      "schedule": "Time",
+      "duration": "Duration",
+      "status": "Status"
+    },
+    "noReason": "No reason",
+    "kinds": {
+      "absence": "Absence",
+      "delay": "Late arrival"
+    },
+    "status": {
+      "absence": {
+        "justified": "Excused",
+        "unjustified": "Unexcused"
+      },
+      "delay": {
+        "justified": "Excused",
+        "unjustified": "Unexcused"
+      }
+    },
+    "byMonth": "Hours missed per month",
+    "error": "Attendance unreadable",
+    "empty": {
+      "title": "No absences",
+      "text": "Nothing to report for this period."
+    }
+  },
   "settings": {
     "title": "Settings",
     "close": "Close settings",
@@ -358,7 +716,9 @@
       "sunset": "Sunset",
       "lagoon": "Lagoon",
       "raspberry": "Raspberry",
-      "mist": "Mist"
+      "mist": "Mist",
+      "cropTitle": "Choose the part of the image",
+      "cropText": "The frame has the shape of the home banner: what it holds shows behind the greeting."
     },
     "startup": {
       "launch": "Startup",

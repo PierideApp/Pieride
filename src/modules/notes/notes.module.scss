@@ -1,0 +1,609 @@
+// Notes, d'après les maquettes 05-notes et leur générateur (pieride_design/design/_src,
+// `average_card`, `stats_card`, `latest_row`, `subject_card`, `nouvelles`, `detail`).
+@use "../../styles/subject" as *;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: var(--space-2) var(--space-6) var(--space-5);
+}
+
+.search {
+  width: 260px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  svg {
+    color: var(--color-text-3);
+  }
+
+  span {
+    margin-left: auto;
+    color: var(--color-text-3);
+  }
+}
+
+// Grille centrée : en flex (rangée), l'état vide ne prenait que sa largeur, collé à gauche.
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+
+// ---------- Moyenne et statistiques ----------
+
+.top {
+  display: grid;
+  grid-template-columns: minmax(0, 700fr) minmax(0, 404fr);
+  gap: var(--space-4);
+
+  [data-detail-open] & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// Grille plutôt que flex : la courbe prend `height: 100%`, que WebKit ne résout pas dans un
+// élément flex étiré sur l'axe principal (elle restait à 0 px).
+.averageCard {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 220px;
+  padding: 28px 0 6px;
+
+  [data-detail-open] & {
+    height: 200px;
+  }
+}
+
+.averageChart {
+  min-height: 0;
+  margin: 0 1px;
+  color: var(--color-accent);
+}
+
+.averageFoot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 20px 0 14px;
+}
+
+.averageValue {
+  margin: 0 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  color: var(--color-accent-text);
+
+  small {
+    margin-left: 2px;
+    font-family: var(--font-text);
+    font-size: 16px;
+    letter-spacing: 0;
+    color: var(--color-text-3);
+  }
+}
+
+.averageAside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-bottom: var(--space-1);
+
+  small {
+    font-size: 12px;
+    color: var(--color-text-3);
+  }
+}
+
+.deltaChip,
+.influence {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-success);
+  background: var(--color-success-bg);
+
+  &[data-down] {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+  }
+}
+
+.influence {
+  height: 22px;
+}
+
+.statsCard {
+  padding: 20px;
+
+  h3 {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text-2);
+  }
+
+  li > span:nth-child(2) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  b {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+}
+
+$stat-tones: (
+  text: var(--color-text),
+  success: var(--color-success),
+  error: var(--color-error),
+  accent: var(--color-accent-text),
+);
+
+.statIcon {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-s);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0.12;
+  }
+
+  @each $tone, $color in $stat-tones {
+    &[data-tone="#{$tone}"] {
+      color: $color;
+    }
+  }
+}
+
+// ---------- Nouvelles notes ----------
+
+.latest {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  [data-detail-open] & {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    li:nth-child(n + 4) {
+      display: none;
+    }
+  }
+}
+
+.latestCard {
+  @include subject-shown;
+  @include subject-gradient(0.1, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: 112px;
+  padding: var(--space-3) 14px;
+  border: none;
+  border-radius: var(--radius-l);
+  text-align: left;
+  color: var(--subject-shown);
+  background: var(--color-bg);
+  cursor: pointer;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--subject-shown);
+    border-radius: inherit;
+    opacity: 0.2;
+  }
+
+  &:hover::after {
+    opacity: 0.6;
+  }
+
+  small {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+}
+
+.latestSubject {
+  width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.latestTitle {
+  width: 100%;
+  margin-top: 10px;
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latestValue {
+  margin-top: auto;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+
+  small {
+    margin-left: 2px;
+    font-family: var(--font-text);
+    font-size: 12px;
+    letter-spacing: 0;
+    opacity: 0.6;
+  }
+}
+
+// ---------- Matières ----------
+
+.subjects {
+  column-gap: var(--space-4);
+  columns: 3;
+
+  [data-detail-open] & {
+    columns: 2;
+  }
+}
+
+.subject {
+  @include subject-shown;
+
+  margin-bottom: 18px;
+  break-inside: avoid;
+}
+
+.subjectHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0 2px var(--space-3);
+  font-size: 15px;
+
+  button {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--subject-shown);
+    }
+  }
+
+  b {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--subject-shown);
+  }
+
+  small {
+    margin-left: -6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-3);
+  }
+}
+
+.gradeList {
+  padding: 2px 0;
+}
+
+.gradeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 58px;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: 10px;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+
+  > span:first-child {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-3);
+  }
+
+  > span:first-child small {
+    font-weight: 500;
+  }
+
+  b {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  &:hover {
+    background: var(--color-bg);
+  }
+
+  &[data-selected] {
+    background: var(--color-accent-soft);
+  }
+}
+
+// Meilleure note du groupe : étoile sur le jaune de la marque.
+.bestBadge {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: var(--space-1);
+  color: var(--color-sulfur-icon);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--radius-round);
+    background: var(--brand-sulfur);
+    opacity: 0.45;
+  }
+}
+
+// ---------- Tableau des notes ----------
+
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0 20px;
+    text-align: left;
+    white-space: nowrap;
+
+    &[data-end] {
+      text-align: right;
+    }
+  }
+
+  th {
+    height: 44px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-2);
+    background: var(--color-table-head);
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 0;
+      border: none;
+      font: inherit;
+      color: inherit;
+      background: none;
+      cursor: pointer;
+
+      &[data-active] {
+        color: var(--color-accent-text);
+      }
+    }
+
+    &:last-child {
+      text-align: right;
+    }
+  }
+
+  tbody tr {
+    @include subject-shown;
+
+    height: 53px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: var(--color-bg);
+    }
+
+    &[data-selected] {
+      background: var(--color-accent-soft);
+    }
+  }
+
+  td button {
+    padding: 0;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    background: none;
+    cursor: pointer;
+  }
+}
+
+.tableSubject {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--subject-shown);
+}
+
+.tableMuted {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+
+.tableValue {
+  b {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  small {
+    margin-left: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-3);
+  }
+}
+
+// ---------- Détail d'une note ou d'une matière ----------
+
+.detail {
+  @include subject-shown;
+}
+
+.detailHero {
+  @include subject-gradient(0.1, 0.22);
+
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-5);
+  padding: var(--space-5) 20px 18px;
+  border-radius: var(--radius-l);
+  color: var(--subject-shown);
+
+  > small {
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+}
+
+.heroValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1.4px;
+  line-height: 1.1;
+
+  [data-subject] & {
+    margin-top: var(--space-1);
+    font-size: 36px;
+  }
+
+  small {
+    margin-left: 2px;
+    font-family: var(--font-text);
+    font-size: 16px;
+    letter-spacing: 0;
+    opacity: 0.6;
+  }
+}
+
+.heroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 24px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-round);
+    font-size: 11.5px;
+    font-weight: 600;
+    background: var(--color-surface);
+  }
+}
+
+.heroChart {
+  height: 44px;
+  margin-top: var(--space-2);
+}

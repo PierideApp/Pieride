@@ -92,6 +92,364 @@
     "close": "Fermer le panneau",
     "hint": "Échap pour fermer"
   },
+  "accueil": {
+    "hello": "Bonjour, {{name}} 👋",
+    "helloAnonymous": "Bonjour 👋",
+    "coursesLeft_one": "Tu as {{count}} cours restant aujourd'hui",
+    "coursesLeft_other": "Tu as {{count}} cours restants aujourd'hui",
+    "noMoreCourses": "Plus de cours aujourd'hui",
+    "more": "Afficher plus",
+    "average": "Moyenne générale",
+    "tasks": "Tâches à faire",
+    "left_one": "{{count}} restante",
+    "left_other": "{{count}} restantes",
+    "noTasks": "Rien à faire pour l'instant.",
+    "allTasks": "Voir toutes les tâches",
+    "allGrades": "Voir toutes les notes",
+    "nextCourse": "{{day}}, premier cours à {{time}} : {{subject}}",
+    "nextCourseRoom": "{{day}}, premier cours à {{time}} : {{subject}} en {{room}}",
+    "unjustified": "{{duration}} injustifiées",
+    "allJustified": "Tout est justifié",
+    "unread_one": "{{count}} non lue",
+    "unread_other": "{{count}} non lues",
+    "allRead": "Tout est lu",
+    "edit": "Modifier l'accueil",
+    "wallpaper": "Changer le fond d'écran",
+    "editHint": "Glisse un widget, change sa taille avec sa barre, ou dépose-le en haut pour une carte.",
+    "addWidget": "Ajouter un widget",
+    "done": "Terminé",
+    "allShown": "Tout est déjà affiché",
+    "widgets": {
+      "attendance": "Assiduité",
+      "news": "Actualités",
+      "courses": "Cours du jour",
+      "average": "Moyenne générale",
+      "tasks": "Tâches à faire",
+      "grades": "Nouvelles notes"
+    },
+    "remove": "Retirer {{name}}",
+    "move": "Déplacer {{name}}",
+    "moveHint": "Glisse le widget, ou utilise les flèches du clavier (Maj + flèches : la taille)",
+    "empty": {
+      "title": "Rien à afficher",
+      "text": "Il n'y a rien à afficher ici pour le moment. Ajoute des widgets pour composer ton accueil."
+    },
+    "sizes": {
+      "mini": "carte",
+      "compact": "réduit",
+      "normal": "normal",
+      "large": "large",
+      "full": "grand"
+    },
+    "then": "Puis {{subject}} à {{time}}",
+    "classAverage": "classe {{value}}",
+    "allNews": "Voir toutes les actualités",
+    "mini": {
+      "course": "{{subject}} à {{time}}",
+      "nextCourse": "{{day}} : {{subject}} à {{time}}",
+      "grade": "{{value}} en {{subject}}"
+    },
+    "cancel": "Annuler",
+    "reset": "Par défaut",
+    "removed": "« {{name}} » retiré",
+    "undo": "Annuler",
+    "sizeOf": "Taille de {{name}}",
+    "stripHint": "Dépose un widget ici pour en faire une carte",
+    "dayOverText": "Profite de ta fin de journée !"
+  },
+  "dateNav": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "today": "Aujourd'hui"
+  },
+  "miniCalendar": {
+    "previous": "Mois précédent",
+    "next": "Mois suivant"
+  },
+  "imageCropper": {
+    "frame": "Partie gardée : déplace-la à la souris ou avec les flèches",
+    "zoom": "Zoom",
+    "cancel": "Annuler",
+    "confirm": "Utiliser cette partie"
+  },
+  "cours": {
+    "view": "Affichage",
+    "day": "Jour",
+    "week": "Semaine",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "time": "{{from}} à {{to}}",
+    "count_one": "{{count}} cours",
+    "count_other": "{{count}} cours",
+    "canceledCount_one": "{{count}} annulé",
+    "canceledCount_other": "{{count}} annulés",
+    "endsAt": "fin à {{time}}",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "hours_one": "{{count}} heure",
+    "hours_other": "{{count}} heures",
+    "hoursMinutes": "{{hours}} h {{minutes}}",
+    "now": "En cours",
+    "remaining": "encore {{duration}}",
+    "break": "Pause",
+    "lunch": "Pause méridienne",
+    "status": {
+      "canceled": "Annulé",
+      "edited": "Modifié",
+      "online": "En ligne",
+      "evaluated": "Évaluation"
+    },
+    "statusLong": {
+      "canceled": "Cours annulé",
+      "edited": "Cours modifié",
+      "online": "En ligne",
+      "evaluated": "Évaluation"
+    },
+    "details": "Détails du cours",
+    "teacher": "Enseignant",
+    "room": "Salle",
+    "group": "Groupe",
+    "duration": "Durée",
+    "homeworkForCourse": "À faire pour ce cours",
+    "noHomeworkForCourse": "Rien à rendre pour ce cours.",
+    "homeworkTomorrow": "À faire pour demain",
+    "homeworkFor": "À faire pour {{day}}",
+    "noHomework": "Rien à faire pour ce jour-là.",
+    "done": "Fait",
+    "todo": "À faire",
+    "error": "Emploi du temps illisible",
+    "empty": {
+      "title": "Aucun cours cette semaine",
+      "text": "Rien dans l'emploi du temps pour cette semaine : vacances, ou semaine pas encore publiée par ton établissement."
+    },
+    "emptyDay": {
+      "title": "Aucun cours ce jour-là",
+      "text": "Profite de ta journée !"
+    },
+    "recess": "Récréation",
+    "dueToday": "Pour aujourd'hui",
+    "dueTomorrow": "Pour demain",
+    "dueOn": "Pour {{day}}",
+    "wholeClass": "Classe entière",
+    "updated": "Mis à jour par {{service}} à {{time}}"
+  },
+  "taches": {
+    "search": "Rechercher des tâches",
+    "filter": "Afficher",
+    "filters": {
+      "todo": "À faire",
+      "done": "Terminées",
+      "all": "Toutes"
+    },
+    "display": "Affichage",
+    "layout": "Disposition",
+    "boardHint": "une colonne par jour",
+    "previousDays": "Jours précédents",
+    "nextDays": "Jours suivants",
+    "listHint": "par date de rendu",
+    "sortBy": "Trier par",
+    "sort": {
+      "due": "Date de rendu",
+      "subject": "Matière"
+    },
+    "hideDone": "Masquer les tâches terminées",
+    "left_one": "tâche restante",
+    "left_other": "tâches restantes",
+    "thisWeek": "cette semaine",
+    "doneOf": "{{done}} sur {{total}} terminées",
+    "dueFor": "Pour {{day}}",
+    "count_one": "{{count}} tâche",
+    "count_other": "{{count}} tâches",
+    "none": "Aucune tâche",
+    "noMatch": "Aucune tâche ne correspond.",
+    "markDone": "Terminé",
+    "markTodo": "À refaire",
+    "state": "État du devoir",
+    "done": "Terminé",
+    "notDone": "Non terminé",
+    "space": "Espace",
+    "description": "Description du devoir",
+    "attachments": "Pièces jointes",
+    "attachment": {
+      "file": "Fichier",
+      "link": "Lien"
+    },
+    "information": "Informations",
+    "givenAt": "Donné le",
+    "dueAt": "À rendre le",
+    "error": "Tâches illisibles",
+    "empty": {
+      "title": "Aucune tâche pour la semaine {{week}}",
+      "text": "Il n'y a pas de tâches prévues pour cette semaine. Profite-en pour te reposer !"
+    },
+    "previousWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante"
+  },
+  "notes": {
+    "period": "Période",
+    "view": "Affichage",
+    "tabs": {
+      "subjects": "Matières",
+      "latest": "Nouvelles notes"
+    },
+    "search": "Rechercher une note, une matière",
+    "sort": "Trier",
+    "sortTitle": "Trier les matières par",
+    "sorts": {
+      "date": {
+        "title": "Date",
+        "text": "dernière note en premier"
+      },
+      "average": {
+        "title": "Moyennes",
+        "text": "de la plus haute à la plus basse"
+      },
+      "alphabetical": {
+        "title": "Alphabétique",
+        "text": "de A à Z"
+      }
+    },
+    "evolution": "Évolution de la moyenne",
+    "methodsTitle": "Méthodes de calcul",
+    "methods": {
+      "weighted": {
+        "title": "Moyenne pondérée",
+        "text": "Calcule la moyenne pondérée de toutes les notes"
+      },
+      "subjects": {
+        "title": "Moyenne des matières",
+        "text": "Calcule la moyenne des moyennes de matières"
+      },
+      "median": {
+        "title": "Médiane des notes",
+        "text": "Calcule la médiane de toutes les notes"
+      }
+    },
+    "since": "{{delta}} depuis le {{date}}",
+    "bySchool": "par l'établissement : {{value}}",
+    "stats": {
+      "title": "Statistiques",
+      "class": "Moyenne de classe",
+      "best": "Meilleure : {{subject}}",
+      "worst": "À travailler : {{subject}}",
+      "count": "Notes de la période"
+    },
+    "latest": "Nouvelles notes",
+    "best": "Meilleure note du groupe",
+    "subjectsCount_one": "{{count}} matière",
+    "subjectsCount_other": "{{count}} matières",
+    "gradesCount_one": "{{count}} note",
+    "gradesCount_other": "{{count}} notes",
+    "subjectSubtitle_one": "Informations sur la matière · {{count}} note",
+    "subjectSubtitle_other": "Informations sur la matière · {{count}} notes",
+    "coefficient": "Coefficient {{value}}",
+    "groupAverage": "Moy. groupe {{value}}",
+    "details": "Détails",
+    "scaled": "Note à l'échelle",
+    "scaledText": "Convertie sur {{scale}}",
+    "highest": "Note la plus haute",
+    "highestText": "Maximale obtenue dans le groupe",
+    "lowest": "Note la plus basse",
+    "lowestText": "Minimale obtenue dans le groupe",
+    "influenceTitle": "Influence",
+    "overall": "Moyenne générale",
+    "toGroup": "Écart avec le groupe",
+    "studentAverage": "Moyenne de l'élève",
+    "subjectStats": {
+      "class": "Moyenne de classe",
+      "classText": "Moyenne de la classe dans la matière",
+      "max": "Moyenne maximale",
+      "maxText": "Meilleure moyenne du groupe",
+      "min": "Moyenne minimale",
+      "minText": "Moyenne la plus faible du groupe"
+    },
+    "table": {
+      "subject": "Matière",
+      "title": "Devoir",
+      "date": "Date",
+      "coefficient": "Coef.",
+      "class": "Moy. classe",
+      "influence": "Influence",
+      "value": "Note"
+    },
+    "error": "Notes illisibles",
+    "empty": {
+      "title": "Aucune note",
+      "text": "Tu n'as pas encore été noté sur cette période.",
+      "action": "Voir le {{period}}"
+    },
+    "monthStart": "1er {{month}}"
+  },
+  "actualites": {
+    "search": "Rechercher une actualité",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Toutes",
+      "unread": "Non lues"
+    },
+    "theme": "Thème de lecture",
+    "themes": {
+      "normal": "Texte normal",
+      "large": "Grand texte"
+    },
+    "error": "Actualités illisibles",
+    "empty": {
+      "title": "Aucune actualité",
+      "text": "Ton établissement n'a rien publié pour l'instant."
+    },
+    "untitled": "Sans titre",
+    "hasAttachments": "Pièces jointes",
+    "noMatch": "Aucune actualité ne correspond.",
+    "publishedAt": "{{date}} à {{time}}"
+  },
+  "assiduite": {
+    "year": "Toute l'année",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Tout",
+      "absence": "Absences",
+      "delay": "Retards"
+    },
+    "stats": {
+      "missed": "Heures manquées",
+      "unjustified": "Heures injustifiées",
+      "absences": "Absences",
+      "delays": "Retards"
+    },
+    "alert": {
+      "title": "{{duration}} injustifiées",
+      "text": "Pense à justifier tes absences et retards auprès de ta vie scolaire ou de ton établissement."
+    },
+    "table": {
+      "kind": "Type",
+      "reason": "Motif",
+      "date": "Date",
+      "schedule": "Horaires",
+      "duration": "Durée",
+      "status": "Statut"
+    },
+    "noReason": "Aucune raison",
+    "kinds": {
+      "absence": "Absence",
+      "delay": "Retard"
+    },
+    "status": {
+      "absence": {
+        "justified": "Justifiée",
+        "unjustified": "Injustifiée"
+      },
+      "delay": {
+        "justified": "Justifié",
+        "unjustified": "Injustifié"
+      }
+    },
+    "byMonth": "Heures manquées par mois",
+    "error": "Assiduité illisible",
+    "empty": {
+      "title": "Aucune absence",
+      "text": "Rien à signaler sur cette période."
+    }
+  },
   "settings": {
     "title": "Paramètres",
     "close": "Fermer les paramètres",
@@ -358,7 +716,9 @@
       "sunset": "Coucher de soleil",
       "lagoon": "Lagon",
       "raspberry": "Framboise",
-      "mist": "Brume"
+      "mist": "Brume",
+      "cropTitle": "Choisis la partie de l'image",
+      "cropText": "Le cadre a la forme du bandeau de l'accueil : ce qu'il contient s'affichera derrière le bonjour."
     },
     "startup": {
       "launch": "Démarrage",

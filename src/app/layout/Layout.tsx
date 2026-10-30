@@ -17,6 +17,7 @@ import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
+import { useSettingsDialog } from "@/stores/settingsDialog";
 import { useSyncStore } from "@/stores/sync";
 
 import { CommandPalette } from "./CommandPalette";
@@ -34,7 +35,10 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { pathname } = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
-  const [settingsAt, setSettingsAt] = useState<string | null>(null);
+  const settingsAt = useSettingsDialog(state => state.openAt);
+  const settingsRequest = useSettingsDialog(state => state.request);
+  const showSettings = useSettingsDialog(state => state.show);
+  const closeSettings = useSettingsDialog(state => state.close);
   const list = useMemo(
     () => (accounts.status === "ready" ? accounts.data : []),
     [accounts]
@@ -64,7 +68,10 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   useTrayGlance(currentAccountId);
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
-  const openSettings = useCallback(() => setSettingsAt(pathname), [pathname]);
+  const openSettings = useCallback(
+    () => showSettings(pathname),
+    [showSettings, pathname]
+  );
   useShortcuts(modules, {
     sync: syncCurrent,
     palette: openPalette,
@@ -126,8 +133,10 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         onSettings={openSettings}
       />
       <Settings
+        // Une section demandée par une page : les Paramètres repartent d'elle.
+        key={settingsRequest}
         open={settingsAt === pathname}
-        onClose={() => setSettingsAt(null)}
+        onClose={closeSettings}
         account={current}
         accounts={list}
       />

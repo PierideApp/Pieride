@@ -26,7 +26,9 @@ import { WindowControls } from "@/app/layout/WindowControls";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
+import { report } from "@/lib/log";
 import { removeAccount } from "@/stores/accounts";
+import { useSettingsDialog } from "@/stores/settingsDialog";
 
 import { AboutSettings } from "./AboutSettings";
 import { AccountSettings } from "./AccountSettings";
@@ -109,7 +111,15 @@ export function Settings({
 } & SettingsSectionProps) {
   const { t } = useTranslation();
   const dialog = useModalDialog(open);
-  const [active, setActive] = useState(APPEARANCE);
+  // La section demandée par une page (bouton « Fond d'écran » de l'accueil), sinon Personnalisation.
+  const [active, setActive] = useState(() => {
+    const asked = useSettingsDialog.getState().section;
+    return (
+      GROUPS.flatMap(group => group.sections).find(
+        section => section.id === asked
+      ) ?? APPEARANCE
+    );
+  });
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
   const activeButton = useRef<HTMLButtonElement>(null);
@@ -225,8 +235,7 @@ export function Settings({
               onClose();
             },
             (failure: unknown) => {
-              // eslint-disable-next-line no-console
-              console.error(failure);
+              report("settings", failure);
               setSignOutFailed(true);
             }
           );

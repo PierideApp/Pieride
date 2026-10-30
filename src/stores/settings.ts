@@ -2,6 +2,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import type { AverageMethod } from "@/lib/grades";
+
 export type Theme = "system" | "light" | "dark";
 export type Language = "fr" | "en";
 
@@ -40,6 +42,47 @@ export type TasksLayout = (typeof TASKS_LAYOUTS)[number];
 /** Échelles proposées pour afficher les notes. */
 export const GRADE_SCALES = [10, 20, 100] as const;
 
+/** Widgets de l'accueil. En carte (`mini`), ils sont les raccourcis de la maquette, en haut. */
+export const HOME_WIDGETS = [
+  "attendance",
+  "news",
+  "courses",
+  "average",
+  "tasks",
+  "grades",
+] as const;
+export type HomeWidget = (typeof HOME_WIDGETS)[number];
+
+/**
+ * Tailles d'un widget, de la plus petite à la plus grande (modules/accueil/layout.ts). `mini` :
+ * une carte d'une ligne, toujours dans la rangée du haut de l'accueil.
+ */
+export const WIDGET_SIZES = [
+  "mini",
+  "compact",
+  "normal",
+  "large",
+  "full",
+] as const;
+export type WidgetSize = (typeof WIDGET_SIZES)[number];
+
+export interface HomeItem {
+  id: HomeWidget;
+  size: WidgetSize;
+  /** En carte : la taille d'avant, rendue quand le widget redescend dans la grille. */
+  previous?: WidgetSize;
+}
+
+/** La disposition de la maquette 02-accueil : raccourcis, cours, moyenne, tâches, notes. */
+export const DEFAULT_HOME_LAYOUT: readonly HomeItem[] = [
+  { id: "attendance", size: "mini" },
+  { id: "news", size: "mini" },
+  { id: "courses", size: "normal" },
+  { id: "average", size: "normal" },
+  { id: "tasks", size: "normal" },
+  { id: "grades", size: "normal" },
+];
+
 /** Heures proposées pour le rappel des tâches, la veille du rendu. */
 export const REMINDER_TIMES = [
   "16:00",
@@ -57,6 +100,10 @@ export interface Preferences {
   accent: Accent;
   /** Notes ramenées sur cette échelle dans l'interface. */
   gradeScale: (typeof GRADE_SCALES)[number];
+  /** Widgets affichés sur l'accueil, dans leur ordre et à leur taille (« Modifier l'accueil »). */
+  homeLayout: HomeItem[];
+  /** Méthode de calcul de la moyenne générale, choisie sous elle (Notes). */
+  averageMethod: AverageMethod;
   showCoefficients: boolean;
   showWeekend: boolean;
   /** Repère de l'heure actuelle dans l'emploi du temps. */
@@ -112,6 +159,50 @@ interface SettingsState extends Preferences {
   forgetAccount: (accountId: string) => void;
 }
 
+/**
+ * Version 1 : `homeWidgets` et `homeShortcuts` (ordre des widgets et raccourcis gardés) deviennent
+ * `homeLayout`, avec les tailles par défaut. Version 2 : la carte d'une ligne devient la taille
+ * `mini` ; `compact` est désormais un petit bloc.
+ */
+function migrateSettings(persisted: unknown, version: number): unknown {
+  if (typeof persisted !== "object" || persisted === null) {
+    return persisted;
+  }
+  if (version === 1) {
+    const current: { homeLayout?: unknown } = persisted;
+    return {
+      ...persisted,
+      homeLayout: Array.isArray(current.homeLayout)
+        ? current.homeLayout.map((item: unknown) =>
+            typeof item === "object" &&
+            item !== null &&
+            "id" in item &&
+            "size" in item &&
+            (item.id === "attendance" || item.id === "news") &&
+            item.size === "compact"
+              ? { ...item, size: "mini" }
+              : item
+          )
+        : [...DEFAULT_HOME_LAYOUT],
+    };
+  }
+  if (version > 1) {
+    return persisted;
+  }
+  const old: { homeWidgets?: unknown; homeShortcuts?: unknown } = persisted;
+  const kept = [old.homeShortcuts, old.homeWidgets]
+    .flatMap(list => (Array.isArray(list) ? list : []))
+    .flatMap(id =>
+      DEFAULT_HOME_LAYOUT.filter(item => item.id === id).map(item => ({
+        ...item,
+      }))
+    );
+  return {
+    ...persisted,
+    homeLayout: kept.length > 0 ? kept : [...DEFAULT_HOME_LAYOUT],
+  };
+}
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     set => ({
@@ -119,6 +210,8 @@ export const useSettingsStore = create<SettingsState>()(
       language: systemLanguage(),
       accent: "indigo",
       gradeScale: 20,
+      averageMethod: "subjects",
+      homeLayout: [...DEFAULT_HOME_LAYOUT],
       showCoefficients: true,
       showWeekend: false,
       showNowLine: true,
@@ -167,6 +260,10 @@ export const useSettingsStore = create<SettingsState>()(
           ),
         })),
     }),
-    { name: "pieride-settings" }
+    {
+      name: "pieride-settings",
+      version: 2,
+      migrate: migrateSettings,
+    }
   )
 );

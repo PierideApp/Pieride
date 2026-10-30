@@ -6,6 +6,8 @@ import { create } from "zustand";
 export interface DetailContent {
   title: string;
   subtitle?: string;
+  /** À droite du titre : l'emoji d'une matière… */
+  media?: ReactNode;
   body: ReactNode;
 }
 

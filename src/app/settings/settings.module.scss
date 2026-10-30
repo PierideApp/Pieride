@@ -1,3 +1,5 @@
+@use "../../styles/subject" as *;
+
 // Paramètres en plein écran (maquettes 07-parametres) : catégories sur le fond de la marque,
 // page de réglages dans un panneau comme celui des modules.
 
@@ -554,42 +556,16 @@ li[draggable] {
   }
 }
 
-// Matières : la couleur arrive par `--subject`, et `--subject-dark` en sombre (lib/subjects.ts,
-// `subjectStyle`). Pas de color-mix() : le WebKit de certains Mac ne le résout pas avec une
-// variable. Les fonds teintés sont un calque de la couleur, peu opaque.
+// Matières : `--subject-shown` et le calque de couleur viennent de styles/_subject.scss.
 
 .subjectTile,
 .subjectDot,
 .coursePreview {
-  --subject-shown: var(--subject);
+  @include subject-shown;
 }
 
-:global(:root[data-theme="dark"]) {
-  .subjectTile,
-  .subjectDot,
-  .coursePreview {
-    --subject-shown: var(--subject-dark);
-  }
-
-  .subjectTile::before {
-    opacity: 0.22;
-  }
-}
-
-// Calque de la couleur sous le contenu (emoji, texte) : `opacity` dose la teinte.
-@mixin tint($opacity) {
-  position: relative;
-  isolation: isolate;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: var(--subject-shown);
-    opacity: $opacity;
-  }
+:global(:root[data-theme="dark"]) .subjectTile::before {
+  opacity: 0.22;
 }
 
 .subjectTile {
@@ -931,5 +907,20 @@ li[draggable] {
 
   [data-level="error"] {
     color: var(--on-brand-danger);
+  }
+}
+
+// Cadrage de l'image de fond, à la proportion du bandeau de l'accueil.
+.crop {
+  h3 {
+    margin: 0 0 var(--space-1);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0 0 var(--space-4);
+    font-size: 13px;
+    color: var(--color-text-2);
   }
 }

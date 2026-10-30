@@ -14,6 +14,7 @@ import type { Capability } from "@/services/shared/plugin";
 
 import { AccueilPage } from "./accueil/AccueilPage";
 import { ActualitesPage } from "./actualites/ActualitesPage";
+import { countUnreadNews } from "./actualites/unread";
 import { AssiduitePage } from "./assiduite/AssiduitePage";
 import { CoursPage } from "./cours/CoursPage";
 import { NotesPage } from "./notes/NotesPage";
@@ -81,6 +82,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Newspaper,
     page: ActualitesPage,
     requires: ["NEWS"],
+    badge: countUnreadNews,
     status: "stable",
     group: "school",
   },
