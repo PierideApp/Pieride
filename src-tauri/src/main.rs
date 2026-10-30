@@ -19,12 +19,11 @@ struct AllowedInstances(Mutex<HashSet<String>>);
 
 #[tauri::command]
 async fn show_app(app: AppHandle) -> Result<(), String> {
-    let main = app
-        .get_webview_window("main")
-        .ok_or_else(|| {
-            eprintln!("[show_app] Fenêtre main introuvable");
-            "Fenêtre 'main' introuvable".to_string()
-        })?;
+    let main = app.get_webview_window("main").ok_or_else(|| {
+        eprintln!("[show_app] Fenêtre main introuvable");
+        "Fenêtre 'main' introuvable".to_string()
+    })?;
+
 
     main.show().map_err(|e| {
         eprintln!("[show_app] Échec de show(): {e}");
