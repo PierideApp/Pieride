@@ -44,7 +44,7 @@ type Phase =
   /** `done` : le nombre d'étapes terminées, la connexion comprise. */
   | { id: "syncing"; done: number };
 
-/** Dans l'ordre de la maquette. Les autres données suivent à la prochaine synchro. */
+/** Dans l'ordre de la maquette. Les autres données suivent juste après, en arrière-plan. */
 const SYNC_STEPS = [
   "TIMETABLE",
   "GRADES",
@@ -65,6 +65,7 @@ export function ConnectStep({
   const { t } = useTranslation();
   const setCurrentAccount = useAccountStore(state => state.setCurrentAccount);
   const reload = useSyncStore(state => state.reload);
+  const sync = useSyncStore(state => state.sync);
   // Le jeton de PRONOTE ne vaut que pour cet identifiant d'appareil.
   const [deviceUUID] = useState(() => crypto.randomUUID());
   const [phase, setPhase] = useState<Phase>({ id: "ready" });
@@ -116,6 +117,9 @@ export function ConnectStep({
     }
     setCurrentAccount(accountId);
     reload();
+    // Actualités, carnet… : une synchro complète, qui ne redemande pas les étapes ci-dessus
+    // (moins de 30 minutes). Sans elle, ils attendraient un clic sur « Synchroniser ».
+    void sync(accountId);
     onDone?.();
   };
 
