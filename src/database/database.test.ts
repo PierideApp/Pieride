@@ -26,7 +26,12 @@ describe("migrate", () => {
     const { driver } = await freshDatabase();
     await migrate(driver);
     const applied = await driver.select("SELECT name FROM migrations", []);
-    expect(applied).toEqual([["0000_init"], ["0001_parametres"]]);
+    expect(applied).toEqual([
+      ["0000_init"],
+      ["0001_parametres"],
+      ["0002_moyennes"],
+      ["0003_vie_scolaire"],
+    ]);
   });
 
   it("n'applique rien d'une migration qui échoue", async () => {

@@ -7,17 +7,21 @@ import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "@/database/client";
 import {
   accounts,
+  attendance,
   courses,
   grades,
   homework,
+  news,
   periods,
   services,
+  subjectAverages,
   subjects,
   syncState,
 } from "@/database/schema";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
+import { addDays, weekStart } from "@/lib/week";
 
 import {
   AuthenticationError,
@@ -25,7 +29,12 @@ import {
   ServiceUnavailable,
   UnsupportedService,
 } from "./shared/errors";
-import type { Account, LinkedService, ServiceKind } from "./shared/models";
+import type {
+  Account,
+  Attendance,
+  LinkedService,
+  ServiceKind,
+} from "./shared/models";
 import {
   type CapabilityMethods,
   type ConnectService,
@@ -34,7 +43,13 @@ import {
 } from "./shared/plugin";
 
 /** Les capabilities qui ont déjà leurs tables. Les autres arriveront avec leur migration. */
-export const SYNCED = ["TIMETABLE", "HOMEWORK", "GRADES"] as const;
+export const SYNCED = [
+  "TIMETABLE",
+  "HOMEWORK",
+  "GRADES",
+  "NEWS",
+  "ATTENDANCE",
+] as const;
 export type SyncedCapability = (typeof SYNCED)[number];
 
 /**
@@ -43,22 +58,11 @@ export type SyncedCapability = (typeof SYNCED)[number];
  */
 export const SYNC_INTERVAL = 30 * 60_000;
 
+/** Les données rangées par semaine : `loadWeek` les charge pour une autre semaine. */
+const WEEKLY = ["TIMETABLE", "HOMEWORK"] as const;
+
 type ServiceRow = typeof services.$inferSelect;
 type Write = BatchItem<"sqlite">;
-
-/** Lundi 0 h, heure locale, de la semaine de `date`. */
-export function weekStart(date: Date): Date {
-  const monday = new Date(date);
-  monday.setHours(0, 0, 0, 0);
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-  return monday;
-}
-
-function weekAfter(start: Date): Date {
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  return end;
-}
 
 /** Un même `id` en double ferait échouer tout l'enregistrement. */
 function uniqueById<T extends { id: string }>(items: T[]): T[] {
@@ -87,6 +91,8 @@ async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
 
 export class AccountManager {
   private readonly plugins = new Map<string, Promise<SchoolServicePlugin>>();
+  /** Semaines chargées par `loadWeek` pendant la session, par service et par lundi. */
+  private readonly weeks = new Map<string, Promise<boolean>>();
 
   constructor(
     private readonly db: Db,
@@ -291,6 +297,119 @@ export class AccountManager {
     );
   }
 
+  /**
+   * Charge les cours et les devoirs d'une autre semaine que celle de la synchro (Cours,
+   * Tâches), une fois par session : y revenir ne redemande rien au service. La semaine en
+   * cours reste à la synchro et à son délai. Hors ligne ou en panne, la base garde ce
+   * qu'elle a et l'erreur va au journal ; la semaine sera redemandée à la prochaine visite.
+   * Renvoie vrai si la base a changé.
+   */
+  async loadWeek(
+    accountId: string,
+    week: Date,
+    now = new Date()
+  ): Promise<boolean> {
+    const monday = weekStart(week);
+    if (monday.getTime() === weekStart(now).getTime()) {
+      return false;
+    }
+    const linked = await this.db
+      .select()
+      .from(services)
+      .where(
+        and(eq(services.accountId, accountId), eq(services.needsLogin, false))
+      );
+    const changed = await Promise.all(
+      linked.map(service => {
+        const key = `${service.id}:${monday.getTime()}`;
+        const loading = this.weeks.get(key);
+        if (loading) {
+          return loading.then(() => false);
+        }
+        const load = this.loadServiceWeek(service, monday).catch(
+          (error: unknown) => {
+            this.weeks.delete(key);
+            if (error instanceof AuthenticationError) {
+              this.plugins.delete(service.id);
+            }
+            log(
+              "warn",
+              "sync",
+              `${service.kind} semaine : ${errorKind(error)}`
+            );
+            return false;
+          }
+        );
+        this.weeks.set(key, load);
+        return load;
+      })
+    );
+    return changed.some(Boolean);
+  }
+
+  /**
+   * Coche ou décoche un devoir : chez le service d'abord, puis dans la base. Hors ligne ou en
+   * panne, rien ne change et l'erreur remonte à l'écran.
+   */
+  async setHomeworkDone(
+    serviceId: string,
+    id: string,
+    done: boolean
+  ): Promise<void> {
+    const [service] = await this.db
+      .select()
+      .from(services)
+      .where(eq(services.id, serviceId));
+    if (!service) {
+      return;
+    }
+    const methods = (await this.plugin(service)).capabilities.HOMEWORK;
+    if (!methods) {
+      throw new UnsupportedService(`${service.kind} ne gère pas les devoirs`);
+    }
+    await methods.setHomeworkCompletion(id, done);
+    await this.db
+      .update(homework)
+      .set({ done })
+      .where(and(eq(homework.serviceId, serviceId), eq(homework.id, id)));
+  }
+
+  /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
+  async markNewsRead(serviceId: string, id: string): Promise<void> {
+    const [service] = await this.db
+      .select()
+      .from(services)
+      .where(eq(services.id, serviceId));
+    const methods = service && (await this.plugin(service)).capabilities.NEWS;
+    if (!methods) {
+      return;
+    }
+    await methods.setNewsAsAcknowledged(id);
+    await this.db
+      .update(news)
+      .set({ read: true })
+      .where(and(eq(news.serviceId, serviceId), eq(news.id, id)));
+  }
+
+  private async loadServiceWeek(
+    service: ServiceRow,
+    monday: Date
+  ): Promise<boolean> {
+    const plugin = await this.plugin(service);
+    const writes: Write[] = [];
+    for (const capability of WEEKLY) {
+      writes.push(
+        ...((await this.fetch(plugin, service.id, capability, monday)) ?? [])
+      );
+    }
+    const [first, ...rest] = writes;
+    if (!first) {
+      return false;
+    }
+    await this.db.batch([first, ...rest]);
+    return true;
+  }
+
   private async refreshService(
     service: ServiceRow,
     capability: SyncedCapability,
@@ -409,7 +528,8 @@ export class AccountManager {
     capability: SyncedCapability,
     now: Date
   ): Promise<Write[] | null> {
-    const { TIMETABLE, HOMEWORK, GRADES } = plugin.capabilities;
+    const { TIMETABLE, HOMEWORK, GRADES, NEWS, ATTENDANCE } =
+      plugin.capabilities;
     switch (capability) {
       case "TIMETABLE":
         return TIMETABLE ? this.timetable(serviceId, TIMETABLE, now) : null;
@@ -417,6 +537,10 @@ export class AccountManager {
         return HOMEWORK ? this.homework(serviceId, HOMEWORK, now) : null;
       case "GRADES":
         return GRADES ? this.grades(serviceId, GRADES) : null;
+      case "NEWS":
+        return NEWS ? this.news(serviceId, NEWS) : null;
+      case "ATTENDANCE":
+        return ATTENDANCE ? this.attendance(serviceId, ATTENDANCE) : null;
       default:
         return capability satisfies never;
     }
@@ -440,7 +564,7 @@ export class AccountManager {
     now: Date
   ): Promise<Write[]> {
     const from = weekStart(now);
-    const to = weekAfter(from);
+    const to = addDays(from, 7);
     const list = uniqueById(await methods.getWeeklyTimetable(from)).filter(
       course => course.from >= from && course.from < to
     );
@@ -474,7 +598,7 @@ export class AccountManager {
     now: Date
   ): Promise<Write[]> {
     const from = weekStart(now);
-    const to = weekAfter(from);
+    const to = addDays(from, 7);
     const list = uniqueById(await methods.getHomeworks(from)).filter(
       item => item.dueAt >= from && item.dueAt < to
     );
@@ -508,26 +632,45 @@ export class AccountManager {
   ): Promise<Write[]> {
     const periodList = uniqueById(await methods.getGradesPeriods());
     const gradeList = [];
-    const subjectNames = [];
+    const averageRows = [];
+    const periodRows = [];
     // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
     for (const period of periodList) {
       const found = await methods.getGradesForPeriod(period);
       gradeList.push(...found.grades);
-      subjectNames.push(...found.subjects);
+      // Une matière en double dans un relevé ferait échouer tout l'enregistrement.
+      const bySubject = new Map(
+        found.averages.map(average => [average.subject, average])
+      );
+      averageRows.push(
+        ...[...bySubject.values()].map(average => ({
+          ...average,
+          serviceId,
+          periodId: period.id,
+        }))
+      );
+      periodRows.push({
+        ...period,
+        serviceId,
+        average: found.overall?.student,
+        classAverage: found.overall?.classAverage,
+      });
     }
     const unique = uniqueById(gradeList);
     return [
       this.db.delete(grades).where(eq(grades.serviceId, serviceId)),
+      this.db
+        .delete(subjectAverages)
+        .where(eq(subjectAverages.serviceId, serviceId)),
       this.db.delete(periods).where(eq(periods.serviceId, serviceId)),
-      ...(periodList.length > 0
-        ? [
-            this.db
-              .insert(periods)
-              .values(periodList.map(period => ({ ...period, serviceId }))),
-          ]
+      ...(periodRows.length > 0
+        ? [this.db.insert(periods).values(periodRows)]
+        : []),
+      ...(averageRows.length > 0
+        ? [this.db.insert(subjectAverages).values(averageRows)]
         : []),
       ...this.subjectsOf(serviceId, [
-        ...subjectNames,
+        ...averageRows.map(average => average.subject),
         ...unique.map(grade => grade.subject),
       ]),
       ...(unique.length > 0
@@ -535,6 +678,48 @@ export class AccountManager {
             this.db
               .insert(grades)
               .values(unique.map(grade => ({ ...grade, serviceId }))),
+          ]
+        : []),
+    ];
+  }
+
+  private async news(
+    serviceId: string,
+    methods: CapabilityMethods["NEWS"]
+  ): Promise<Write[]> {
+    const list = uniqueById(await methods.getNews());
+    return [
+      this.db.delete(news).where(eq(news.serviceId, serviceId)),
+      ...(list.length > 0
+        ? [
+            this.db
+              .insert(news)
+              .values(list.map(item => ({ ...item, serviceId }))),
+          ]
+        : []),
+    ];
+  }
+
+  /** Absences et retards de toutes les périodes du carnet (l'année recoupe les trimestres). */
+  private async attendance(
+    serviceId: string,
+    methods: CapabilityMethods["ATTENDANCE"]
+  ): Promise<Write[]> {
+    const found = new Map<string, Attendance>();
+    // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
+    for (const period of uniqueById(await methods.getAttendancePeriods())) {
+      for (const item of await methods.getAttendanceForPeriod(period)) {
+        found.set(`${item.kind}:${item.id}`, item);
+      }
+    }
+    const list = [...found.values()];
+    return [
+      this.db.delete(attendance).where(eq(attendance.serviceId, serviceId)),
+      ...(list.length > 0
+        ? [
+            this.db
+              .insert(attendance)
+              .values(list.map(item => ({ ...item, serviceId }))),
           ]
         : []),
     ];

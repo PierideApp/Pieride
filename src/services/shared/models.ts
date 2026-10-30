@@ -99,6 +99,25 @@ export interface Grade {
   optional: boolean;
 }
 
+/** Moyenne d'une matière sur une période, telle que le service la calcule. */
+export interface SubjectAverage {
+  subject: string;
+  /** Celle de l'élève, de la classe, la plus haute et la plus basse de la classe. */
+  student?: number;
+  classAverage?: number;
+  min?: number;
+  max?: number;
+  outOf: number;
+}
+
+/** Les moyennes d'une période : par matière, et générale si le service la donne. */
+export interface PeriodGrades {
+  grades: Grade[];
+  /** Toutes les matières du relevé, même sans note. */
+  averages: SubjectAverage[];
+  overall?: { student?: number; classAverage?: number };
+}
+
 export interface News {
   id: string;
   title?: string;

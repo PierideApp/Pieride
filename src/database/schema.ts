@@ -11,7 +11,12 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
-import type { Attachment, Course, ServiceKind } from "@/services/shared/models";
+import type {
+  Attachment,
+  Attendance,
+  Course,
+  ServiceKind,
+} from "@/services/shared/models";
 import type { Capability } from "@/services/shared/plugin";
 
 const createdAt = () =>
@@ -82,8 +87,64 @@ export const periods = sqliteTable(
     name: text("name").notNull(),
     start: integer("start", { mode: "timestamp_ms" }).notNull(),
     end: integer("end", { mode: "timestamp_ms" }).notNull(),
+    /** Moyennes générales de l'élève et de la classe, quand le service les donne. */
+    average: real("average"),
+    classAverage: real("class_average"),
   },
   t => [primaryKey({ columns: [t.serviceId, t.id] })]
+);
+
+/** Actualités de l'établissement. `content` est du HTML du service, à ramener à du texte. */
+export const news = sqliteTable(
+  "news",
+  {
+    serviceId: serviceId(),
+    id: text("id").notNull(),
+    title: text("title"),
+    author: text("author").notNull(),
+    date: integer("date", { mode: "timestamp_ms" }).notNull(),
+    content: text("content").notNull(),
+    read: integer("read", { mode: "boolean" }).notNull(),
+    attachments: text("attachments", { mode: "json" })
+      .$type<Attachment[]>()
+      .notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.serviceId, t.id] }),
+    index("news_date").on(t.serviceId, t.date),
+  ]
+);
+
+/** Absences et retards. Un même identifiant peut servir à une absence et à un retard. */
+export const attendance = sqliteTable(
+  "attendance",
+  {
+    serviceId: serviceId(),
+    id: text("id").notNull(),
+    kind: text("kind").$type<Attendance["kind"]>().notNull(),
+    from: integer("from", { mode: "timestamp_ms" }).notNull(),
+    to: integer("to", { mode: "timestamp_ms" }).notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    reason: text("reason"),
+    justified: integer("justified", { mode: "boolean" }).notNull(),
+  },
+  t => [primaryKey({ columns: [t.serviceId, t.kind, t.id] })]
+);
+
+/** Moyennes par matière et par période, calculées par le service (`SubjectAverage`). */
+export const subjectAverages = sqliteTable(
+  "subject_averages",
+  {
+    serviceId: serviceId(),
+    periodId: text("period_id").notNull(),
+    subject: text("subject").notNull(),
+    student: real("student"),
+    classAverage: real("class_average"),
+    min: real("min"),
+    max: real("max"),
+    outOf: real("out_of").notNull(),
+  },
+  t => [primaryKey({ columns: [t.serviceId, t.periodId, t.subject] })]
 );
 
 export const courses = sqliteTable(

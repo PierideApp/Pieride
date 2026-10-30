@@ -8,11 +8,11 @@ import type {
   CanteenMenu,
   CanteenTransaction,
   Course,
-  Grade,
   Homework,
   LinkedService,
   News,
   Period,
+  PeriodGrades,
   ServiceKind,
 } from "./models";
 
@@ -26,12 +26,10 @@ export interface CapabilityMethods {
   GRADES: {
     getGradesPeriods(): Promise<Period[]>;
     /**
-     * Les notes de la période, et les matières de son relevé (`subjects`), même celles sans
+     * Les notes de la période et ses moyennes. Les matières du relevé comptent même sans
      * note : la liste des matières (Paramètres > Matières) ne dépend pas que des notes.
      */
-    getGradesForPeriod(
-      period: Period
-    ): Promise<{ grades: Grade[]; subjects: string[] }>;
+    getGradesForPeriod(period: Period): Promise<PeriodGrades>;
   };
   NEWS: {
     getNews(): Promise<News[]>;
@@ -95,7 +93,7 @@ export const SERVICE_CAPABILITIES: Record<ServiceKind, readonly Capability[]> =
     ard: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
     izly: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
     alise: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
-    mock: ["TIMETABLE", "HOMEWORK", "GRADES"],
+    mock: ["TIMETABLE", "HOMEWORK", "GRADES", "NEWS", "ATTENDANCE"],
   };
 
 /** Nom affiché de chaque service : un nom de marque, le même dans toutes les langues. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { weekStart } from "../account-manager";
+import { weekStart } from "@/lib/week";
+
 import { mockPlugin } from ".";
 
 // Lundi 26 octobre 2026 : premier trimestre de l'année 2026-2027.

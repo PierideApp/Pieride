@@ -2,7 +2,13 @@
 // Développeur). En dev seulement : l'app publiée ne contient pas ce fichier (services/index.ts).
 // Aucun réseau : tout est calculé à partir de la semaine demandée. Élève, professeurs et
 // établissement sont inventés, comme sur les maquettes (Camille Martin, 1re G3).
-import type { Course, Grade, Homework, Period } from "../shared/models";
+import type {
+  Course,
+  Grade,
+  Homework,
+  Period,
+  SubjectAverage,
+} from "../shared/models";
 import type { ConnectService, SchoolServicePlugin } from "../shared/plugin";
 
 const SUBJECTS = {
@@ -110,6 +116,54 @@ function trimesters(now: Date): Period[] {
   }));
 }
 
+/** Actualités inventées : [jours avant aujourd'hui, auteur, titre, texte, lue]. */
+const NEWS: readonly [number, string, string, string, boolean][] = [
+  [
+    2,
+    "Mme Dubois",
+    "Sortie pédagogique au musée",
+    "<p>Bonjour à tous,</p><p>Les élèves de 1re G3 visiteront le musée le jeudi 5 novembre. Départ à 8h00 devant le lycée, retour vers 17h30.</p><p>Merci de rapporter l'autorisation signée avant vendredi.</p>",
+    false,
+  ],
+  [
+    5,
+    "Direction",
+    "Conseil de classe du 1er trimestre",
+    "<p>Le conseil de classe de la 1re G3 se tiendra le mardi 8 décembre à 17h30.</p>",
+    false,
+  ],
+  [
+    6,
+    "Restauration scolaire",
+    "Semaine du goût : menus spéciaux",
+    "<p>Toute la semaine, le self vous fait voyager avec un menu régional chaque jour.</p>",
+    true,
+  ],
+  [
+    13,
+    "M. Moreau",
+    "Inscriptions à l'association sportive",
+    "<p>Badminton, escalade, futsal : les inscriptions sont ouvertes jusqu'à vendredi.</p>",
+    true,
+  ],
+];
+
+/** Absences et retards inventés : [jours avant aujourd'hui, heure, minutes, motif, justifié]. */
+const ATTENDANCE: readonly [
+  number,
+  number,
+  number,
+  "absence" | "delay",
+  string | undefined,
+  boolean,
+][] = [
+  [3, 13, 180, "absence", "Rendez-vous médical", true],
+  [9, 15, 60, "absence", undefined, false],
+  [16, 8, 120, "absence", "Maladie", true],
+  [4, 8, 12, "delay", "Retard du bus", true],
+  [8, 9, 5, "delay", undefined, false],
+];
+
 /** Le faux service. `now` sert aux notes : seules celles déjà passées existent. */
 export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
   // Cocher un devoir dure le temps de la session, comme une réponse du service.
@@ -118,6 +172,37 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
   return {
     kind: "mock",
     capabilities: {
+      NEWS: {
+        getNews: async () =>
+          NEWS.map(([days, author, title, content, read], index) => ({
+            id: `mock-news-${index}`,
+            title,
+            author,
+            date: at(now(), -days, 16),
+            content,
+            read,
+            attachments: [],
+          })),
+        setNewsAsAcknowledged: async () => undefined,
+      },
+      ATTENDANCE: {
+        getAttendancePeriods: async () => trimesters(now()),
+        getAttendanceForPeriod: async period =>
+          ATTENDANCE.map(([days, hour, minutes, kind, reason, justified]) => {
+            const from = at(now(), -days, hour);
+            return {
+              id: `mock-${kind}-${days}`,
+              kind,
+              from,
+              to: new Date(from.getTime() + minutes * 60_000),
+              durationMinutes: minutes,
+              reason,
+              justified,
+            };
+          }).filter(
+            item => item.from >= period.start && item.from <= period.end
+          ),
+      },
       TIMETABLE: {
         getWeeklyTimetable: async weekStart =>
           WEEK.map(([day, from, to, subject, status]) => ({
@@ -147,8 +232,8 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
       },
       GRADES: {
         getGradesPeriods: async () => trimesters(now()),
-        getGradesForPeriod: async period => ({
-          grades: GRADES.map(
+        getGradesForPeriod: async period => {
+          const grades = GRADES.map(
             ([week, subject, title, value, coefficient, classAverage], index) =>
               ({
                 id: `mock-grade-${period.id}-${index}`,
@@ -166,12 +251,41 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
                 bonus: false,
                 optional: false,
               }) satisfies Grade
-          ).filter(grade => grade.date <= now()),
-          subjects: [],
-        }),
+          ).filter(grade => grade.date <= now());
+          return { grades, averages: averagesOf(grades) };
+        },
       },
     },
   };
+}
+
+/** Moyennes fictives de chaque matière : celle des notes, la classe un peu autour. */
+function averagesOf(grades: readonly Grade[]): SubjectAverage[] {
+  return Object.keys(SUBJECTS).map(subject => {
+    const own = grades.filter(
+      grade => grade.subject === subject && grade.value !== undefined
+    );
+    const weight = own.reduce((sum, grade) => sum + grade.coefficient, 0);
+    const student = weight
+      ? own.reduce(
+          (sum, grade) => sum + (grade.value ?? 0) * grade.coefficient,
+          0
+        ) / weight
+      : undefined;
+    const classAverage = own.length
+      ? own.reduce((sum, grade) => sum + (grade.classAverage ?? 0), 0) /
+        own.length
+      : undefined;
+    return {
+      subject,
+      student,
+      classAverage,
+      min: classAverage === undefined ? undefined : classAverage - 5,
+      max:
+        classAverage === undefined ? undefined : Math.min(20, classAverage + 4),
+      outOf: 20,
+    };
+  });
 }
 
 export const connectMock: ConnectService = async () => mockPlugin();

@@ -15,6 +15,20 @@
       "when": 1793226130763,
       "tag": "0001_parametres",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793305569474,
+      "tag": "0002_moyennes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793306521929,
+      "tag": "0003_vie_scolaire",
+      "breakpoints": true
     }
   ]
 }

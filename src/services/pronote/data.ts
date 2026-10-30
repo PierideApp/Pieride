@@ -1,21 +1,36 @@
-// Données PRONOTE vers les modèles communs : emploi du temps, devoirs et notes. D'après
-// services/pronote/timetable.ts, homework.ts et grades.ts de Papillon (GPLv3).
+// Données PRONOTE vers les modèles communs : emploi du temps, devoirs et notes d'après
+// services/pronote/timetable.ts, homework.ts et grades.ts de Papillon (GPLv3) ; actualités et
+// carnet (absences, retards) d'après les types de pawnote.
 import {
   type Assignment,
   assignmentsFromIntervals,
   assignmentStatus,
+  type Attachment as PronoteAttachment,
   AttachmentKind,
   type Grade as PronoteGrade,
   GradeKind,
   gradesOverview,
   type GradeValue,
+  news,
+  type NewsInformation,
+  newsRead,
+  type Notebook,
+  notebook,
   parseTimetable,
   TabLocation,
   type Timetable,
   timetableFromIntervals,
 } from "@blockshub/pawnote-lts";
 
-import type { Course, Grade, Homework, Period } from "../shared/models";
+import type {
+  Attachment,
+  Attendance,
+  Course,
+  Grade,
+  Homework,
+  News,
+  Period,
+} from "../shared/models";
 import type { CapabilityMethods } from "../shared/plugin";
 import type { PronoteSession } from "./session";
 
@@ -71,6 +86,12 @@ export function toCourse(item: TimetableItem): Course {
   };
 }
 
+const toAttachment = (attachment: PronoteAttachment): Attachment => ({
+  kind: attachment.kind === AttachmentKind.Link ? "link" : "file",
+  name: attachment.name,
+  url: attachment.url,
+});
+
 export function toHomework(assignment: Assignment): Homework {
   return {
     id: assignment.id,
@@ -78,12 +99,43 @@ export function toHomework(assignment: Assignment): Homework {
     content: assignment.description,
     dueAt: assignment.deadline,
     done: assignment.done,
-    attachments: assignment.attachments.map(attachment => ({
-      kind: attachment.kind === AttachmentKind.Link ? "link" : "file",
-      name: attachment.name,
-      url: attachment.url,
-    })),
+    attachments: assignment.attachments.map(toAttachment),
   };
+}
+
+export function toNews(item: NewsInformation): News {
+  return {
+    id: item.id,
+    title: item.title,
+    author: item.author,
+    date: item.startDate,
+    content: item.content,
+    read: item.read,
+    attachments: item.attachments.map(toAttachment),
+  };
+}
+
+export function toAttendance(book: Notebook): Attendance[] {
+  return [
+    ...book.absences.map((absence): Attendance => ({
+      id: absence.id,
+      kind: "absence",
+      from: absence.startDate,
+      to: absence.endDate,
+      durationMinutes: absence.hoursMissed * 60 + absence.minutesMissed,
+      reason: absence.reason,
+      justified: absence.justified,
+    })),
+    ...book.delays.map((delay): Attendance => ({
+      id: delay.id,
+      kind: "delay",
+      from: delay.date,
+      to: new Date(delay.date.getTime() + delay.minutes * 60_000),
+      durationMinutes: delay.minutes,
+      reason: delay.reason ?? delay.justification,
+      justified: delay.justified,
+    })),
+  ];
 }
 
 /** Une valeur de PRONOTE en points, si c'en est une (une moyenne vide vaut `NaN`). */
@@ -182,18 +234,68 @@ export function capabilities(
           .get(TabLocation.Grades)
           ?.periods.find(candidate => candidate.name === period.name);
         if (!found) {
-          return { grades: [], subjects: [] };
+          return { grades: [], averages: [] };
         }
         const overview = await gradesOverview(handle, found);
         return {
           grades: overview.grades.map(grade => toGrade(grade, period.id)),
-          subjects: overview.subjectsAverages.map(
-            average => average.subject.name
-          ),
+          averages: overview.subjectsAverages.map(average => ({
+            subject: average.subject.name,
+            student: points(average.student),
+            classAverage: points(average.class_average),
+            min: points(average.min),
+            max: points(average.max),
+            outOf: points(average.outOf) ?? 20,
+          })),
+          overall: {
+            student: points(overview.overallAverage),
+            classAverage: points(overview.classAverage),
+          },
         };
       }),
   };
+  const newsMethods: CapabilityMethods["NEWS"] = {
+    getNews: () =>
+      session.run(async handle =>
+        (await news(handle)).items
+          .filter((item): item is NewsInformation => item.is === "information")
+          .map(toNews)
+      ),
+    setNewsAsAcknowledged: id =>
+      session.run(async handle => {
+        const item = (await news(handle)).items.find(
+          candidate => candidate.id === id
+        );
+        if (item) {
+          await newsRead(handle, item, true);
+        }
+      }),
+  };
+  const attendanceMethods: CapabilityMethods["ATTENDANCE"] = {
+    getAttendancePeriods: () =>
+      session.run(async handle =>
+        (handle.userResource.tabs.get(TabLocation.Notebook)?.periods ?? []).map(
+          (period): Period => ({
+            id: period.id,
+            name: period.name,
+            start: period.startDate,
+            end: period.endDate,
+          })
+        )
+      ),
+    getAttendanceForPeriod: period =>
+      session.run(async handle => {
+        const found = handle.userResource.tabs
+          .get(TabLocation.Notebook)
+          ?.periods.find(candidate => candidate.name === period.name);
+        return found ? toAttendance(await notebook(handle, found)) : [];
+      }),
+  };
   return {
+    ...(tabs.includes(TabLocation.News) && { NEWS: newsMethods }),
+    ...(tabs.includes(TabLocation.Notebook) && {
+      ATTENDANCE: attendanceMethods,
+    }),
     ...(tabs.includes(TabLocation.Timetable) && { TIMETABLE: timetable }),
     ...(tabs.includes(TabLocation.Assignments) && { HOMEWORK: homework }),
     ...(tabs.includes(TabLocation.Grades) && { GRADES: grades }),
