@@ -12,6 +12,7 @@ use sqlx::{
     query::Query,
     sqlite::{
         SqliteArguments, SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteRow,
+        SqliteSynchronous,
     },
 };
 use tauri::{AppHandle, Manager, State};
@@ -37,9 +38,13 @@ async fn connect(options: SqliteConnectOptions) -> sqlx::Result<Pool<Sqlite>> {
 pub async fn open(app: &AppHandle) -> Result<Database, Box<dyn std::error::Error>> {
     let dir = app.path().app_data_dir()?;
     create_dir_all(&dir)?;
+    // En WAL, NORMAL n'attend le disque qu'aux points de contrôle, pas à chaque écriture : la
+    // base ne peut pas se corrompre, une coupure de courant perd au pire les dernières
+    // écritures, que la synchro suivante refait.
     let options = SqliteConnectOptions::new()
         .filename(dir.join("pieride.db"))
-        .journal_mode(SqliteJournalMode::Wal);
+        .journal_mode(SqliteJournalMode::Wal)
+        .synchronous(SqliteSynchronous::Normal);
     Ok(Database(connect(options).await?))
 }
 
@@ -89,10 +94,8 @@ fn values(row: &SqliteRow) -> Vec<Value> {
 /// Tout passe, ou rien : la transaction est annulée si une requête échoue.
 async fn batch(pool: &Pool<Sqlite>, queries: Vec<(String, Params)>) -> sqlx::Result<()> {
     let mut transaction = pool.begin().await?;
-    for (sql, params) in &queries {
-        query(sql, params.clone())
-            .execute(&mut *transaction)
-            .await?;
+    for (sql, params) in queries {
+        query(&sql, params).execute(&mut *transaction).await?;
     }
     transaction.commit().await
 }
