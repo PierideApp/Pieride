@@ -144,10 +144,7 @@
   opacity: 0.85;
 }
 
-// Grille : la salle et l'enseignant selon la place (durée du cours), jamais l'enseignant d'un
-// cours annulé.
-.course[data-size="s"] .courseMeta,
-.course[data-size="m"] .courseTeacher,
+// Grille : jamais l'enseignant d'un cours annulé (le reste selon la hauteur, voir `.slot`).
 .course[data-variant="compact"][data-status="canceled"] .courseTeacher {
   display: none;
 }
@@ -311,12 +308,13 @@ $status-colors: (
   }
 }
 
-// Une ligne de grille d'au moins 52 px par heure : la hauteur des colonnes reste définie même
-// quand WebKit ne résout pas celle venue du flex (les cours y sont placés en pourcentage).
+// Une ligne de grille d'au moins 53 px par heure : la hauteur des colonnes reste définie même
+// quand WebKit ne résout pas celle venue du flex (les cours y sont placés en pourcentage), et
+// un cours de 55 minutes garde ses 44 px, de quoi montrer sa salle.
 .weekBody {
   position: relative;
   flex: 1;
-  grid-template-rows: minmax(calc(var(--hours) * 52px), 1fr);
+  grid-template-rows: minmax(calc(var(--hours) * 53px), 1fr);
 }
 
 // Lignes des heures sur toute la largeur : pleine pour la première, en pointillés ensuite.
@@ -402,12 +400,27 @@ $status-colors: (
   z-index: 1;
   width: calc(100% / var(--columns) - var(--space-2));
   height: calc(#{grid-y("var(--to) - var(--from)")} - 4px);
-  container-type: inline-size;
+  container-type: size;
 }
 
 // Une carte étroite n'a pas la place pour la pastille du statut (maquettes : moins de 180 px).
 @container (max-width: 179px) {
   .status {
+    display: none;
+  }
+}
+
+// La salle à partir de 44 px de haut, l'enseignant à partir de 64 (maquettes). On regarde la
+// hauteur réelle, pas la durée : quand le zoom de l'écran réduit la grille, une ligne qui ne
+// tient pas serait coupée en deux. `.slot` devant : plus fort que `.courseMeta > span`.
+@container (height < 64px) {
+  .slot .courseTeacher {
+    display: none;
+  }
+}
+
+@container (height < 44px) {
+  .slot .courseMeta {
     display: none;
   }
 }

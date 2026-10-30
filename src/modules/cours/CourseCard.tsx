@@ -10,12 +10,6 @@ import { subjectStyle } from "@/lib/subjects";
 
 import styles from "./cours.module.scss";
 
-/** Dans la grille : la salle à partir d'environ 35 minutes, l'enseignant à partir de 50. */
-function compactSize(course: CourseView): "s" | "m" | "l" {
-  const minutes = (course.to.getTime() - course.from.getTime()) / 60_000;
-  return minutes >= 50 ? "l" : minutes >= 35 ? "m" : "s";
-}
-
 export function CourseCard({
   course,
   variant,
@@ -42,7 +36,6 @@ export function CourseCard({
       className={styles.course}
       style={subjectStyle(course.color)}
       data-variant={variant}
-      data-size={variant === "compact" ? compactSize(course) : undefined}
       data-status={course.status}
       data-selected={selected || undefined}
       aria-pressed={selected}
