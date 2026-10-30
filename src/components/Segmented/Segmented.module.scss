@@ -1,13 +1,18 @@
+// Maquettes : `segmented` (pieride_design/design/_src/lib.py).
 .segmented {
   display: flex;
   flex-shrink: 0;
-  padding: 3px;
+  height: 34px;
+  padding: var(--space-1);
   border-radius: var(--radius-m);
-  background: var(--color-bg);
+  background: var(--color-fill);
 
   label {
     position: relative;
-    padding: var(--space-1) var(--space-3);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border: 1px solid transparent;
     border-radius: var(--radius-s);
     font-size: 13px;
     font-weight: 600;
@@ -15,9 +20,9 @@
     cursor: pointer;
 
     &[data-checked] {
+      border-color: var(--color-border);
       color: var(--color-text);
       background: var(--color-surface);
-      box-shadow: 0 1px 3px var(--color-overlay);
     }
 
     &:has(:focus-visible) {

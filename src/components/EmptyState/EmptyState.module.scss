@@ -44,3 +44,23 @@
 .action {
   margin-top: var(--space-4);
 }
+
+// Dans un petit bloc : tout plus serré.
+.empty[data-size="small"] {
+  gap: var(--space-1);
+  padding: var(--space-3);
+
+  .icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: var(--space-1);
+  }
+
+  .title {
+    font-size: 15px;
+  }
+
+  .text {
+    font-size: 13px;
+  }
+}

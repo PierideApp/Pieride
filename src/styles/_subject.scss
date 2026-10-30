@@ -1,0 +1,56 @@
+// Couleur d'une matière : `--subject`, et `--subject-dark` en sombre (lib/subjects.ts,
+// `subjectStyle`). Pas de color-mix() : le WebKit de certains Mac ne le résout pas avec une
+// variable. Les fonds teintés sont un calque de la couleur, peu opaque.
+
+// `--subject-shown` : la couleur de la matière adaptée au thème. `:where` garde la spécificité
+// d'une seule classe : un état (cours annulé) peut la remplacer dans les deux thèmes.
+@mixin subject-shown {
+  --subject-shown: var(--subject);
+
+  :global(:where(:root[data-theme="dark"])) & {
+    --subject-shown: var(--subject-dark);
+  }
+}
+
+// Calque de la couleur sous le contenu (emoji, texte) : `opacity` dose la teinte.
+@mixin tint($opacity) {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--subject-shown);
+    opacity: $opacity;
+  }
+}
+
+// Dégradé de la couleur, de `$from` à `$to` d'opacité dans la direction `$direction`, atteint à
+// `$end` (cartes de cours et de tâches). Un masque plutôt qu'une couleur transparente : la
+// couleur arrive par une variable.
+@mixin subject-gradient($from, $to, $direction: to right, $end: 100%) {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--subject-shown);
+    -webkit-mask-image: linear-gradient(
+      $direction,
+      rgba(0, 0, 0, $from),
+      rgba(0, 0, 0, $to) $end
+    );
+    mask-image: linear-gradient(
+      $direction,
+      rgba(0, 0, 0, $from),
+      rgba(0, 0, 0, $to) $end
+    );
+  }
+}

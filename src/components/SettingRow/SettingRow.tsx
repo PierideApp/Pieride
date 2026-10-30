@@ -34,8 +34,11 @@ export function SettingRow({
   text?: ReactNode;
   /** Une valeur affichée à droite (établissement, version…). */
   value?: ReactNode;
-  /** `danger` : action destructrice ; `success` : engagement tenu. */
-  tone?: "danger" | "success";
+  /**
+   * `danger` : action destructrice ; `success` : engagement tenu ; `subject` : icône de la
+   * couleur de la matière (`--subject-shown` posée par un parent).
+   */
+  tone?: "danger" | "success" | "subject";
 }) {
   return createElement(
     as,

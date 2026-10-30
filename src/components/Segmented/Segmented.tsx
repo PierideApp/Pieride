@@ -8,6 +8,7 @@ export function Segmented<T extends string>({
   options,
   onChange,
   labelledBy,
+  label,
 }: {
   /** Nom du groupe de boutons radio, unique dans la page. */
   name: string;
@@ -15,13 +16,16 @@ export function Segmented<T extends string>({
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
   /** `id` du texte visible qui nomme le choix. */
-  labelledBy: string;
+  labelledBy?: string;
+  /** Nom du choix quand aucun texte visible ne le donne (barre d'outils). */
+  label?: string;
 }) {
   return (
     <span
       className={styles.segmented}
       role="radiogroup"
       aria-labelledby={labelledBy}
+      aria-label={labelledBy ? undefined : label}
     >
       {options.map(option => (
         <label

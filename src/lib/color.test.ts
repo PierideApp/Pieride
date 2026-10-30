@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { accentShades, mix } from "./color";
+import { accentShades, luminance, mix, shadeFor } from "./color";
 
 describe("mix", () => {
   it("rend chaque couleur à ses extrémités", () => {
@@ -28,5 +28,20 @@ describe("accentShades", () => {
     const dark = accentShades("#dd0030", true, "#181733");
     expect(dark.accent).not.toBe("#dd0030");
     expect(dark.soft).not.toBe("#181733");
+  });
+});
+
+describe("luminance et voile", () => {
+  it("mesure la luminance relative du blanc, du noir et d'une couleur", () => {
+    expect(luminance("#ffffff")).toBeCloseTo(1);
+    expect(luminance("#000000")).toBe(0);
+    expect(luminance([0, 127, 218])).toBeCloseTo(0.2, 2);
+  });
+
+  it("voile un fond clair juste assez, laisse un fond sombre intact", () => {
+    expect(shadeFor(0.1)).toBe(0);
+    expect(shadeFor(0.36)).toBeCloseTo(0.5);
+    // Plafonné : l'image reste visible même toute blanche.
+    expect(shadeFor(1)).toBe(0.7);
   });
 });

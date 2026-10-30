@@ -1,0 +1,61 @@
+// Maquettes : `line_chart` et « Survol de la courbe ». Les positions sont en pourcentage de
+// la courbe (`--x`, `--y`).
+.chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+}
+
+.marker {
+  position: absolute;
+  top: calc(1% * var(--y));
+  left: calc(1% * var(--x));
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--color-surface);
+  border-radius: var(--radius-round);
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.hoverLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(1% * var(--x));
+  border-left: 1px dashed currentColor;
+}
+
+.tooltip {
+  position: absolute;
+  top: -10px;
+  left: calc(1% * var(--x));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 104px;
+  padding: 6px var(--space-2);
+  border-radius: 10px;
+  background: var(--brand-ink);
+  transform: translateX(-50%);
+  pointer-events: none;
+
+  small {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--brand-lavender);
+  }
+
+  b {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--on-brand);
+  }
+}

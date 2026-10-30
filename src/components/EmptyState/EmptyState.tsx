@@ -14,6 +14,8 @@ interface EmptyStateProps {
   action?: { label: string; onClick: () => void };
   /** Grand texte décoratif au-dessus de l'icône (« 404 »). */
   backdrop?: ReactNode;
+  /** `small` : dans un petit bloc (widget de l'accueil). */
+  size?: "medium" | "small";
 }
 
 export function EmptyState({
@@ -22,16 +24,17 @@ export function EmptyState({
   text,
   action,
   backdrop,
+  size = "medium",
 }: EmptyStateProps) {
   return (
-    <div className={styles.empty}>
+    <div className={styles.empty} data-size={size}>
       {backdrop && (
         <p className={styles.backdrop} aria-hidden="true">
           {backdrop}
         </p>
       )}
       <span className={styles.icon} aria-hidden="true">
-        <Icon size={24} />
+        <Icon size={size === "small" ? 20 : 24} />
       </span>
       <h2 className={styles.title}>{title}</h2>
       <p className={styles.text}>{text}</p>

@@ -87,3 +87,28 @@ export function accentShades(color: string, dark: boolean, surface: string) {
     soft: mix(text, surface, dark ? 0.22 : 0.12),
   };
 }
+
+/** Luminance relative (WCAG) d'une couleur `#rrggbb` ou de ses canaux, entre 0 et 1. */
+export function luminance(color: string | Rgb): number {
+  const rgb = typeof color === "string" ? parseHex(color) : color;
+  if (!rgb) {
+    return 0;
+  }
+  const [r, g, b] = rgb;
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+/**
+ * Le voile sombre (opacité entre 0 et 0,7) à poser sur un fond de luminance `background` pour
+ * que le texte blanc s'y lise : sous lui, la luminance doit tomber à 0,18 au plus (contraste
+ * d'au moins 4,5:1 avec le blanc). Un fond déjà sombre n'est pas voilé.
+ */
+export function shadeFor(background: number): number {
+  if (background <= SHADE_TARGET) {
+    return 0;
+  }
+  return Math.min(MAX_SHADE, 1 - SHADE_TARGET / background);
+}
+
+const SHADE_TARGET = 0.18;
+const MAX_SHADE = 0.7;

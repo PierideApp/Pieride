@@ -40,6 +40,24 @@
     color: var(--color-success);
     background: var(--color-success-bg);
   }
+
+  // Couleur de la matière, en calque peu opaque (styles/_subject.scss).
+  &[data-tone="subject"] .icon {
+    position: relative;
+    isolation: isolate;
+    color: var(--subject-shown);
+    background: none;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background: var(--subject-shown);
+      opacity: 0.12;
+    }
+  }
 }
 
 .icon {
