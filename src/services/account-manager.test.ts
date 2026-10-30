@@ -213,6 +213,18 @@ describe("AccountManager", () => {
     expect(fetchTimetable).toHaveBeenCalledOnce();
   });
 
+  it("garde le cours de la semaine quand le même revient la semaine d'après", async () => {
+    const { db, manager } = await setup();
+    const monday = new Date(2026, 10, 2, 8);
+    timetable = async () => [
+      course("maths", monday),
+      course("maths", addDays(monday, 7)),
+    ];
+    expect(await manager.loadWeek("camille", monday, NOW)).toBe(true);
+    const stored = await db.select().from(courses);
+    expect(stored.map(c => c.from)).toEqual([monday]);
+  });
+
   it("laisse la semaine en cours à la synchro", async () => {
     const { manager } = await setup();
     expect(await manager.loadWeek("camille", at(30, 8), NOW)).toBe(false);

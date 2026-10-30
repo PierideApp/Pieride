@@ -69,7 +69,7 @@ function grade(changes: Partial<Grade> = {}): Grade {
 describe("toCourse", () => {
   it("reprend un cours", () => {
     expect(toCourse(lesson())).toEqual({
-      id: "c1",
+      id: `c1@${START.toISOString()}`,
       subject: "MATHEMATIQUES",
       from: START,
       to: END,
@@ -78,6 +78,13 @@ describe("toCourse", () => {
       group: undefined,
       status: undefined,
     });
+  });
+
+  it("distingue les séances d'un cours qui revient chaque semaine", () => {
+    const nextWeek = new Date(2026, 10, 2, 8);
+    expect(toCourse(lesson({ startDate: nextWeek })).id).not.toBe(
+      toCourse(lesson()).id
+    );
   });
 
   it.each<[Partial<TimetableClassLesson>, Course["status"]]>([

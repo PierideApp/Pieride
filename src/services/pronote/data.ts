@@ -3,7 +3,7 @@
 // carnet (absences, retards) d'après les types de pawnote.
 import {
   type Assignment,
-  assignmentsFromIntervals,
+  assignmentsFromWeek,
   assignmentStatus,
   type Attachment as PronoteAttachment,
   AttachmentKind,
@@ -17,9 +17,11 @@ import {
   type Notebook,
   notebook,
   parseTimetable,
+  type SessionHandle,
   TabLocation,
   type Timetable,
-  timetableFromIntervals,
+  timetableFromWeek,
+  translateToWeekNumber,
 } from "@blockshub/pawnote-lts";
 
 import type {
@@ -64,7 +66,13 @@ function courseStatus(lesson: Lesson): Course["status"] {
 }
 
 export function toCourse(item: TimetableItem): Course {
-  const base = { id: item.id, from: item.startDate, to: item.endDate };
+  // Un cours qui revient chaque semaine garde son identifiant PRONOTE : l'heure de début en
+  // fait une séance unique.
+  const base = {
+    id: `${item.id}@${item.startDate.toISOString()}`,
+    from: item.startDate,
+    to: item.endDate,
+  };
   if (item.is === "activity") {
     return { ...base, subject: item.title };
   }
@@ -178,11 +186,12 @@ export function toGrade(grade: PronoteGrade, periodId: string): Grade {
   };
 }
 
-function weekEnd(weekStart: Date): Date {
-  const end = new Date(weekStart);
-  end.setDate(end.getDate() + 7);
-  return end;
-}
+/**
+ * Le numéro PRONOTE de la semaine, comme Papillon : demandée par dates (du lundi au lundi),
+ * elle déborde sur le lundi suivant.
+ */
+const weekNumber = (handle: SessionHandle, weekStart: Date) =>
+  translateToWeekNumber(weekStart, handle.instance.firstMonday);
 
 /** Les capabilities des onglets ouverts à l'élève, comme Papillon. */
 export function capabilities(
@@ -192,10 +201,9 @@ export function capabilities(
   const timetable: CapabilityMethods["TIMETABLE"] = {
     getWeeklyTimetable: weekStart =>
       session.run(async handle => {
-        const found = await timetableFromIntervals(
+        const found = await timetableFromWeek(
           handle,
-          weekStart,
-          weekEnd(weekStart)
+          weekNumber(handle, weekStart)
         );
         parseTimetable(handle, found, {
           withSuperposedCanceledClasses: false,
@@ -208,9 +216,9 @@ export function capabilities(
   const homework: CapabilityMethods["HOMEWORK"] = {
     getHomeworks: weekStart =>
       session.run(async handle =>
-        (
-          await assignmentsFromIntervals(handle, weekStart, weekEnd(weekStart))
-        ).map(toHomework)
+        (await assignmentsFromWeek(handle, weekNumber(handle, weekStart))).map(
+          toHomework
+        )
       ),
     setHomeworkCompletion: (id, done) =>
       session.run(handle => assignmentStatus(handle, id, done)),

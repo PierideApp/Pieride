@@ -565,8 +565,11 @@ export class AccountManager {
   ): Promise<Write[]> {
     const from = weekStart(now);
     const to = addDays(from, 7);
-    const list = uniqueById(await methods.getWeeklyTimetable(from)).filter(
-      course => course.from >= from && course.from < to
+    // La semaine d'abord : un cours d'une autre semaine ne doit pas en remplacer un de celle-ci.
+    const list = uniqueById(
+      (await methods.getWeeklyTimetable(from)).filter(
+        course => course.from >= from && course.from < to
+      )
     );
     return [
       this.db
@@ -599,8 +602,10 @@ export class AccountManager {
   ): Promise<Write[]> {
     const from = weekStart(now);
     const to = addDays(from, 7);
-    const list = uniqueById(await methods.getHomeworks(from)).filter(
-      item => item.dueAt >= from && item.dueAt < to
+    const list = uniqueById(
+      (await methods.getHomeworks(from)).filter(
+        item => item.dueAt >= from && item.dueAt < to
+      )
     );
     return [
       this.db

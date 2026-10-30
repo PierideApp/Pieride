@@ -60,6 +60,7 @@ export interface Period {
 }
 
 export interface Course {
+  /** Unique pour cette séance : un cours qui revient chaque semaine a un id par semaine. */
   id: string;
   subject: string;
   from: Date;
