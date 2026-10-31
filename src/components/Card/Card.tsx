@@ -14,7 +14,7 @@ export function Card({
 }: HTMLAttributes<HTMLElement> & {
   as?: "div" | "ul" | "ol" | "section";
   rows?: boolean;
-  tone?: "success";
+  tone?: "success" | "warn" | "danger" | "info";
 }) {
   return (
     <Tag
