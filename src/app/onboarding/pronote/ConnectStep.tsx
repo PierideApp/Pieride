@@ -17,6 +17,7 @@ import {
   closeEntLogin,
   loadPhoto,
   loginWithEnt,
+  loginDemo,
   openEntLogin,
   type PronoteLogin,
   WrongPin,
@@ -75,6 +76,10 @@ export function ConnectStep({
 
   // Quitter l'étape (Retour, fenêtre des Paramètres fermée) ferme aussi la page de connexion.
   useEffect(() => () => void closeEntLogin(), []);
+
+  useEffect(() => () => {
+    if(school.url === "https://demo.index-education.net/pronote") loginWithDemo();
+  }, [])
 
   const fail = (failure: unknown) => {
     setPhase({ id: "ready" });
@@ -148,6 +153,17 @@ export function ConnectStep({
       fail(failure);
     }
   };
+
+  const loginWithDemo = async() => {
+    setPhase({ id: "syncing", done: 0 });
+    try {
+      const result = await loginDemo();
+      await complete(result.login)
+    }
+    catch (failure) {
+      fail(failure);
+    }
+  }
 
   const confirmPin = async (finish: (pin: string) => Promise<PronoteLogin>) => {
     setError(null);
