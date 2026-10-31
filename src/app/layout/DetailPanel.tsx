@@ -38,14 +38,19 @@ export function DetailPanel() {
           aria-label={t("detail.close")}
           onClick={close}
         >
-          <Cross size={18} />
+          <Cross size={16} />
         </button>
         <span className={styles.detailHint}>{t("detail.hint")}</span>
       </header>
-      <h2 className={styles.detailTitle}>{content.title}</h2>
-      {content.subtitle && (
-        <p className={styles.detailSubtitle}>{content.subtitle}</p>
-      )}
+      <div className={styles.detailHead}>
+        <div>
+          <h2 className={styles.detailTitle}>{content.title}</h2>
+          {content.subtitle && (
+            <p className={styles.detailSubtitle}>{content.subtitle}</p>
+          )}
+        </div>
+        {content.media}
+      </div>
       <div className={styles.detailBody}>{content.body}</div>
     </aside>
   );

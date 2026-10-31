@@ -1,0 +1,46 @@
+.spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  border: 2px solid var(--color-accent-soft);
+  border-top-color: var(--color-accent);
+  border-radius: var(--radius-round);
+  animation: spin 0.9s linear infinite;
+
+  // Plus lent plutôt qu'arrêté : il doit rester clair que l'app travaille.
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 3s;
+  }
+}
+
+.small {
+  width: 16px;
+  height: 16px;
+}
+
+.large {
+  width: 64px;
+  height: 64px;
+  border-width: 4px;
+}
+
+// Une lecture rapide de la base ne fait pas clignoter le cercle : il reste caché 300 ms.
+.fill {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  height: 100%;
+  padding: var(--space-6);
+  animation: appear 0s 300ms backwards;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes appear {
+  from {
+    visibility: hidden;
+  }
+}

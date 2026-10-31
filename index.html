@@ -3,11 +3,89 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="index.css" rel="stylesheet" />
     <title>Piéride</title>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="splash-screen">
+      <div id="splash-screen-content" class="splash-screen-content">
+        <div class="splash-screen-logo">
+          <img
+            class="icon-background"
+            src="/src/assets/brand/icon-background.svg"
+            width="150"
+            height="150"
+          />
+          <div class="div-mark">
+            <img
+              class="mark"
+              src="/src/assets/brand/mark.svg"
+              width="130"
+              height="130"
+            />
+          </div>
+        </div>
+        <h1>piéride</h1>
+      </div>
+    </div>
+    <div id="root" style="display: none"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      import {
+        restoreStateCurrent,
+        StateFlags,
+      } from "@tauri-apps/plugin-window-state";
+
+      const navigation = performance.getEntriesByType("navigation")[0];
+      const isReload = navigation?.type === "reload";
+      // Les deux dernières lignes permettent de savoir si lors de l'exécution du script,
+      // la page a été rechargée.
+      const launchedMinimized =
+        await window.__TAURI_INTERNALS__.invoke("is_minimized");
+      // Permet de savoir si on veut lancer l'appli sans ouvrir la fenêtre, donc minimisée.
+
+      function show_app() {
+        window.__TAURI_INTERNALS__.invoke("show_app", {});
+      }
+
+      if (!isReload) {
+        await restoreStateCurrent(
+          StateFlags.MAXIMIZED | StateFlags.SIZE | StateFlags.POSITION
+        );
+
+        setTimeout(async () => {
+          await show_app();
+          setTimeout(() => {
+            startAnimations();
+          }, 50); // 50ms nécessaire pour que la fenêtre ai le temps d'apparaître
+        }, 75); // 75 ms nécessaires pour que la fenêtre ai le temps de se redimensionner en arrière-plan
+      } else {
+        startAnimations(); // Pas besoin d'attendre si la page est déjà affichée.
+      }
+
+      // Permet de lancer les animations du splash screen
+      function startAnimations() {
+        document.querySelector("#splash-screen").classList.add("ready");
+        setTimeout(() => {
+          hideSplash();
+        }, 3600);
+      }
+
+      function hideSplash() {
+        const splash = document.getElementById("splash-screen");
+        splash.style.animation = "fadeOut 650ms ease-in-out forwards";
+        setTimeout(() => {
+          splash.style.display = "none";
+          showApp();
+        }, 651);
+      }
+
+      function showApp() {
+        const app = document.getElementById("root");
+        app.style.animation = "fadeIn 650ms ease-in-out forwards";
+        app.style.display = null;
+      }
+    </script>
   </body>
 </html>

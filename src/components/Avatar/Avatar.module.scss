@@ -1,0 +1,14 @@
+// Taille donnée par `--avatar-size` (prop `size` du composant).
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: var(--radius-round);
+  font-size: calc(var(--avatar-size) * 0.36);
+  font-weight: 700;
+  color: var(--on-brand);
+  background: var(--brand-500);
+  object-fit: cover;
+}

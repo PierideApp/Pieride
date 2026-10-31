@@ -1,0 +1,38 @@
+// Maquettes : `segmented` (pieride_design/design/_src/lib.py).
+.segmented {
+  display: flex;
+  flex-shrink: 0;
+  height: 34px;
+  padding: var(--space-1);
+  border-radius: var(--radius-m);
+  background: var(--color-fill);
+
+  label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-s);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-2);
+    cursor: pointer;
+
+    &[data-checked] {
+      border-color: var(--color-border);
+      color: var(--color-text);
+      background: var(--color-surface);
+    }
+
+    &:has(:focus-visible) {
+      outline: 2px solid var(--brand-sulfur);
+    }
+  }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

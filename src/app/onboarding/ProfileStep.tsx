@@ -4,6 +4,8 @@ import { AlertTriangle } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/Button/Button";
+
 import styles from "./onboarding.module.scss";
 
 const PROFILES: readonly { id: string; emoji: string; supported: boolean }[] = [
@@ -68,30 +70,27 @@ export function ProfileStep({
       <footer className={styles.footer}>
         {selected?.supported === false ? (
           <>
-            <button
-              type="button"
-              className={styles.secondary}
+            <Button
+              variant="ghost"
+              size="large"
+              className={styles.footerStart}
               onClick={() => setSelected(undefined)}
             >
               {t("onboarding.profile.other")}
-            </button>
-            <button
-              type="button"
-              className={styles.primary}
-              onClick={onOffline}
-            >
+            </Button>
+            <Button variant="primary" size="large" onClick={onOffline}>
               {t("onboarding.profile.offline")}
-            </button>
+            </Button>
           </>
         ) : (
-          <button
-            type="button"
-            className={styles.primary}
+          <Button
+            variant="primary"
+            size="large"
             disabled={!selected}
             onClick={onNext}
           >
             {t("onboarding.continue")}
-          </button>
+          </Button>
         )}
       </footer>
     </div>

@@ -24,6 +24,8 @@ export interface Account {
   lastName: string;
   schoolName?: string;
   className?: string;
+  /** Photo de profil, en URL `data:` (lib/image.ts). */
+  avatar?: string;
 }
 
 /** Un service lié à un compte. Ses secrets sont dans le trousseau, rangés sous `id`. */
@@ -41,9 +43,11 @@ export interface Attachment {
   url: string;
 }
 
-/** Une matière, telle que l'app l'affiche (couleur et emoji choisis localement). */
+/** Une matière, telle que l'app l'affiche (nom, couleur et emoji choisis localement). */
 export interface Subject {
+  /** Le nom donné par le service, qui identifie la matière. */
   name: string;
+  displayName?: string;
   color?: string;
   emoji?: string;
 }
@@ -56,6 +60,7 @@ export interface Period {
 }
 
 export interface Course {
+  /** Unique pour cette séance : un cours qui revient chaque semaine a un id par semaine. */
   id: string;
   subject: string;
   from: Date;
@@ -64,11 +69,24 @@ export interface Course {
   teacher?: string;
   group?: string;
   status?: "canceled" | "edited" | "online" | "evaluated";
+  /** Le cahier de textes de la séance, quand le service le fournit. */
+  contents?: CourseContent[];
+}
+
+/** Ce que l'enseignant a noté pour une séance (cahier de textes). */
+export interface CourseContent {
+  title?: string;
+  /** HTML venant du service (PRONOTE) ou texte simple : à nettoyer avant affichage. */
+  description?: string;
+  /** « Cours », « Correction »… tel que le service le nomme. */
+  category?: string;
+  attachments: Attachment[];
 }
 
 export interface Homework {
   id: string;
   subject: string;
+  /** HTML venant du service (PRONOTE) ou texte simple : à nettoyer avant affichage. */
   content: string;
   givenAt?: Date;
   dueAt: Date;
@@ -92,6 +110,25 @@ export interface Grade {
   max?: number;
   bonus: boolean;
   optional: boolean;
+}
+
+/** Moyenne d'une matière sur une période, telle que le service la calcule. */
+export interface SubjectAverage {
+  subject: string;
+  /** Celle de l'élève, de la classe, la plus haute et la plus basse de la classe. */
+  student?: number;
+  classAverage?: number;
+  min?: number;
+  max?: number;
+  outOf: number;
+}
+
+/** Les moyennes d'une période : par matière, et générale si le service la donne. */
+export interface PeriodGrades {
+  grades: Grade[];
+  /** Toutes les matières du relevé, même sans note. */
+  averages: SubjectAverage[];
+  overall?: { student?: number; classAverage?: number };
 }
 
 export interface News {

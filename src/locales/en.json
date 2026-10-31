@@ -9,7 +9,17 @@
     "SecurityChallenge": "This service is asking for a verification.",
     "Unknown": "Something unexpected went wrong.",
     "keyring_unavailable": "Your system keyring is unavailable: your credentials can't be saved.",
-    "UnsupportedService": "This service isn't supported by Piéride yet."
+    "UnsupportedService": "This service isn't supported by Piéride yet.",
+    "instance": {
+      "invalid_url": "This address isn't valid.",
+      "https_required": "The address must start with https://.",
+      "credentials_in_url": "The address mustn't contain a username or password.",
+      "ip_address": "Enter your school's domain name, not an IP address.",
+      "invalid_domain": "This domain name isn't valid.",
+      "local_domain": "This address doesn't lead to a server on the Internet.",
+      "instance_lock": "Piéride couldn't open this address. Restart the app and try again.",
+      "instance_capability": "Piéride couldn't open this address. Restart the app and try again."
+    }
   },
   "modules": {
     "accueil": "Home",
@@ -30,7 +40,8 @@
     "running": "Syncing…",
     "failed": "Sync failed",
     "done": "Synced {{when}}",
-    "action": "Sync"
+    "wait": "Try again {{when}}",
+    "hint": "{{keys}} to sync (at most every 5 minutes)"
   },
   "placeholder": {
     "title": "Coming soon",
@@ -54,7 +65,12 @@
   },
   "tray": {
     "open": "Open Piéride",
-    "quit": "Quit"
+    "quit": "Quit",
+    "now": "Now: {{subject}}, until {{end}}",
+    "noCurrent": "No class right now",
+    "next": "Next: {{subject}} at {{start}}",
+    "nextRoom": "Next: {{subject}} at {{start}}, room {{room}}",
+    "noNext": "No more classes today"
   },
   "palette": {
     "label": "Command palette",
@@ -62,7 +78,6 @@
     "placeholder": "Go to a page, run an action…",
     "goto": "Go to",
     "actions": "Actions",
-    "sync": "Sync now",
     "switchAccount": "Switch account",
     "empty": "No results",
     "navigate": "navigate",
@@ -76,6 +91,367 @@
   "detail": {
     "close": "Close the panel",
     "hint": "Esc to close"
+  },
+  "accueil": {
+    "hello": "Hello, {{name}} 👋",
+    "helloAnonymous": "Hello 👋",
+    "coursesLeft_one": "You have {{count}} class left today",
+    "coursesLeft_other": "You have {{count}} classes left today",
+    "noMoreCourses": "No more classes today",
+    "more": "Show more",
+    "average": "Overall average",
+    "tasks": "To do",
+    "left_one": "{{count}} left",
+    "left_other": "{{count}} left",
+    "noTasks": "Nothing to do for now.",
+    "allTasks": "See all tasks",
+    "allGrades": "See all grades",
+    "nextCourse": "{{day}}, first class at {{time}}: {{subject}}",
+    "nextCourseRoom": "{{day}}, first class at {{time}}: {{subject}} in {{room}}",
+    "unjustified": "{{duration}} unexcused",
+    "allJustified": "All excused",
+    "unread_one": "{{count}} unread",
+    "unread_other": "{{count}} unread",
+    "allRead": "All read",
+    "edit": "Edit home",
+    "wallpaper": "Change wallpaper",
+    "editHint": "Drag a widget, resize it with its bar, or drop it at the top for a card.",
+    "addWidget": "Add a widget",
+    "done": "Done",
+    "allShown": "Everything is already shown",
+    "widgets": {
+      "attendance": "Attendance",
+      "news": "News",
+      "courses": "Today's classes",
+      "average": "Overall average",
+      "tasks": "To do",
+      "grades": "Recent grades"
+    },
+    "remove": "Remove {{name}}",
+    "move": "Move {{name}}",
+    "moveHint": "Drag the widget, or use the arrow keys (Shift + arrows: size)",
+    "empty": {
+      "title": "Nothing to show",
+      "text": "Nothing to show here yet. Add widgets to build your home."
+    },
+    "sizes": {
+      "mini": "card",
+      "compact": "small",
+      "normal": "normal",
+      "large": "large",
+      "full": "full"
+    },
+    "then": "Then {{subject}} at {{time}}",
+    "classAverage": "class {{value}}",
+    "allNews": "See all news",
+    "mini": {
+      "course": "{{subject}} at {{time}}",
+      "nextCourse": "{{day}}: {{subject}} at {{time}}",
+      "grade": "{{value}} in {{subject}}"
+    },
+    "cancel": "Cancel",
+    "reset": "Default",
+    "removed": "“{{name}}” removed",
+    "undo": "Undo",
+    "sizeOf": "Size of {{name}}",
+    "stripHint": "Drop a widget here to make it a card",
+    "dayOverText": "Enjoy the rest of your day!"
+  },
+  "dateNav": {
+    "previous": "Previous",
+    "next": "Next",
+    "today": "Today"
+  },
+  "miniCalendar": {
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "imageCropper": {
+    "frame": "Kept area: move it with the mouse or the arrow keys",
+    "zoom": "Zoom",
+    "cancel": "Cancel",
+    "confirm": "Use this part"
+  },
+  "attachmentList": {
+    "file": "File",
+    "link": "Link"
+  },
+  "cours": {
+    "view": "View",
+    "day": "Day",
+    "week": "Week",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "time": "{{from}} to {{to}}",
+    "count_one": "{{count}} class",
+    "count_other": "{{count}} classes",
+    "canceledCount_one": "{{count}} canceled",
+    "canceledCount_other": "{{count}} canceled",
+    "endsAt": "ends at {{time}}",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "hoursMinutes": "{{hours}} h {{minutes}}",
+    "now": "Now",
+    "remaining": "{{duration}} left",
+    "break": "Break",
+    "lunch": "Lunch break",
+    "status": {
+      "canceled": "Canceled",
+      "edited": "Changed",
+      "online": "Online",
+      "evaluated": "Test"
+    },
+    "statusLong": {
+      "canceled": "Class canceled",
+      "edited": "Class changed",
+      "online": "Online",
+      "evaluated": "Test"
+    },
+    "details": "Class details",
+    "teacher": "Teacher",
+    "room": "Room",
+    "group": "Group",
+    "duration": "Duration",
+    "contents": "Lesson content",
+    "homeworkForCourse": "Due for this class",
+    "noHomeworkForCourse": "Nothing due for this class.",
+    "homeworkTomorrow": "Due tomorrow",
+    "homeworkFor": "Due {{day}}",
+    "noHomework": "Nothing due that day.",
+    "done": "Done",
+    "todo": "To do",
+    "error": "Timetable unreadable",
+    "empty": {
+      "title": "No classes this week",
+      "text": "Nothing in the timetable this week: holidays, or a week your school has not published yet."
+    },
+    "emptyDay": {
+      "title": "No classes that day",
+      "text": "Enjoy your day!"
+    },
+    "recess": "Recess",
+    "dueToday": "Due today",
+    "dueTomorrow": "Due tomorrow",
+    "dueOn": "Due {{day}}",
+    "wholeClass": "Whole class",
+    "updated": "Updated by {{service}} at {{time}}"
+  },
+  "taches": {
+    "search": "Search tasks",
+    "filter": "Show",
+    "filters": {
+      "todo": "To do",
+      "done": "Done",
+      "all": "All"
+    },
+    "display": "View",
+    "layout": "Layout",
+    "boardHint": "one column per day",
+    "previousDays": "Previous days",
+    "nextDays": "Next days",
+    "listHint": "by due date",
+    "sortBy": "Sort by",
+    "sort": {
+      "due": "Due date",
+      "subject": "Subject"
+    },
+    "hideDone": "Hide completed tasks",
+    "left_one": "task left",
+    "left_other": "tasks left",
+    "thisWeek": "this week",
+    "doneOf": "{{done}} of {{total}} done",
+    "dueFor": "Due {{day}}",
+    "count_one": "{{count}} task",
+    "count_other": "{{count}} tasks",
+    "none": "No tasks",
+    "noMatch": "No task matches.",
+    "markDone": "Done",
+    "markTodo": "Not done",
+    "state": "Status",
+    "done": "Done",
+    "notDone": "Not done",
+    "space": "Space",
+    "description": "Description",
+    "attachments": "Attachments",
+    "information": "Details",
+    "givenAt": "Given on",
+    "dueAt": "Due on",
+    "error": "Tasks unreadable",
+    "empty": {
+      "title": "No tasks for week {{week}}",
+      "text": "Nothing planned this week. Time to rest!"
+    },
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week"
+  },
+  "notes": {
+    "period": "Period",
+    "view": "View",
+    "tabs": {
+      "subjects": "Subjects",
+      "latest": "Recent grades"
+    },
+    "search": "Search a grade, a subject",
+    "sort": "Sort",
+    "sortTitle": "Sort subjects by",
+    "sorts": {
+      "date": {
+        "title": "Date",
+        "text": "latest grade first"
+      },
+      "average": {
+        "title": "Averages",
+        "text": "highest to lowest"
+      },
+      "alphabetical": {
+        "title": "Alphabetical",
+        "text": "A to Z"
+      }
+    },
+    "evolution": "Average over time",
+    "methodsTitle": "Calculation methods",
+    "methods": {
+      "weighted": {
+        "title": "Weighted average",
+        "text": "Weighted average of every grade"
+      },
+      "subjects": {
+        "title": "Subject average",
+        "text": "Average of the subject averages"
+      },
+      "median": {
+        "title": "Median grade",
+        "text": "Median of every grade"
+      }
+    },
+    "since": "{{delta}} since {{date}}",
+    "estimated": "{{method}} (estimate)",
+    "estimatedBy": "Estimated by Piéride",
+    "fromSchool": "From your school",
+    "stats": {
+      "title": "Statistics",
+      "class": "Class average",
+      "best": "Best: {{subject}}",
+      "worst": "To work on: {{subject}}",
+      "count": "Grades this period"
+    },
+    "latest": "Recent grades",
+    "best": "Best grade in the group",
+    "subjectsCount_one": "{{count}} subject",
+    "subjectsCount_other": "{{count}} subjects",
+    "gradesCount_one": "{{count}} grade",
+    "gradesCount_other": "{{count}} grades",
+    "subjectSubtitle_one": "Subject details · {{count}} grade",
+    "subjectSubtitle_other": "Subject details · {{count}} grades",
+    "coefficient": "Coefficient {{value}}",
+    "groupAverage": "Group avg. {{value}}",
+    "details": "Details",
+    "scaled": "On another scale",
+    "scaledText": "Converted to {{scale}}",
+    "highest": "Highest grade",
+    "highestText": "Best in the group",
+    "lowest": "Lowest grade",
+    "lowestText": "Lowest in the group",
+    "influenceTitle": "Impact",
+    "overall": "Overall average",
+    "toGroup": "Gap with the group",
+    "studentAverage": "Your average",
+    "subjectStats": {
+      "class": "Class average",
+      "classText": "Class average in this subject",
+      "max": "Highest average",
+      "maxText": "Best average in the group",
+      "min": "Lowest average",
+      "minText": "Lowest average in the group"
+    },
+    "table": {
+      "subject": "Subject",
+      "title": "Assignment",
+      "date": "Date",
+      "coefficient": "Coef.",
+      "class": "Class avg.",
+      "influence": "Impact",
+      "value": "Grade"
+    },
+    "error": "Grades unreadable",
+    "empty": {
+      "title": "No grades",
+      "text": "You have not been graded in this period yet.",
+      "action": "See {{period}}"
+    },
+    "monthStart": "{{month}} 1"
+  },
+  "actualites": {
+    "search": "Search news",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "theme": "Reading theme",
+    "themes": {
+      "normal": "Normal text",
+      "large": "Large text"
+    },
+    "error": "News unreadable",
+    "empty": {
+      "title": "No news",
+      "text": "Your school has not published anything yet."
+    },
+    "untitled": "Untitled",
+    "hasAttachments": "Attachments",
+    "noMatch": "No news matches.",
+    "publishedAt": "{{date}} at {{time}}"
+  },
+  "assiduite": {
+    "year": "Whole year",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "absence": "Absences",
+      "delay": "Late arrivals"
+    },
+    "stats": {
+      "missed": "Hours missed",
+      "unjustified": "Unexcused hours",
+      "absences": "Absences",
+      "delays": "Late arrivals"
+    },
+    "alert": {
+      "title": "{{duration}} unexcused",
+      "text": "Remember to excuse your absences and late arrivals with your school."
+    },
+    "table": {
+      "kind": "Type",
+      "reason": "Reason",
+      "date": "Date",
+      "schedule": "Time",
+      "duration": "Duration",
+      "status": "Status"
+    },
+    "noReason": "No reason",
+    "kinds": {
+      "absence": "Absence",
+      "delay": "Late arrival"
+    },
+    "status": {
+      "absence": {
+        "justified": "Excused",
+        "unjustified": "Unexcused"
+      },
+      "delay": {
+        "justified": "Excused",
+        "unjustified": "Unexcused"
+      }
+    },
+    "byMonth": "Hours missed per month",
+    "error": "Attendance unreadable",
+    "empty": {
+      "title": "No absences",
+      "text": "Nothing to report for this period."
+    }
   },
   "settings": {
     "title": "Settings",
@@ -102,10 +478,19 @@
       "developer": "Developer"
     },
     "descriptions": {
-      "appearance": "Piéride's theme.",
+      "appearance": "Theme, color and wallpaper.",
       "sidebar": "This account's modules. Those none of your services provide don't show up.",
       "language": "The interface language.",
-      "developer": "Tools to work on Piéride, only shown in dev builds."
+      "developer": "The log and network requests since launch, to understand a problem.",
+      "features": "Turn on what you need.",
+      "releaseNotes": "What's new in Piéride?",
+      "account": "Your profile as it appears in Piéride.",
+      "linkedAccounts": "Your school and canteen accounts, and your calendars.",
+      "subjects": "Name, color and emoji of each subject, everywhere in Piéride.",
+      "notifications": "System notifications, even when the window is closed.",
+      "startup": "How Piéride lives on your computer.",
+      "privacy": "You and Piéride: what stays with you.",
+      "about": "Who makes Piéride, and with what."
     },
     "theme": {
       "label": "Theme",
@@ -113,13 +498,32 @@
       "dark": "Dark",
       "system": "System"
     },
+    "accent": {
+      "label": "Accent color",
+      "text": "The chosen color is used for buttons and selected items.",
+      "indigo": "Indigo",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
+      "yellow": "Yellow",
+      "orange": "Orange",
+      "red": "Red",
+      "pink": "Raspberry",
+      "purple": "Purple",
+      "ink": "Ink"
+    },
     "modules": {
       "label": "Modules",
-      "account": "Account: {{name}}",
+      "account": "Account",
       "always": "Always available",
       "providedBy": "Provided by {{services}}",
       "locked": "Always shown",
-      "noAccount": "Add an account first: each account has its own modules."
+      "noAccount": "Add an account first: each account has its own modules.",
+      "reorder": "Drag to reorder",
+      "move": "Move {{name}}",
+      "moveHint": "Drag the row, or use the up and down arrows",
+      "tip": "Each account has its own modules. With a university account (APPSCHO, ESUP Multi), only Home, Classes and News are available.",
+      "display": "Display"
     },
     "developer": {
       "noAccount": "Create an account first: fake data is attached to the current account.",
@@ -129,7 +533,267 @@
       "detached": "Not attached",
       "attach": "Attach and fill",
       "remove": "Remove",
-      "failed": "That didn't work: see the developer console for details."
+      "failed": "That didn't work: see the developer console for details.",
+      "network": "Network",
+      "requests": "Network requests",
+      "requestCount_one": "{{count}} request since launch",
+      "requestCount_other": "{{count}} requests since launch",
+      "show": "Show",
+      "hide": "Hide",
+      "time": "Time",
+      "method": "Method",
+      "host": "Domain",
+      "status": "Status",
+      "duration": "Duration",
+      "noResponse": "failed",
+      "log": "Log",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Copying didn't work: select the log text by hand.",
+      "emptyLog": "Nothing yet.",
+      "private": "Kept in memory only, without tokens or full addresses. It is erased when Piéride closes."
+    },
+    "toggles": {
+      "showCoefficients": {
+        "title": "Show coefficients",
+        "text": "In the list of grades"
+      },
+      "showWeekend": {
+        "title": "Show the weekend",
+        "text": "Saturday and Sunday in the week view"
+      },
+      "showNowLine": {
+        "title": "Current time line",
+        "text": "Red marker in the timetable"
+      },
+      "showBreaks": {
+        "title": "Breaks",
+        "text": "Lunch break and recess in the list"
+      },
+      "showCanteen": {
+        "title": "Canteen menu and booking",
+        "text": "In the lunch break"
+      },
+      "hideDoneTasks": {
+        "title": "Hide completed tasks",
+        "text": "They stay visible with the Done filter"
+      },
+      "sidebarAutoCollapse": {
+        "title": "Collapse automatically",
+        "text": "When the window is narrower than 1280 px"
+      },
+      "sidebarBadges": {
+        "title": "Badges",
+        "text": "Number of tasks to do"
+      },
+      "startMinimized": {
+        "title": "Start minimized in the taskbar",
+        "text": "When Piéride starts as you log in"
+      },
+      "closeToTray": {
+        "title": "Closing the window minimizes Piéride",
+        "text": "The app stays in the taskbar instead of quitting"
+      },
+      "trayGlance": {
+        "title": "Glance in the taskbar",
+        "text": "Current and next class in the icon's menu"
+      },
+      "notifyGrades": {
+        "title": "New grades",
+        "text": "As soon as a grade is published"
+      },
+      "notifyCourses": {
+        "title": "Canceled or changed classes",
+        "text": "Room change, absent teacher"
+      },
+      "notifyHomework": {
+        "title": "Task reminder",
+        "text": "The day before it's due"
+      },
+      "notifyNews": {
+        "title": "New news",
+        "text": "Published by your school"
+      },
+      "notifyMorning": {
+        "title": "Morning summary",
+        "text": "Your classes and tasks of the day when you log in"
+      },
+      "quietDuringClasses": {
+        "title": "Quiet during classes",
+        "text": "Notifications wait until the class ends"
+      }
+    },
+    "features": {
+      "gradeScale": "Grade scale",
+      "gradeScaleText": "Default scale in the interface",
+      "outOf": "Out of {{scale}}",
+      "tasksLayout": "Tasks layout",
+      "tasksLayoutText": "One column per day, or a list by due date",
+      "board": "Board",
+      "list": "List"
+    },
+    "language": {
+      "recommended": "Recommended"
+    },
+    "releaseNotes": {
+      "installed": "Installed",
+      "emptyTitle": "No release notes yet",
+      "emptyText": "They will come with Piéride's first published version."
+    },
+    "account": {
+      "noAccount": "Add an account first.",
+      "profile": "Profile",
+      "changePhoto": "Change photo",
+      "offline": "Offline account",
+      "identity": "Identity",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "photo": "Profile photo",
+      "fromFile": "From a file",
+      "fromFileText": "Choose an image on your computer",
+      "removePhoto": "Remove photo",
+      "fromServices": "Information from {{services}}",
+      "school": "School",
+      "className": "Class"
+    },
+    "image": {
+      "too_big": "This image is too large: 25 MB at most.",
+      "unreadable": "This image could not be opened. Try a PNG, JPEG or WebP file."
+    },
+    "linked": {
+      "school": "School accounts",
+      "canteen": "Canteen and cards",
+      "calendar": "Calendars",
+      "current": "Shown account",
+      "needsLogin": "Sign in again",
+      "relink": "Sign in again",
+      "actions": "Actions",
+      "show": "Show this account",
+      "remove": "Remove account",
+      "unlink": "Unlink",
+      "removeTitle": "Remove {{name}}'s account?",
+      "removeText": "Its data and credentials will be erased from this computer. Nothing changes on its services' websites.",
+      "unlinkTitle": "Unlink {{service}}?",
+      "unlinkText": "Its data will be erased from this computer. You can link it again to {{name}}'s account.",
+      "failed": "That didn't work. Try again in a moment.",
+      "secretsLeft": "The account is removed, but its credentials stayed in the keychain: Piéride will try again on next launch.",
+      "addAccount": "Add an account",
+      "addOffline": "Create an offline account"
+    },
+    "signOut": {
+      "label": "Sign out",
+      "title": "Sign out of {{name}}?"
+    },
+    "subjects": {
+      "search": "Search for a subject",
+      "reset": "Reset",
+      "resetTitle": "Reset all subjects?",
+      "resetText": "The names, colors and emojis chosen for this account go back to the defaults.",
+      "resetOne": "Back to defaults",
+      "noMatch": "No subject matches your search.",
+      "emptyTitle": "No subjects yet",
+      "emptyText": "They appear after the first sync of your classes, tasks or grades.",
+      "all": "All subjects",
+      "everywhere": "Changes apply to every view.",
+      "preview": "Preview",
+      "previewText": "As in your timetable",
+      "name": "Displayed name",
+      "original": "Name given by your school: {{name}}",
+      "emoji": "Emoji",
+      "otherEmoji": "Or type an emoji",
+      "color": "Color",
+      "colorNumber": "Color {{number}}"
+    },
+    "wallpaper": {
+      "label": "Home wallpaper",
+      "title": "Wallpaper",
+      "text": "Choose the background of your home banner.",
+      "where": "At the top of your home page",
+      "change": "Change",
+      "remove": "Remove wallpaper",
+      "drop": "Drop an image here or click to choose a file",
+      "failed": "The image could not be saved. Try a smaller image.",
+      "none": "None",
+      "image": "Your image",
+      "indigo": "Indigo",
+      "sunset": "Sunset",
+      "lagoon": "Lagoon",
+      "raspberry": "Raspberry",
+      "mist": "Mist",
+      "cropTitle": "Choose the part of the image",
+      "cropText": "The frame has the shape of the home banner: what it holds shows behind the greeting."
+    },
+    "startup": {
+      "launch": "Startup",
+      "atLogin": "Launch at computer startup",
+      "atLoginText": "When you log in",
+      "autostartFailed": "Launch at startup could not be set on this system.",
+      "updates": "Updates",
+      "version": "Piéride {{version}}",
+      "updatesText": "Automatic updates come with version 1.0.",
+      "releases": "See releases",
+      "shortcuts": "Keyboard shortcuts",
+      "to": "to",
+      "shortcut": {
+        "palette": "Command palette",
+        "sections": "Go to a section",
+        "sync": "Sync (at most every 5 minutes)",
+        "settings": "Settings",
+        "close": "Close a panel or window"
+      }
+    },
+    "notifications": {
+      "sampleFrom": "Piéride · now",
+      "example": "Class canceled: History-Geography at 9:00 is canceled.",
+      "test": "Test",
+      "denied": "Piéride's notifications are blocked: allow them in your system settings.",
+      "failed": "The notification could not be sent.",
+      "macDev": "In dev mode, macOS shows the notification as coming from Terminal: allow its notifications in System Settings > Notifications > Terminal. The built app sends them under its own name.",
+      "for": "Notify me about",
+      "reminderTime": "Reminder time",
+      "quiet": "Quiet",
+      "soon": "Piéride will send these notifications as soon as background sync is ready. Your choices are already saved."
+    },
+    "privacy": {
+      "nothing": "Piéride sends nothing",
+      "nothingText": "No statistics, no tracking: the team doesn't even know you use Piéride.",
+      "promises": "Our commitments",
+      "local": "Your school data stays on this computer",
+      "keyring": "Your credentials are kept in your system's keychain",
+      "services": "Piéride only talks to your school services",
+      "remove": "Removing an account erases all its data",
+      "source": "Check the source code"
+    },
+    "about": {
+      "versionOn": "Version {{version}} · {{system}}",
+      "text": "Maintained by student volunteers. Inspired by Papillon, with its team's agreement.",
+      "links": {
+        "repository": {
+          "title": "GitHub project",
+          "text": "Contribute to the source code"
+        },
+        "contributors": {
+          "title": "Contributors",
+          "text": "The volunteers behind the project"
+        },
+        "issues": {
+          "title": "Report a bug",
+          "text": "Open an issue on GitHub"
+        },
+        "translate": {
+          "title": "Help translate Piéride",
+          "text": "The project's language files"
+        },
+        "papillon": {
+          "title": "Papillon",
+          "text": "The app that inspired Piéride"
+        }
+      },
+      "appVersion": "App version",
+      "dependencies": "Dependency versions",
+      "licenses": "Open source licenses",
+      "licensesText": "GPL-3.0, Papicons (MIT), SIL OFL fonts",
+      "readLicense": "Read"
     }
   },
   "onboarding": {
@@ -202,6 +866,80 @@
       },
       "cancel": "Cancel",
       "create": "Create account"
+    },
+    "pronote": {
+      "eyebrow": "Sign in to PRONOTE",
+      "methodTitle": "How do you want to sign in?",
+      "methodText": "Find your school or paste its PRONOTE address.",
+      "city": "Search for a town",
+      "cityText": "Then pick your school from the list",
+      "recommended": "Recommended",
+      "url": "I have a sign-in URL",
+      "urlText": "Your school's PRONOTE address",
+      "entTitle": "Do you usually sign in through your ENT?",
+      "entText": "Pick your school: Piéride opens your ENT's sign-in page in a secure window.",
+      "searchEyebrow": "Find your school",
+      "searchTitle": "Pick your school",
+      "searchText": "Type the name of your town: PRONOTE schools around it show up from nearest to farthest.",
+      "searchPlaceholder": "Name of your town",
+      "searching": "Looking for schools…",
+      "schoolsIn": "Schools in {{city}}",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "filterPlaceholder": "Filter by name or postcode",
+      "noFilterMatch": "No school in the list matches this filter.",
+      "noCity": "No town matches your search.",
+      "noSchool": "No PRONOTE school found around {{city}}.",
+      "searchFailed": "Search isn't responding right now. Try again in a moment, or enter your school's address.",
+      "urlEyebrow": "School URL",
+      "urlTitle": "Enter your school's URL",
+      "urlLabel": "Your PRONOTE URL",
+      "urlHelp": "Where do I find this address?",
+      "urlStep1": "Open PRONOTE in your browser, from your ENT or your school's website.",
+      "urlStep2": "Copy the address shown in the browser's address bar.",
+      "urlStep3": "Paste it here: Piéride trims the end of the address for you.",
+      "checking": "Checking the address…",
+      "instanceEnt": "sign-in through ENT ({{ent}})",
+      "instanceDirect": "direct sign-in",
+      "instanceFailed": "No PRONOTE answers at this address. Check it, or search for your school by town.",
+      "loginEyebrow": "Sign in",
+      "loginTitle": "Sign in to {{name}}",
+      "loginText": "Your school's sign-in page, or your ENT's, opens in a separate window. Sign in as usual.",
+      "safeTitle": "Your password stays private",
+      "safeText": "Piéride isn't affiliated with PRONOTE or your ENT. The page opens in a secure window: Piéride never reads or keeps your password.",
+      "open": "Open the sign-in page",
+      "retry": "Try again",
+      "waiting": "Sign in in the window that just opened.",
+      "show": "Show the window",
+      "closed": "The window was closed before you finished signing in.",
+      "windowTitle": "Sign in to PRONOTE",
+      "pinEyebrow": "Two-factor authentication",
+      "pinTitle": "A quick check",
+      "pinText": "PRONOTE is asking for the PIN you chose to protect your account.",
+      "pinLabel": "PIN",
+      "confirm": "Confirm",
+      "syncTitle": "Signing in…",
+      "syncText": "This may take a moment.",
+      "steps": {
+        "login": "Signing in to PRONOTE",
+        "TIMETABLE": "Getting your timetable",
+        "GRADES": "Getting your grades",
+        "HOMEWORK": "Getting your homework"
+      },
+      "done": "Done",
+      "errors": {
+        "login_open": "The sign-in window is already open.",
+        "login_window": "The sign-in window couldn't open.",
+        "AuthenticationError": "PRONOTE refused the sign-in. Try again.",
+        "ServiceUnavailable": "PRONOTE isn't responding right now. Try again in a moment.",
+        "SecurityChallenge": "PRONOTE is asking for a check Piéride can't handle yet.",
+        "LoginBlocked": "PRONOTE wants you to change your password or set up two-factor authentication. Do it on the PRONOTE website first, then come back here.",
+        "WrongPin": "That PIN isn't right."
+      }
     }
+  },
+  "dialog": {
+    "cancel": "Cancel",
+    "close": "Close"
   }
 }

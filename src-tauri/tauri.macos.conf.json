@@ -9,7 +9,9 @@
         "minWidth": 800,
         "decorations": true,
         "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "hiddenTitle": true,
+        "dragDropEnabled": false,
+        "visible": false
       }
     ]
   }

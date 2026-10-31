@@ -1,0 +1,101 @@
+.button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-m);
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.primary {
+  border-color: transparent;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+
+  &:hover:not(:disabled) {
+    border-color: transparent;
+  }
+}
+
+.danger {
+  color: var(--color-error);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-error);
+  }
+}
+
+.ghost {
+  border-color: transparent;
+  color: var(--color-text-2);
+  background: none;
+
+  &:hover:not(:disabled) {
+    border-color: transparent;
+    color: var(--color-text);
+  }
+}
+
+.dangerSolid {
+  border-color: transparent;
+  color: var(--on-brand);
+  background: var(--color-error);
+
+  &:hover:not(:disabled) {
+    border-color: transparent;
+  }
+}
+
+.onBrand {
+  border-color: var(--on-brand-soft);
+  color: var(--on-brand);
+  background: var(--on-brand-soft);
+
+  &:hover:not(:disabled) {
+    border-color: var(--on-brand);
+  }
+}
+
+.onBrandSolid {
+  border-color: transparent;
+  color: var(--brand-ink);
+  background: var(--on-brand);
+
+  &:hover:not(:disabled) {
+    border-color: transparent;
+  }
+}
+
+.link {
+  padding: 0 var(--space-1);
+  border: none;
+  font-size: 13px;
+  color: var(--color-accent-text);
+  background: none;
+
+  &:disabled {
+    opacity: 1;
+    color: var(--color-text-3);
+  }
+}
+
+.large {
+  padding: var(--space-3) var(--space-5);
+  font-size: 15px;
+  font-weight: 700;
+}

@@ -1,0 +1,87 @@
+// Maquette 03-cours/03-jour, « Mini calendrier ».
+.calendar {
+  padding: var(--space-4) 20px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.arrow {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-s);
+  color: var(--color-text-2);
+  background: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+}
+
+.grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th {
+    padding-bottom: var(--space-3);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-3);
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 5px 0;
+    text-align: center;
+  }
+}
+
+.day {
+  width: 34px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: none;
+  cursor: pointer;
+
+  &[data-weekend] {
+    color: var(--color-text-3);
+  }
+
+  &[data-highlighted] {
+    background: var(--color-accent-soft);
+  }
+
+  &[data-selected] {
+    width: 30px;
+    border-radius: var(--radius-round);
+    font-weight: 700;
+    color: var(--color-on-accent);
+    background: var(--color-accent);
+  }
+
+  &:hover:not([data-selected]) {
+    background: var(--color-fill);
+  }
+}

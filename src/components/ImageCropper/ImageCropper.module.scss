@@ -1,0 +1,65 @@
+.cropper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+// La zone a exactement la taille de l'image affichée : le cadre se place en pourcentage d'elle.
+.stage {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: var(--radius-m);
+  user-select: none;
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+  }
+}
+
+// Le cadre gardé ; tout autour, l'image assombrie.
+.frame {
+  position: absolute;
+  top: calc(1% * var(--crop-y));
+  left: calc(1% * var(--crop-x));
+  width: calc(1% * var(--crop-w));
+  height: calc(1% * var(--crop-h));
+  border: 2px solid var(--on-brand);
+  border-radius: var(--radius-s);
+  box-shadow: 0 0 0 9999px var(--color-overlay);
+  cursor: grab;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--brand-sulfur);
+    outline-offset: 2px;
+  }
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-2);
+
+  input {
+    flex: 1;
+    accent-color: var(--color-accent);
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

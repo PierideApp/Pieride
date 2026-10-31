@@ -11,11 +11,14 @@ import { Page } from "@/components/Page/Page";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
+import { useTrayGlance } from "@/hooks/useTrayGlance";
 import { modulePath, visibleModules } from "@/modules/registry";
+import { SYNC_INTERVAL } from "@/services/account-manager";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
+import { useSettingsDialog } from "@/stores/settingsDialog";
 import { useSyncStore } from "@/stores/sync";
 
 import { CommandPalette } from "./CommandPalette";
@@ -33,7 +36,10 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { pathname } = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
-  const [settingsAt, setSettingsAt] = useState<string | null>(null);
+  const settingsAt = useSettingsDialog(state => state.openAt);
+  const settingsRequest = useSettingsDialog(state => state.request);
+  const showSettings = useSettingsDialog(state => state.show);
+  const closeSettings = useSettingsDialog(state => state.close);
   const list = useMemo(
     () => (accounts.status === "ready" ? accounts.data : []),
     [accounts]
@@ -42,30 +48,63 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const hidden = useSettingsStore(state =>
     current ? state.hiddenModules[current.id] : undefined
   );
+  const order = useSettingsStore(state =>
+    current ? state.moduleOrder[current.id] : undefined
+  );
+  const autoCollapse = useSettingsStore(state => state.sidebarAutoCollapse);
   const modules = useMemo(
-    () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden),
-    [current, hidden]
+    () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden, order),
+    [current, hidden, order]
   );
   const sync = useSyncStore(state => state.sync);
+  const syncNow = useSyncStore(state => state.syncNow);
+  const syncing = useSyncStore(state => state.syncing);
   const currentAccountId = current?.id;
   const syncCurrent = useCallback(() => {
     if (currentAccountId) {
       void sync(currentAccountId);
     }
   }, [currentAccountId, sync]);
+  // Au lancement et au changement de compte. Une donnée de moins de 30 minutes n'est pas
+  // redemandée (`SYNC_INTERVAL`).
+  useEffect(syncCurrent, [syncCurrent]);
+  // Puis 30 minutes après la fin de chaque synchro, tant que l'app est ouverte. Compter depuis
+  // la fin plutôt qu'à heure fixe : la suivante trouve toujours ses données assez vieilles.
+  useEffect(() => {
+    if (syncing) {
+      return;
+    }
+    const timer = setTimeout(syncCurrent, SYNC_INTERVAL);
+    return () => clearTimeout(timer);
+  }, [syncing, syncCurrent]);
+  // `Ctrl R`, seule synchro à la demande : au plus toutes les 5 minutes (`syncNow`).
+  const syncManually = useCallback(() => {
+    if (currentAccountId) {
+      syncNow(currentAccountId);
+    }
+  }, [currentAccountId, syncNow]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
 
+  useTrayGlance(currentAccountId);
+
   const openPalette = useCallback(() => setPaletteOpen(true), []);
-  const openSettings = useCallback(() => setSettingsAt(pathname), [pathname]);
+  const openSettings = useCallback(
+    () => showSettings(pathname),
+    [showSettings, pathname]
+  );
   useShortcuts(modules, {
-    sync: syncCurrent,
+    sync: syncManually,
     palette: openPalette,
     settings: openSettings,
   });
 
+  // `data-expanded` : barre latérale complète à toutes les largeurs (pas de rail).
   return (
-    <div className={styles.shell}>
+    <div
+      className={styles.shell}
+      data-expanded={autoCollapse ? undefined : true}
+    >
       <Sidebar
         accounts={accounts}
         current={current}
@@ -111,13 +150,15 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         modules={modules}
         accounts={list}
         current={current}
-        onSync={syncCurrent}
         onSettings={openSettings}
       />
       <Settings
+        // Une section demandée par une page : les Paramètres repartent d'elle.
+        key={settingsRequest}
         open={settingsAt === pathname}
-        onClose={() => setSettingsAt(null)}
+        onClose={closeSettings}
         account={current}
+        accounts={list}
       />
     </div>
   );

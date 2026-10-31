@@ -8,6 +8,34 @@
       "when": 1792927145126,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793226130763,
+      "tag": "0001_parametres",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793305569474,
+      "tag": "0002_moyennes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1793306521929,
+      "tag": "0003_vie_scolaire",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793373234539,
+      "tag": "0004_contenu_cours",
+      "breakpoints": true
     }
   ]
 }

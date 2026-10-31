@@ -1,0 +1,17 @@
+.chip {
+  flex-shrink: 0;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.success {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.accent {
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}

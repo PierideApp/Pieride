@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 
 import { WindowControls } from "@/app/layout/WindowControls";
 import icon from "@/assets/brand/icon.svg";
+import { Button } from "@/components/Button/Button";
 
 import styles from "./onboarding.module.scss";
 
@@ -27,16 +28,16 @@ export function Welcome({ onStart }: { onStart: () => void }) {
         <img src={icon} alt="" width={88} height={88} />
         <h1>{t("onboarding.welcome.title")}</h1>
         <p>{t("onboarding.welcome.text")}</p>
-        <button
-          type="button"
-          className={styles.start}
+        <Button
+          variant="onBrandSolid"
+          size="large"
+          icon={ArrowRight}
           // Le seul choix de l'écran : `Entrée` suffit pour commencer.
           autoFocus
           onClick={onStart}
         >
-          <ArrowRight size={18} />
           {t("onboarding.welcome.start")}
-        </button>
+        </Button>
       </div>
 
       <div className={styles.preview} aria-hidden="true">

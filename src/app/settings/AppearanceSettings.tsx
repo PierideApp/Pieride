@@ -1,9 +1,20 @@
-// Personnalisation : le thème. Couleur d'accentuation et fond d'écran viendront avec l'accueil.
+// Personnalisation : thème, couleur d'accentuation et fond d'écran de l'accueil
+// (maquette 03-personnalisation). « Changer » ouvre le choix du fond d'écran.
+import { Gallery } from "@getpapillon/papicons";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { type Theme, useSettingsStore } from "@/stores/settings";
+import { Button } from "@/components/Button/Button";
+import { Card } from "@/components/Card/Card";
+import { ColorSwatches } from "@/components/ColorSwatches/ColorSwatches";
+import { Section } from "@/components/Section/Section";
+import { SettingRow } from "@/components/SettingRow/SettingRow";
+import { ACCENTS, type Theme, useSettingsStore } from "@/stores/settings";
+import { useSettingsDialog } from "@/stores/settingsDialog";
+import { useWallpaperStore, wallpaperBackground } from "@/stores/wallpaper";
 
 import styles from "./settings.module.scss";
+import { WallpaperSettings } from "./WallpaperSettings";
 
 const THEMES: readonly Theme[] = ["light", "dark", "system"];
 
@@ -22,40 +33,93 @@ const Preview = ({ theme }: { theme: "light" | "dark" }) => (
 export function AppearanceSettings() {
   const { t } = useTranslation();
   const theme = useSettingsStore(state => state.theme);
-  const setTheme = useSettingsStore(state => state.setTheme);
+  const accent = useSettingsStore(state => state.accent);
+  const setPreference = useSettingsStore(state => state.setPreference);
+  const wallpaper = useWallpaperStore();
+  // Ouverts depuis le bouton « Fond d'écran » de l'accueil : directement sur sa page.
+  const [choosingWallpaper, setChoosingWallpaper] = useState(
+    () => useSettingsDialog.getState().wallpaper
+  );
+
+  if (choosingWallpaper) {
+    return <WallpaperSettings onBack={() => setChoosingWallpaper(false)} />;
+  }
+  const background = wallpaperBackground(wallpaper);
 
   return (
-    <fieldset className={styles.block}>
-      <legend className={styles.label}>{t("settings.theme.label")}</legend>
-      <div className={styles.themes}>
-        {THEMES.map(value => (
-          <label
-            key={value}
-            className={styles.theme}
-            data-checked={value === theme || undefined}
-          >
-            <span className={styles.previewFrame} aria-hidden="true">
-              {value === "system" ? (
-                <>
-                  <Preview theme="light" />
-                  <Preview theme="dark" />
-                </>
-              ) : (
-                <Preview theme={value} />
-              )}
-            </span>
-            <span className={styles.option}>
-              <input
-                type="radio"
-                name="theme"
-                checked={value === theme}
-                onChange={() => setTheme(value)}
+    <>
+      <Section title={t("settings.theme.label")} titleId="appearance-theme">
+        <div
+          className={styles.themes}
+          role="radiogroup"
+          aria-labelledby="appearance-theme"
+        >
+          {THEMES.map(value => (
+            <label
+              key={value}
+              className={styles.theme}
+              data-checked={value === theme || undefined}
+            >
+              <span className={styles.previewFrame} aria-hidden="true">
+                {value === "system" ? (
+                  <>
+                    <Preview theme="light" />
+                    <Preview theme="dark" />
+                  </>
+                ) : (
+                  <Preview theme={value} />
+                )}
+              </span>
+              <span className={styles.option}>
+                <input
+                  type="radio"
+                  name="theme"
+                  checked={value === theme}
+                  onChange={() => setPreference("theme", value)}
+                />
+                {t(`settings.theme.${value}`)}
+              </span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
+      <Section title={t("settings.accent.label")} titleId="appearance-accent">
+        <Card className={styles.padded}>
+          <ColorSwatches
+            name="accent"
+            labelledBy="appearance-accent"
+            value={accent}
+            options={ACCENTS.map(({ id, color }) => ({
+              value: id,
+              color,
+              label: t(`settings.accent.${id}`),
+            }))}
+            onChange={id => setPreference("accent", id)}
+          />
+          <p className={styles.hint}>{t("settings.accent.text")}</p>
+        </Card>
+      </Section>
+
+      <Section title={t("settings.wallpaper.label")}>
+        <Card>
+          <SettingRow
+            media={
+              <span
+                className={styles.wallpaperThumb}
+                style={background ? { background } : undefined}
+                aria-hidden="true"
               />
-              {t(`settings.theme.${value}`)}
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
+            }
+            title={t(`settings.wallpaper.${wallpaper.wallpaper ?? "none"}`)}
+            text={t("settings.wallpaper.where")}
+          >
+            <Button icon={Gallery} onClick={() => setChoosingWallpaper(true)}>
+              {t("settings.wallpaper.change")}
+            </Button>
+          </SettingRow>
+        </Card>
+      </Section>
+    </>
   );
 }

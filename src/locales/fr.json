@@ -9,7 +9,17 @@
     "SecurityChallenge": "Ce service demande une vérification.",
     "Unknown": "Une erreur inattendue est survenue.",
     "keyring_unavailable": "Le trousseau de ton système est inaccessible : impossible d'enregistrer tes identifiants.",
-    "UnsupportedService": "Ce service n'est pas encore pris en charge par Piéride."
+    "UnsupportedService": "Ce service n'est pas encore pris en charge par Piéride.",
+    "instance": {
+      "invalid_url": "Cette adresse n'est pas valide.",
+      "https_required": "L'adresse doit commencer par https://.",
+      "credentials_in_url": "L'adresse ne doit contenir ni identifiant ni mot de passe.",
+      "ip_address": "Indique le nom de domaine de ton établissement, pas une adresse IP.",
+      "invalid_domain": "Ce nom de domaine n'est pas valide.",
+      "local_domain": "Cette adresse ne mène pas à un serveur sur Internet.",
+      "instance_lock": "Piéride n'a pas pu ouvrir cette adresse. Redémarre l'app et réessaie.",
+      "instance_capability": "Piéride n'a pas pu ouvrir cette adresse. Redémarre l'app et réessaie."
+    }
   },
   "modules": {
     "accueil": "Accueil",
@@ -30,7 +40,8 @@
     "running": "Synchronisation…",
     "failed": "Échec de la synchronisation",
     "done": "Synchronisé {{when}}",
-    "action": "Synchroniser"
+    "wait": "Réessaie {{when}}",
+    "hint": "{{keys}} pour synchroniser (au plus toutes les 5 minutes)"
   },
   "placeholder": {
     "title": "Bientôt ici",
@@ -54,7 +65,12 @@
   },
   "tray": {
     "open": "Ouvrir Piéride",
-    "quit": "Quitter"
+    "quit": "Quitter",
+    "now": "En cours : {{subject}}, jusqu'à {{end}}",
+    "noCurrent": "Pas de cours en ce moment",
+    "next": "Ensuite : {{subject}} à {{start}}",
+    "nextRoom": "Ensuite : {{subject}} à {{start}}, salle {{room}}",
+    "noNext": "Plus de cours aujourd'hui"
   },
   "palette": {
     "label": "Palette de commandes",
@@ -62,7 +78,6 @@
     "placeholder": "Aller à une page, lancer une action…",
     "goto": "Aller à",
     "actions": "Actions",
-    "sync": "Synchroniser maintenant",
     "switchAccount": "Changer de compte",
     "empty": "Aucun résultat",
     "navigate": "naviguer",
@@ -76,6 +91,367 @@
   "detail": {
     "close": "Fermer le panneau",
     "hint": "Échap pour fermer"
+  },
+  "accueil": {
+    "hello": "Bonjour, {{name}} 👋",
+    "helloAnonymous": "Bonjour 👋",
+    "coursesLeft_one": "Tu as {{count}} cours restant aujourd'hui",
+    "coursesLeft_other": "Tu as {{count}} cours restants aujourd'hui",
+    "noMoreCourses": "Plus de cours aujourd'hui",
+    "more": "Afficher plus",
+    "average": "Moyenne générale",
+    "tasks": "Tâches à faire",
+    "left_one": "{{count}} restante",
+    "left_other": "{{count}} restantes",
+    "noTasks": "Rien à faire pour l'instant.",
+    "allTasks": "Voir toutes les tâches",
+    "allGrades": "Voir toutes les notes",
+    "nextCourse": "{{day}}, premier cours à {{time}} : {{subject}}",
+    "nextCourseRoom": "{{day}}, premier cours à {{time}} : {{subject}} en {{room}}",
+    "unjustified": "{{duration}} injustifiées",
+    "allJustified": "Tout est justifié",
+    "unread_one": "{{count}} non lue",
+    "unread_other": "{{count}} non lues",
+    "allRead": "Tout est lu",
+    "edit": "Modifier l'accueil",
+    "wallpaper": "Changer le fond d'écran",
+    "editHint": "Glisse un widget, change sa taille avec sa barre, ou dépose-le en haut pour une carte.",
+    "addWidget": "Ajouter un widget",
+    "done": "Terminé",
+    "allShown": "Tout est déjà affiché",
+    "widgets": {
+      "attendance": "Assiduité",
+      "news": "Actualités",
+      "courses": "Cours du jour",
+      "average": "Moyenne générale",
+      "tasks": "Tâches à faire",
+      "grades": "Nouvelles notes"
+    },
+    "remove": "Retirer {{name}}",
+    "move": "Déplacer {{name}}",
+    "moveHint": "Glisse le widget, ou utilise les flèches du clavier (Maj + flèches : la taille)",
+    "empty": {
+      "title": "Rien à afficher",
+      "text": "Il n'y a rien à afficher ici pour le moment. Ajoute des widgets pour composer ton accueil."
+    },
+    "sizes": {
+      "mini": "carte",
+      "compact": "réduit",
+      "normal": "normal",
+      "large": "large",
+      "full": "grand"
+    },
+    "then": "Puis {{subject}} à {{time}}",
+    "classAverage": "classe {{value}}",
+    "allNews": "Voir toutes les actualités",
+    "mini": {
+      "course": "{{subject}} à {{time}}",
+      "nextCourse": "{{day}} : {{subject}} à {{time}}",
+      "grade": "{{value}} en {{subject}}"
+    },
+    "cancel": "Annuler",
+    "reset": "Par défaut",
+    "removed": "« {{name}} » retiré",
+    "undo": "Annuler",
+    "sizeOf": "Taille de {{name}}",
+    "stripHint": "Dépose un widget ici pour en faire une carte",
+    "dayOverText": "Profite de ta fin de journée !"
+  },
+  "dateNav": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "today": "Aujourd'hui"
+  },
+  "miniCalendar": {
+    "previous": "Mois précédent",
+    "next": "Mois suivant"
+  },
+  "imageCropper": {
+    "frame": "Partie gardée : déplace-la à la souris ou avec les flèches",
+    "zoom": "Zoom",
+    "cancel": "Annuler",
+    "confirm": "Utiliser cette partie"
+  },
+  "attachmentList": {
+    "file": "Fichier",
+    "link": "Lien"
+  },
+  "cours": {
+    "view": "Affichage",
+    "day": "Jour",
+    "week": "Semaine",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "time": "{{from}} à {{to}}",
+    "count_one": "{{count}} cours",
+    "count_other": "{{count}} cours",
+    "canceledCount_one": "{{count}} annulé",
+    "canceledCount_other": "{{count}} annulés",
+    "endsAt": "fin à {{time}}",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "hours_one": "{{count}} heure",
+    "hours_other": "{{count}} heures",
+    "hoursMinutes": "{{hours}} h {{minutes}}",
+    "now": "En cours",
+    "remaining": "encore {{duration}}",
+    "break": "Pause",
+    "lunch": "Pause méridienne",
+    "status": {
+      "canceled": "Annulé",
+      "edited": "Modifié",
+      "online": "En ligne",
+      "evaluated": "Évaluation"
+    },
+    "statusLong": {
+      "canceled": "Cours annulé",
+      "edited": "Cours modifié",
+      "online": "En ligne",
+      "evaluated": "Évaluation"
+    },
+    "details": "Détails du cours",
+    "teacher": "Enseignant",
+    "room": "Salle",
+    "group": "Groupe",
+    "duration": "Durée",
+    "contents": "Contenu du cours",
+    "homeworkForCourse": "À faire pour ce cours",
+    "noHomeworkForCourse": "Rien à rendre pour ce cours.",
+    "homeworkTomorrow": "À faire pour demain",
+    "homeworkFor": "À faire pour {{day}}",
+    "noHomework": "Rien à faire pour ce jour-là.",
+    "done": "Fait",
+    "todo": "À faire",
+    "error": "Emploi du temps illisible",
+    "empty": {
+      "title": "Aucun cours cette semaine",
+      "text": "Rien dans l'emploi du temps pour cette semaine : vacances, ou semaine pas encore publiée par ton établissement."
+    },
+    "emptyDay": {
+      "title": "Aucun cours ce jour-là",
+      "text": "Profite de ta journée !"
+    },
+    "recess": "Récréation",
+    "dueToday": "Pour aujourd'hui",
+    "dueTomorrow": "Pour demain",
+    "dueOn": "Pour {{day}}",
+    "wholeClass": "Classe entière",
+    "updated": "Mis à jour par {{service}} à {{time}}"
+  },
+  "taches": {
+    "search": "Rechercher des tâches",
+    "filter": "Afficher",
+    "filters": {
+      "todo": "À faire",
+      "done": "Terminées",
+      "all": "Toutes"
+    },
+    "display": "Affichage",
+    "layout": "Disposition",
+    "boardHint": "une colonne par jour",
+    "previousDays": "Jours précédents",
+    "nextDays": "Jours suivants",
+    "listHint": "par date de rendu",
+    "sortBy": "Trier par",
+    "sort": {
+      "due": "Date de rendu",
+      "subject": "Matière"
+    },
+    "hideDone": "Masquer les tâches terminées",
+    "left_one": "tâche restante",
+    "left_other": "tâches restantes",
+    "thisWeek": "cette semaine",
+    "doneOf": "{{done}} sur {{total}} terminées",
+    "dueFor": "Pour {{day}}",
+    "count_one": "{{count}} tâche",
+    "count_other": "{{count}} tâches",
+    "none": "Aucune tâche",
+    "noMatch": "Aucune tâche ne correspond.",
+    "markDone": "Terminé",
+    "markTodo": "À refaire",
+    "state": "État du devoir",
+    "done": "Terminé",
+    "notDone": "Non terminé",
+    "space": "Espace",
+    "description": "Description du devoir",
+    "attachments": "Pièces jointes",
+    "information": "Informations",
+    "givenAt": "Donné le",
+    "dueAt": "À rendre le",
+    "error": "Tâches illisibles",
+    "empty": {
+      "title": "Aucune tâche pour la semaine {{week}}",
+      "text": "Il n'y a pas de tâches prévues pour cette semaine. Profite-en pour te reposer !"
+    },
+    "previousWeek": "Semaine précédente",
+    "nextWeek": "Semaine suivante"
+  },
+  "notes": {
+    "period": "Période",
+    "view": "Affichage",
+    "tabs": {
+      "subjects": "Matières",
+      "latest": "Nouvelles notes"
+    },
+    "search": "Rechercher une note, une matière",
+    "sort": "Trier",
+    "sortTitle": "Trier les matières par",
+    "sorts": {
+      "date": {
+        "title": "Date",
+        "text": "dernière note en premier"
+      },
+      "average": {
+        "title": "Moyennes",
+        "text": "de la plus haute à la plus basse"
+      },
+      "alphabetical": {
+        "title": "Alphabétique",
+        "text": "de A à Z"
+      }
+    },
+    "evolution": "Évolution de la moyenne",
+    "methodsTitle": "Méthodes de calcul",
+    "methods": {
+      "weighted": {
+        "title": "Moyenne pondérée",
+        "text": "Calcule la moyenne pondérée de toutes les notes"
+      },
+      "subjects": {
+        "title": "Moyenne des matières",
+        "text": "Calcule la moyenne des moyennes de matières"
+      },
+      "median": {
+        "title": "Médiane des notes",
+        "text": "Calcule la médiane de toutes les notes"
+      }
+    },
+    "since": "{{delta}} depuis le {{date}}",
+    "estimated": "{{method}} (estimée)",
+    "estimatedBy": "Estimée par Piéride",
+    "fromSchool": "Donnée par ton établissement",
+    "stats": {
+      "title": "Statistiques",
+      "class": "Moyenne de classe",
+      "best": "Meilleure : {{subject}}",
+      "worst": "À travailler : {{subject}}",
+      "count": "Notes de la période"
+    },
+    "latest": "Nouvelles notes",
+    "best": "Meilleure note du groupe",
+    "subjectsCount_one": "{{count}} matière",
+    "subjectsCount_other": "{{count}} matières",
+    "gradesCount_one": "{{count}} note",
+    "gradesCount_other": "{{count}} notes",
+    "subjectSubtitle_one": "Informations sur la matière · {{count}} note",
+    "subjectSubtitle_other": "Informations sur la matière · {{count}} notes",
+    "coefficient": "Coefficient {{value}}",
+    "groupAverage": "Moy. groupe {{value}}",
+    "details": "Détails",
+    "scaled": "Note à l'échelle",
+    "scaledText": "Convertie sur {{scale}}",
+    "highest": "Note la plus haute",
+    "highestText": "Maximale obtenue dans le groupe",
+    "lowest": "Note la plus basse",
+    "lowestText": "Minimale obtenue dans le groupe",
+    "influenceTitle": "Influence",
+    "overall": "Moyenne générale",
+    "toGroup": "Écart avec le groupe",
+    "studentAverage": "Moyenne de l'élève",
+    "subjectStats": {
+      "class": "Moyenne de classe",
+      "classText": "Moyenne de la classe dans la matière",
+      "max": "Moyenne maximale",
+      "maxText": "Meilleure moyenne du groupe",
+      "min": "Moyenne minimale",
+      "minText": "Moyenne la plus faible du groupe"
+    },
+    "table": {
+      "subject": "Matière",
+      "title": "Devoir",
+      "date": "Date",
+      "coefficient": "Coef.",
+      "class": "Moy. classe",
+      "influence": "Influence",
+      "value": "Note"
+    },
+    "error": "Notes illisibles",
+    "empty": {
+      "title": "Aucune note",
+      "text": "Tu n'as pas encore été noté sur cette période.",
+      "action": "Voir le {{period}}"
+    },
+    "monthStart": "1er {{month}}"
+  },
+  "actualites": {
+    "search": "Rechercher une actualité",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Toutes",
+      "unread": "Non lues"
+    },
+    "theme": "Thème de lecture",
+    "themes": {
+      "normal": "Texte normal",
+      "large": "Grand texte"
+    },
+    "error": "Actualités illisibles",
+    "empty": {
+      "title": "Aucune actualité",
+      "text": "Ton établissement n'a rien publié pour l'instant."
+    },
+    "untitled": "Sans titre",
+    "hasAttachments": "Pièces jointes",
+    "noMatch": "Aucune actualité ne correspond.",
+    "publishedAt": "{{date}} à {{time}}"
+  },
+  "assiduite": {
+    "year": "Toute l'année",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Tout",
+      "absence": "Absences",
+      "delay": "Retards"
+    },
+    "stats": {
+      "missed": "Heures manquées",
+      "unjustified": "Heures injustifiées",
+      "absences": "Absences",
+      "delays": "Retards"
+    },
+    "alert": {
+      "title": "{{duration}} injustifiées",
+      "text": "Pense à justifier tes absences et retards auprès de ta vie scolaire ou de ton établissement."
+    },
+    "table": {
+      "kind": "Type",
+      "reason": "Motif",
+      "date": "Date",
+      "schedule": "Horaires",
+      "duration": "Durée",
+      "status": "Statut"
+    },
+    "noReason": "Aucune raison",
+    "kinds": {
+      "absence": "Absence",
+      "delay": "Retard"
+    },
+    "status": {
+      "absence": {
+        "justified": "Justifiée",
+        "unjustified": "Injustifiée"
+      },
+      "delay": {
+        "justified": "Justifié",
+        "unjustified": "Injustifié"
+      }
+    },
+    "byMonth": "Heures manquées par mois",
+    "error": "Assiduité illisible",
+    "empty": {
+      "title": "Aucune absence",
+      "text": "Rien à signaler sur cette période."
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -102,10 +478,19 @@
       "developer": "Développeur"
     },
     "descriptions": {
-      "appearance": "Le thème de Piéride.",
+      "appearance": "Thème, couleur et fond d'écran.",
       "sidebar": "Les modules de ce compte. Ceux qu'aucun de tes services ne fournit n'apparaissent pas.",
       "language": "La langue de l'interface.",
-      "developer": "Outils pour travailler sur Piéride, visibles seulement en version de dev."
+      "developer": "Le journal et les requêtes réseau depuis le lancement, pour comprendre un problème.",
+      "features": "Active ou désactive ce dont tu as besoin.",
+      "releaseNotes": "Quoi de neuf dans Piéride ?",
+      "account": "Ton profil tel qu'il apparaît dans Piéride.",
+      "linkedAccounts": "Tes comptes scolaires, de cantine et tes calendriers.",
+      "subjects": "Nom, couleur et emoji de chaque matière, partout dans Piéride.",
+      "notifications": "Notifications du système, même quand la fenêtre est fermée.",
+      "startup": "Comment Piéride vit sur ton ordinateur.",
+      "privacy": "Toi et Piéride : ce qui reste chez toi.",
+      "about": "Qui fait Piéride, et avec quoi."
     },
     "theme": {
       "label": "Thème",
@@ -113,13 +498,32 @@
       "dark": "Sombre",
       "system": "Système"
     },
+    "accent": {
+      "label": "Couleur d'accentuation",
+      "text": "La couleur choisie s'applique aux boutons et aux éléments sélectionnés.",
+      "indigo": "Indigo",
+      "blue": "Bleu",
+      "teal": "Turquoise",
+      "green": "Vert",
+      "yellow": "Jaune",
+      "orange": "Orange",
+      "red": "Rouge",
+      "pink": "Framboise",
+      "purple": "Violet",
+      "ink": "Encre"
+    },
     "modules": {
       "label": "Modules",
-      "account": "Compte : {{name}}",
+      "account": "Compte",
       "always": "Toujours disponible",
       "providedBy": "Fourni par {{services}}",
       "locked": "Toujours affiché",
-      "noAccount": "Ajoute d'abord un compte : chaque compte a ses propres modules."
+      "noAccount": "Ajoute d'abord un compte : chaque compte a ses propres modules.",
+      "reorder": "Glisse pour réordonner",
+      "move": "Déplacer {{name}}",
+      "moveHint": "Glisse la ligne, ou utilise les flèches haut et bas",
+      "tip": "Chaque compte a ses propres modules. Avec un compte universitaire (APPSCHO, ESUP Multi), seuls Accueil, Cours et Actualités sont disponibles.",
+      "display": "Affichage"
     },
     "developer": {
       "noAccount": "Crée d'abord un compte : les données fictives s'attachent au compte en cours.",
@@ -129,7 +533,267 @@
       "detached": "Pas attachées",
       "attach": "Attacher et remplir",
       "remove": "Retirer",
-      "failed": "Ça n'a pas marché : le détail est dans la console de développement."
+      "failed": "Ça n'a pas marché : le détail est dans la console de développement.",
+      "network": "Réseau",
+      "requests": "Requêtes réseau",
+      "requestCount_one": "{{count}} requête depuis le lancement",
+      "requestCount_other": "{{count}} requêtes depuis le lancement",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "time": "Heure",
+      "method": "Méthode",
+      "host": "Domaine",
+      "status": "Statut",
+      "duration": "Durée",
+      "noResponse": "échec",
+      "log": "Journal",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "La copie n'a pas marché : sélectionne le texte du journal à la main.",
+      "emptyLog": "Rien pour l'instant.",
+      "private": "Gardé en mémoire seulement, sans jetons ni adresses complètes. Il s'efface quand Piéride se ferme."
+    },
+    "toggles": {
+      "showCoefficients": {
+        "title": "Afficher les coefficients",
+        "text": "Dans la liste des notes"
+      },
+      "showWeekend": {
+        "title": "Afficher le week-end",
+        "text": "Samedi et dimanche dans la vue semaine"
+      },
+      "showNowLine": {
+        "title": "Ligne de l'heure actuelle",
+        "text": "Repère rouge dans l'emploi du temps"
+      },
+      "showBreaks": {
+        "title": "Pauses",
+        "text": "Pause méridienne et récréations dans la liste"
+      },
+      "showCanteen": {
+        "title": "Menu et réservation de cantine",
+        "text": "Dans la pause méridienne"
+      },
+      "hideDoneTasks": {
+        "title": "Masquer les tâches terminées",
+        "text": "Elles restent visibles avec le filtre Terminées"
+      },
+      "sidebarAutoCollapse": {
+        "title": "Replier automatiquement",
+        "text": "Quand la fenêtre fait moins de 1280 px de large"
+      },
+      "sidebarBadges": {
+        "title": "Pastilles de nouveautés",
+        "text": "Nombre de tâches à faire"
+      },
+      "startMinimized": {
+        "title": "Démarrer réduit dans la barre des tâches",
+        "text": "Quand Piéride se lance à l'ouverture de session"
+      },
+      "closeToTray": {
+        "title": "Fermer la fenêtre réduit Piéride",
+        "text": "L'application reste dans la barre des tâches au lieu de quitter"
+      },
+      "trayGlance": {
+        "title": "Coup d'œil dans la barre des tâches",
+        "text": "Cours actuel et suivant dans le menu de l'icône"
+      },
+      "notifyGrades": {
+        "title": "Nouvelles notes",
+        "text": "Dès qu'une note est publiée"
+      },
+      "notifyCourses": {
+        "title": "Cours annulés ou modifiés",
+        "text": "Changement de salle, absence d'un professeur"
+      },
+      "notifyHomework": {
+        "title": "Rappel des tâches",
+        "text": "La veille de la date de rendu"
+      },
+      "notifyNews": {
+        "title": "Nouvelles actualités",
+        "text": "Publiées par ton établissement"
+      },
+      "notifyMorning": {
+        "title": "Résumé du matin",
+        "text": "Tes cours et tâches du jour à l'ouverture de session"
+      },
+      "quietDuringClasses": {
+        "title": "Silencieux pendant les cours",
+        "text": "Les notifications attendent la fin du cours"
+      }
+    },
+    "features": {
+      "gradeScale": "Échelle des notes",
+      "gradeScaleText": "Notation par défaut dans l'interface",
+      "outOf": "Sur {{scale}}",
+      "tasksLayout": "Affichage des tâches",
+      "tasksLayoutText": "Une colonne par jour, ou une liste par date de rendu",
+      "board": "Tableau",
+      "list": "Liste"
+    },
+    "language": {
+      "recommended": "Recommandé"
+    },
+    "releaseNotes": {
+      "installed": "Installée",
+      "emptyTitle": "Pas encore de notes de version",
+      "emptyText": "Elles arriveront avec la première version publiée de Piéride."
+    },
+    "account": {
+      "noAccount": "Ajoute d'abord un compte.",
+      "profile": "Profil",
+      "changePhoto": "Changer la photo",
+      "offline": "Compte hors ligne",
+      "identity": "Identité",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "photo": "Photo de profil",
+      "fromFile": "Depuis un fichier",
+      "fromFileText": "Choisir une image sur ton ordinateur",
+      "removePhoto": "Supprimer la photo",
+      "fromServices": "Informations transmises par {{services}}",
+      "school": "Établissement",
+      "className": "Classe"
+    },
+    "image": {
+      "too_big": "Cette image est trop lourde : 25 Mo au plus.",
+      "unreadable": "Cette image n'a pas pu être ouverte. Essaie un fichier PNG, JPEG ou WebP."
+    },
+    "linked": {
+      "school": "Comptes scolaires",
+      "canteen": "Cantine et cartes",
+      "calendar": "Calendriers",
+      "current": "Compte affiché",
+      "needsLogin": "Reconnexion nécessaire",
+      "relink": "Se reconnecter",
+      "actions": "Actions",
+      "show": "Afficher ce compte",
+      "remove": "Supprimer le compte",
+      "unlink": "Délier",
+      "removeTitle": "Supprimer le compte de {{name}} ?",
+      "removeText": "Ses données et ses identifiants seront effacés de cet ordinateur. Rien ne change sur les sites de ses services.",
+      "unlinkTitle": "Délier {{service}} ?",
+      "unlinkText": "Ses données seront effacées de cet ordinateur. Tu pourras le lier de nouveau au compte de {{name}}.",
+      "failed": "Ça n'a pas marché. Réessaie dans un instant.",
+      "secretsLeft": "Le compte est supprimé, mais ses identifiants sont restés dans le trousseau : Piéride réessaiera au prochain démarrage.",
+      "addAccount": "Ajouter un compte",
+      "addOffline": "Créer un compte hors ligne"
+    },
+    "signOut": {
+      "label": "Se déconnecter",
+      "title": "Te déconnecter de {{name}} ?"
+    },
+    "subjects": {
+      "search": "Rechercher une matière",
+      "reset": "Réinitialiser",
+      "resetTitle": "Réinitialiser toutes les matières ?",
+      "resetText": "Les noms, couleurs et emojis choisis pour ce compte reviennent à ceux par défaut.",
+      "resetOne": "Revenir aux choix par défaut",
+      "noMatch": "Aucune matière ne correspond à ta recherche.",
+      "emptyTitle": "Pas encore de matières",
+      "emptyText": "Elles apparaissent après la première synchronisation de tes cours, tâches ou notes.",
+      "all": "Toutes les matières",
+      "everywhere": "Les changements s'appliquent à toutes les vues.",
+      "preview": "Aperçu",
+      "previewText": "Comme dans ton emploi du temps",
+      "name": "Nom affiché",
+      "original": "Nom donné par ton établissement : {{name}}",
+      "emoji": "Emoji",
+      "otherEmoji": "Ou tape un emoji",
+      "color": "Couleur",
+      "colorNumber": "Couleur {{number}}"
+    },
+    "wallpaper": {
+      "label": "Fond d'écran de l'accueil",
+      "title": "Fond d'écran",
+      "text": "Choisis le fond du bandeau de ton accueil.",
+      "where": "En haut de ton accueil",
+      "change": "Changer",
+      "remove": "Supprimer le fond d'écran",
+      "drop": "Glisse une image ici ou clique pour choisir un fichier",
+      "failed": "L'image n'a pas pu être enregistrée. Essaie une image plus petite.",
+      "none": "Aucun",
+      "image": "Ton image",
+      "indigo": "Indigo",
+      "sunset": "Coucher de soleil",
+      "lagoon": "Lagon",
+      "raspberry": "Framboise",
+      "mist": "Brume",
+      "cropTitle": "Choisis la partie de l'image",
+      "cropText": "Le cadre a la forme du bandeau de l'accueil : ce qu'il contient s'affichera derrière le bonjour."
+    },
+    "startup": {
+      "launch": "Démarrage",
+      "atLogin": "Lancer au démarrage de l'ordinateur",
+      "atLoginText": "À l'ouverture de ta session",
+      "autostartFailed": "Le lancement au démarrage n'a pas pu être réglé sur ce système.",
+      "updates": "Mises à jour",
+      "version": "Piéride {{version}}",
+      "updatesText": "Les mises à jour automatiques arrivent avec la version 1.0.",
+      "releases": "Voir les versions",
+      "shortcuts": "Raccourcis clavier",
+      "to": "à",
+      "shortcut": {
+        "palette": "Palette de commandes",
+        "sections": "Aller à une section",
+        "sync": "Synchroniser (au plus toutes les 5 minutes)",
+        "settings": "Paramètres",
+        "close": "Fermer un panneau ou une fenêtre"
+      }
+    },
+    "notifications": {
+      "sampleFrom": "Piéride · maintenant",
+      "example": "Cours annulé : Histoire-Géographie à 9:00 est annulé.",
+      "test": "Tester",
+      "denied": "Les notifications de Piéride sont bloquées : autorise-les dans les réglages de ton système.",
+      "failed": "La notification n'a pas pu être envoyée.",
+      "macDev": "En mode dev, macOS affiche la notification au nom du Terminal : autorise ses notifications dans Réglages Système > Notifications > Terminal. L'app compilée envoie les siennes sous son propre nom.",
+      "for": "M'avertir pour",
+      "reminderTime": "Heure du rappel",
+      "quiet": "Discrétion",
+      "soon": "Piéride t'enverra ces notifications dès que la synchronisation en arrière-plan sera prête. Tes choix sont déjà enregistrés."
+    },
+    "privacy": {
+      "nothing": "Piéride n'envoie rien",
+      "nothingText": "Aucune statistique, aucun suivi : l'équipe ne sait même pas que tu utilises Piéride.",
+      "promises": "Nos engagements",
+      "local": "Tes données scolaires restent sur cet ordinateur",
+      "keyring": "Tes identifiants sont gardés dans le trousseau de ton système",
+      "services": "Piéride ne parle qu'à tes services scolaires",
+      "remove": "Supprimer un compte efface toutes ses données",
+      "source": "Vérifier dans le code source"
+    },
+    "about": {
+      "versionOn": "Version {{version}} · {{system}}",
+      "text": "Maintenu par des élèves et étudiants bénévoles. Inspiré de Papillon, avec l'accord de son équipe.",
+      "links": {
+        "repository": {
+          "title": "Projet GitHub",
+          "text": "Contribuer au code source"
+        },
+        "contributors": {
+          "title": "Contributeurs",
+          "text": "Les bénévoles qui font vivre le projet"
+        },
+        "issues": {
+          "title": "Signaler un bug",
+          "text": "Ouvrir un ticket sur GitHub"
+        },
+        "translate": {
+          "title": "Aider à traduire Piéride",
+          "text": "Les fichiers de langue du projet"
+        },
+        "papillon": {
+          "title": "Papillon",
+          "text": "L'application qui a inspiré Piéride"
+        }
+      },
+      "appVersion": "Version de l'application",
+      "dependencies": "Versions des dépendances",
+      "licenses": "Licences open source",
+      "licensesText": "GPL-3.0, Papicons (MIT), polices SIL OFL",
+      "readLicense": "Lire"
     }
   },
   "onboarding": {
@@ -202,6 +866,80 @@
       },
       "cancel": "Annuler",
       "create": "Créer le compte"
+    },
+    "pronote": {
+      "eyebrow": "Connexion à PRONOTE",
+      "methodTitle": "Comment souhaites-tu te connecter ?",
+      "methodText": "Trouve ton établissement ou colle l'adresse PRONOTE.",
+      "city": "Rechercher une ville",
+      "cityText": "Puis choisir ton établissement dans la liste",
+      "recommended": "Recommandé",
+      "url": "J'ai une URL de connexion",
+      "urlText": "L'adresse PRONOTE de ton établissement",
+      "entTitle": "Tu te connectes d'habitude par l'ENT ?",
+      "entText": "Choisis ton établissement : Piéride ouvre la page de connexion de ton ENT dans une fenêtre sécurisée.",
+      "searchEyebrow": "Recherche de l'emplacement",
+      "searchTitle": "Choisis ton établissement",
+      "searchText": "Tape le nom de ta ville : les établissements PRONOTE autour s'affichent du plus proche au plus loin.",
+      "searchPlaceholder": "Nom de ta ville",
+      "searching": "Recherche des établissements…",
+      "schoolsIn": "Établissements à {{city}}",
+      "results_one": "{{count}} résultat",
+      "results_other": "{{count}} résultats",
+      "filterPlaceholder": "Filtrer par nom ou code postal",
+      "noFilterMatch": "Aucun établissement de la liste ne correspond à ce filtre.",
+      "noCity": "Aucune ville ne correspond à ta recherche.",
+      "noSchool": "Aucun établissement PRONOTE trouvé autour de {{city}}.",
+      "searchFailed": "La recherche ne répond pas pour l'instant. Réessaie dans un instant, ou indique l'adresse de ton établissement.",
+      "urlEyebrow": "URL de l'établissement",
+      "urlTitle": "Indique l'adresse URL de ton établissement",
+      "urlLabel": "URL de ton instance PRONOTE",
+      "urlHelp": "Où trouver cette adresse ?",
+      "urlStep1": "Ouvre PRONOTE dans ton navigateur, depuis l'ENT ou le site du lycée.",
+      "urlStep2": "Copie l'adresse affichée dans la barre du navigateur.",
+      "urlStep3": "Colle-la ici : Piéride retire tout seul la fin de l'adresse.",
+      "checking": "Vérification de l'adresse…",
+      "instanceEnt": "connexion par ENT ({{ent}})",
+      "instanceDirect": "connexion directe",
+      "instanceFailed": "Aucun PRONOTE ne répond à cette adresse. Vérifie-la, ou cherche ton établissement par ville.",
+      "loginEyebrow": "Connexion",
+      "loginTitle": "Connecte-toi à {{name}}",
+      "loginText": "La page de connexion de ton établissement, ou de ton ENT, s'ouvre dans une fenêtre à part. Connecte-toi comme d'habitude.",
+      "safeTitle": "Ton mot de passe reste privé",
+      "safeText": "Piéride n'est affilié ni à PRONOTE ni à ton ENT. La page s'ouvre dans une fenêtre sécurisée : ton mot de passe n'est ni lu ni gardé par Piéride.",
+      "open": "Ouvrir la page de connexion",
+      "retry": "Réessayer",
+      "waiting": "Connecte-toi dans la fenêtre qui vient de s'ouvrir.",
+      "show": "Afficher la fenêtre",
+      "closed": "La fenêtre a été fermée avant la fin de la connexion.",
+      "windowTitle": "Connexion à PRONOTE",
+      "pinEyebrow": "Double authentification",
+      "pinTitle": "Une petite vérification",
+      "pinText": "PRONOTE demande le code PIN que tu as choisi pour protéger ton compte.",
+      "pinLabel": "Code PIN",
+      "confirm": "Confirmer",
+      "syncTitle": "Connexion en cours…",
+      "syncText": "Cela peut prendre quelques instants.",
+      "steps": {
+        "login": "Connexion à PRONOTE",
+        "TIMETABLE": "Récupération de l'emploi du temps",
+        "GRADES": "Récupération des notes",
+        "HOMEWORK": "Récupération des devoirs"
+      },
+      "done": "Terminé",
+      "errors": {
+        "login_open": "La fenêtre de connexion est déjà ouverte.",
+        "login_window": "La fenêtre de connexion n'a pas pu s'ouvrir.",
+        "AuthenticationError": "PRONOTE a refusé la connexion. Réessaie.",
+        "ServiceUnavailable": "PRONOTE ne répond pas pour l'instant. Réessaie dans un instant.",
+        "SecurityChallenge": "PRONOTE demande une vérification que Piéride ne sait pas encore faire.",
+        "LoginBlocked": "PRONOTE te demande de changer ton mot de passe ou de choisir ta double authentification. Fais-le d'abord sur le site de PRONOTE, puis reviens ici.",
+        "WrongPin": "Ce code PIN n'est pas le bon."
+      }
     }
+  },
+  "dialog": {
+    "cancel": "Annuler",
+    "close": "Fermer"
   }
 }

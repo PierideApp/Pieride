@@ -58,20 +58,22 @@ export const MODULES: readonly ModuleManifest[] = [
   // …
 ];
 
-// Modules affichés : capabilities des services du compte, moins ceux masqués
-export function visibleModules(capabilities, hidden = []) {
+// Modules affichés : capabilities des services du compte, moins ceux masqués,
+// groupe par groupe dans l'ordre choisi
+export function visibleModules(capabilities, hidden = [], order = []) {
   return MODULES.filter(
     module =>
       module.status !== "off" &&
       !hidden.includes(module.id) &&
       (module.requires.length === 0 ||
         module.requires.some(capability => capabilities.has(capability)))
-  );
+  ).sort(/* groupe, puis place dans `order` */);
 }
 ```
 
 - Chaque module vit dans son dossier `src/modules/<id>/` : sa page, ses composants, ses hooks.
 - Le routeur ne déclare que les routes des modules visibles. Une adresse vers un module caché affiche l'état « Page introuvable ».
-- Les raccourcis `Ctrl/⌘ 1` à `6` suivent l'ordre des modules visibles.
+- L'utilisateur réordonne les modules de chaque compte dans Paramètres > Barre latérale (`moduleOrder` dans `src/stores/settings.ts`), sans les faire changer de groupe. Les raccourcis `Ctrl/⌘ 1` à `9` suivent cet ordre.
+- Un module peut afficher une pastille dans la barre latérale (`badge`, une fonction qui compte dans la base, comme les tâches à faire). L'utilisateur peut couper les pastilles.
 - Un module `beta` s'affiche avec une pastille « Bêta » dans la barre latérale.
 - Ajouter un module = un dossier dans `src/modules/` + une ligne dans `MODULES`.

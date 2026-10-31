@@ -1,0 +1,30 @@
+.dialog {
+  width: min(440px, calc(100% - 2 * var(--space-5)));
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  color: var(--color-text);
+  background: var(--color-surface);
+
+  &::backdrop {
+    background: var(--color-overlay);
+  }
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.text {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-2);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}

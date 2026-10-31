@@ -3,3 +3,10 @@ export const isMac = navigator.userAgent.includes("Mac");
 
 /** Touche des raccourcis telle qu'on l'affiche : `⌘` sous macOS, `Ctrl` ailleurs. */
 export const MOD = isMac ? "⌘" : "Ctrl";
+
+/** Le nom du système, pour « À propos ». */
+export const platformName = isMac
+  ? "macOS"
+  : navigator.userAgent.includes("Windows")
+    ? "Windows"
+    : "Linux";

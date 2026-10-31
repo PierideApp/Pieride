@@ -1,0 +1,37 @@
+// Maquettes : `period_nav` (pieride_design/design/_src/lib.py).
+.nav {
+  display: flex;
+  align-items: center;
+}
+
+.arrow {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--color-text-2);
+}
+
+.period {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 var(--space-3);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge {
+  padding: 2px 7px;
+  border-radius: var(--radius-s);
+  font-size: 14px;
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
+.today {
+  height: 34px;
+  margin-left: var(--space-2);
+  padding: 0 14px;
+  font-size: 13px;
+}

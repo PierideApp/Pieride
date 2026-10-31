@@ -1,0 +1,15 @@
+.tip {
+  display: flex;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  font-size: 13px;
+  color: var(--color-text-2);
+  background: var(--color-accent-soft);
+
+  svg {
+    flex-shrink: 0;
+    color: var(--color-accent-text);
+  }
+}

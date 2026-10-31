@@ -1,9 +1,12 @@
 // Le cadre de la fenêtre : fond, panneau de page, barre latérale, boutons de la fenêtre.
 
-// Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4).
+// Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4), sauf si
+// l'utilisateur l'a refusé (Paramètres > Barre latérale, `data-expanded`).
 @mixin rail {
   @media (max-width: 1279px) {
-    @content;
+    .shell:not([data-expanded]) & {
+      @content;
+    }
   }
 }
 
@@ -55,8 +58,9 @@
   flex-direction: column;
   flex-shrink: 0;
   width: 400px;
-  padding: var(--space-4) var(--space-5) var(--space-5);
-  overflow-y: auto;
+  // Sous les boutons de la fenêtre, comme dans les maquettes (`inspector`).
+  padding: var(--space-8) var(--space-5) var(--space-5);
+  overflow: hidden auto;
   border-left: 1px solid var(--color-border);
   background: var(--color-surface);
 
@@ -78,19 +82,18 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 40px;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .detailClose {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border);
+  width: 30px;
+  height: 30px;
+  border: none;
   border-radius: var(--radius-s);
   color: var(--color-text-2);
-  background: var(--color-surface);
+  background: var(--color-bg);
   cursor: pointer;
 
   &:hover {
@@ -103,14 +106,29 @@
   color: var(--color-text-3);
 }
 
+// Titre, sous-titre et à droite l'image de l'élément (emoji d'une matière…).
+.detailHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .detailTitle {
-  margin: 0;
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .detailSubtitle {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
   color: var(--color-text-2);
 }
 
@@ -170,7 +188,7 @@
   flex: 1 1 auto;
   min-height: 0;
   padding: var(--space-2);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 .paletteGroup {
@@ -253,7 +271,8 @@
   gap: var(--space-2);
   width: var(--sidebar-width);
   padding: var(--space-5) var(--space-3) var(--space-4);
-  overflow-y: auto;
+  // En hauteur seulement, comme les pages (components/Page).
+  overflow: hidden auto;
   color: var(--brand-lavender);
 
   // Trame de papillons du bas, qui s'estompe vers le haut (maquettes, « Motif Piéride »).
@@ -321,19 +340,6 @@
     padding-inline: 0;
     background: none;
   }
-}
-
-.avatar {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-round);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--on-brand);
-  background: var(--brand-500);
 }
 
 .accountText {
@@ -428,6 +434,7 @@
 }
 
 .item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -450,6 +457,16 @@
     cursor: default;
   }
 
+  // L'état de la synchro : aligné sur les liens, mais rien à cliquer.
+  &.status {
+    margin: 0;
+    cursor: default;
+
+    &:hover {
+      color: inherit;
+    }
+  }
+
   @include rail {
     justify-content: center;
     padding-inline: 0;
@@ -468,6 +485,28 @@
 
 .moduleIcon {
   flex-shrink: 0;
+}
+
+// Pastille d'un module (tâches à faire…) ; dans le rail, posée sur le coin de l'icône.
+.badge {
+  min-width: 20px;
+  margin-left: auto;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--brand-ink);
+  background: var(--brand-sulfur);
+
+  @include rail {
+    position: absolute;
+    top: 0;
+    right: var(--space-1);
+    min-width: 16px;
+    padding: 0 var(--space-1);
+    font-size: 10px;
+  }
 }
 
 .group {
@@ -491,6 +530,15 @@
 .syncIcon {
   flex-shrink: 0;
   color: var(--color-success);
+}
+
+// À la place de l'icône pendant la synchro, sur la même place.
+.syncSpinner {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
 }
 
 // Dans le rail, les libellés restent lus par les lecteurs d'écran.
@@ -550,13 +598,29 @@
   }
 }
 
+// Sur le bandeau de l'Accueil (`data-window-banner`, AccueilPage.tsx) : blancs comme le texte
+// du bandeau, avec son ombre, lisibles sur une image claire que le voile assombrit en haut.
+.shell:has([data-window-banner]) .controls {
+  color: var(--on-brand);
+
+  svg {
+    filter: drop-shadow(0 1px 2px var(--color-overlay));
+  }
+}
+
+.shell:has([data-window-banner]) .button:hover {
+  color: var(--on-brand);
+  background: var(--on-brand-soft);
+}
+
 // Convention de Windows : la fermeture devient rouge au survol.
 .close {
   composes: button;
   border-top-right-radius: var(--radius-l);
 
   &:hover,
-  .onBrand &:hover {
+  .onBrand &:hover,
+  .shell:has([data-window-banner]) &:hover {
     color: var(--color-on-accent);
     background: var(--color-error);
   }

@@ -1,32 +1,3 @@
-/* Thèmes clair et sombre, d'après les maquettes (pieride_design/design/README.md).
-   Toute couleur, espacement ou rayon de l'interface passe par ces variables. */
-
-@font-face {
-  font-family: "SN Pro";
-  font-weight: 400;
-  src: url("@/assets/fonts/SNPro-Regular.ttf") format("truetype");
-}
-@font-face {
-  font-family: "SN Pro";
-  font-weight: 500;
-  src: url("@/assets/fonts/SNPro-Medium.ttf") format("truetype");
-}
-@font-face {
-  font-family: "SN Pro";
-  font-weight: 600;
-  src: url("@/assets/fonts/SNPro-Semibold.ttf") format("truetype");
-}
-@font-face {
-  font-family: "SN Pro";
-  font-weight: 700;
-  src: url("@/assets/fonts/SNPro-Bold.ttf") format("truetype");
-}
-@font-face {
-  font-family: "Unbounded";
-  font-weight: 700;
-  src: url("@/assets/fonts/Unbounded-Bold.ttf") format("truetype");
-}
-
 @mixin light {
   --color-bg: #f4f5fb;
   --color-surface: #ffffff;
@@ -44,6 +15,22 @@
   --color-error-bg: #fdecee;
   --color-warning: #e8901c;
   --color-warning-bg: #fff3e3;
+  // Retards (Assiduité) : le bleu des maquettes.
+  --color-info: #007fda;
+  // Gris des maquettes (DARK_MAP) : fond d'un sélecteur ou de la pause de midi, cours
+  // annulé et son bord, bord d'une case à cocher vide.
+  --color-fill: #e9ebf5;
+  --color-muted: #f1f2f7;
+  --color-muted-border: #e2e4ee;
+  --color-control: #cdd0e2;
+  // Piste d'une barre de progression, colonne du tableau des tâches, pastille grise, texte et
+  // icône sur le jaune soufre de la marque.
+  --color-track: #e3e5f2;
+  --color-column: #eceef7;
+  --color-chip: #eef0f7;
+  --color-sulfur-text: #6b5f00;
+  --color-sulfur-icon: #8a7a00;
+  --color-table-head: #f8f9fd;
 
   color-scheme: light;
 }
@@ -64,27 +51,41 @@
   --color-error-bg: #33161e;
   --color-warning: #ffb547;
   --color-warning-bg: #32240f;
+  --color-info: #4da5e5;
+  --color-fill: #201f3b;
+  --color-muted: #1c1b35;
+  --color-muted-border: #2e2d50;
+  --color-control: #4a4972;
+  --color-track: #2c2b52;
+  --color-column: #15142c;
+  --color-chip: #24233f;
+  --color-sulfur-text: #f1e25b;
+  --color-sulfur-icon: #f1e25b;
+  --color-table-head: #1d1c39;
 
   color-scheme: dark;
 }
 
 :root {
   /* Marque : identique dans les deux thèmes */
-  --brand-ink: #0e0b4d;
   --brand-900: #16127a;
   --brand-500: #5566f2;
   --brand-lavender: #a9b4ff;
   --brand-sulfur: #f1e25b;
-  --brand-surface: linear-gradient(160deg, #1d1a96 0%, var(--brand-ink) 100%);
-  --brand-glow: radial-gradient(circle at 15% 5%, #5566f273, transparent 60%);
   --on-brand: #ffffff;
   --on-brand-soft: #ffffff1f;
   --on-brand-active: #ffffff21;
+  // Action destructrice posée sur la marque (« Se déconnecter »).
+  --on-brand-danger: #ff8a95;
   // Fond assombri sous la palette et ombre du panneau détail.
   --color-overlay: #0e0b4d59;
+  // Ombre douce sous un bouton rond posé sur le contenu (flèche du tableau des tâches).
+  --color-shadow: #0e0b4d14;
 
   --font-text: "SN Pro", system-ui, sans-serif;
   --font-display: "Unbounded", "SN Pro", system-ui, sans-serif;
+  // Journaux (Paramètres > Développeur) : la police à chasse fixe du système.
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", monospace;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -115,6 +116,9 @@
   @include dark;
 }
 
+// Une couleur d'accentuation autre que l'indigo (Paramètres > Personnalisation) remplace
+// `--color-accent*` en ligne sur la racine : hooks/useTheme.ts calcule ses teintes.
+
 *,
 *::before,
 *::after {
@@ -128,9 +132,15 @@ body,
   margin: 0;
 }
 
+// La fenêtre ne défile jamais et ne rebondit pas au pavé tactile : seules les zones de l'app
+// défilent, et en hauteur seulement (`overflow: hidden auto`, car `overflow-y: auto` seul
+// rend l'autre axe défilant lui aussi).
+html {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
-  background: var(--brand-ink);
-  color: var(--color-text);
   font-family: var(--font-text);
   font-size: 14px;
   // Medium, comme le texte courant de Papillon (body1).
@@ -141,6 +151,16 @@ body {
 button {
   font: inherit;
   color: inherit;
+}
+
+// Pas de barre de défilement visible : on défile à la molette, au pavé tactile ou au clavier.
+// `::-webkit-scrollbar` pour les WebKit sans `scrollbar-width` (macOS avant Safari 18.2).
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 // Une touche du clavier (« Ctrl », « Échap ») dans un texte d'aide.

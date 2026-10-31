@@ -8,11 +8,11 @@ import type {
   CanteenMenu,
   CanteenTransaction,
   Course,
-  Grade,
   Homework,
   LinkedService,
   News,
   Period,
+  PeriodGrades,
   ServiceKind,
 } from "./models";
 
@@ -25,7 +25,11 @@ export interface CapabilityMethods {
   };
   GRADES: {
     getGradesPeriods(): Promise<Period[]>;
-    getGradesForPeriod(period: Period): Promise<Grade[]>;
+    /**
+     * Les notes de la période et ses moyennes. Les matières du relevé comptent même sans
+     * note : la liste des matières (Paramètres > Matières) ne dépend pas que des notes.
+     */
+    getGradesForPeriod(period: Period): Promise<PeriodGrades>;
   };
   NEWS: {
     getNews(): Promise<News[]>;
@@ -89,7 +93,7 @@ export const SERVICE_CAPABILITIES: Record<ServiceKind, readonly Capability[]> =
     ard: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
     izly: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
     alise: ["CANTEEN_BALANCE", "CANTEEN_HISTORY"],
-    mock: ["TIMETABLE", "HOMEWORK", "GRADES"],
+    mock: ["TIMETABLE", "HOMEWORK", "GRADES", "NEWS", "ATTENDANCE"],
   };
 
 /** Nom affiché de chaque service : un nom de marque, le même dans toutes les langues. */
@@ -105,6 +109,24 @@ export const SERVICE_NAMES: Record<ServiceKind, string> = {
   izly: "Izly",
   alise: "Alise",
   mock: "Mock Data",
+};
+
+/** Le rôle de chaque service, pour les ranger dans Paramètres > Comptes liés. */
+export const SERVICE_GROUPS: Record<
+  ServiceKind,
+  "school" | "canteen" | "calendar"
+> = {
+  pronote: "school",
+  ecoledirecte: "school",
+  skolengo: "school",
+  appscho: "school",
+  multi: "school",
+  ical: "calendar",
+  turboself: "canteen",
+  ard: "canteen",
+  izly: "canteen",
+  alise: "canteen",
+  mock: "school",
 };
 
 /** Les services sans identifiants : rien à garder dans le trousseau. */

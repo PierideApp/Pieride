@@ -8,7 +8,7 @@ use tauri::{AppHandle, async_runtime::spawn_blocking};
 type Result<T> = std::result::Result<T, &'static str>;
 
 /// Les `id` sont des UUID créés par le front : rien d'autre n'est accepté.
-fn valid_id(id: &str) -> bool {
+pub(crate) fn valid_id(id: &str) -> bool {
     (1..=64).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
 }
 

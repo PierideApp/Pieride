@@ -12,8 +12,13 @@
     "core:window:allow-show",
     "core:window:allow-unminimize",
     "core:window:allow-set-focus",
+    "core:window:allow-hide",
+    "core:window:allow-destroy",
     "core:app:allow-default-window-icon",
     "allow-allow-instance",
+    "allow-pronote-login",
+    "allow-show-app",
+    "allow-is-minimized",
     "allow-secret-get",
     "allow-secret-set",
     "allow-secret-delete",
@@ -21,9 +26,22 @@
     "allow-db-execute",
     "allow-db-batch",
     "allow-db-apply-migration",
+    "notification:allow-is-permission-granted",
+    "notification:allow-request-permission",
+    "notification:allow-notify",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://github.com/PierideApp/*" },
+        { "url": "https://github.com/PapillonApp/*" }
+      ]
+    },
     {
       "identifier": "http:default",
-      "allow": [],
+      "allow": [
+        { "url": "https://www.index-education.com/swie/geoloc.php" },
+        { "url": "https://data.geopf.fr/geocodage/search" }
+      ],
       "deny": [{ "url": "http://*" }]
     }
   ]

@@ -11,7 +11,7 @@ describe("SchoolServicePlugin", () => {
       capabilities: {
         GRADES: {
           getGradesPeriods: async () => [],
-          getGradesForPeriod: async () => [],
+          getGradesForPeriod: async () => ({ grades: [], averages: [] }),
         },
       },
     };
