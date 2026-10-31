@@ -13,7 +13,7 @@ function keys(value: unknown, prefix = ""): string[] {
 }
 
 describe("locales", () => {
-  it("en a exactement les clés de fr", () => {
+  it("pas de différence de clés entre fr et en", () => {
     expect(keys(en)).toEqual(keys(fr));
   });
 });
