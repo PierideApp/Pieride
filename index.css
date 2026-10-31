@@ -109,7 +109,7 @@
 
 body {
   background: var(--brand-glow), var(--brand-surface);
-  color: white;
+  color: var(--color-text, white);
   overflow: hidden;
   overscroll-behavior: none;
 }
