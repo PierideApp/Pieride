@@ -350,12 +350,12 @@ export function AccueilPage() {
             {t("accueil.edit")}
           </Button>
         </div>
-        <h1 className={styles.hello}>
+        <h1 className={styles.hello} data-tauri-drag-region>
           {account
             ? t("accueil.hello", { name: account.firstName })
             : t("accueil.helloAnonymous")}
         </h1>
-        <p className={styles.summary}>
+        <p className={styles.summary} data-tauri-drag-region>
           {capitalize(formats.longDate.format(now), formats.locale)} ·{" "}
           {held.length > 0
             ? t("accueil.coursesLeft", { count: held.length })

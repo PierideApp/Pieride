@@ -19,8 +19,11 @@
 }
 
 // Le fond d'écran déborde sous les widgets et s'efface vers le fond de la page.
+// Transparent aux clics : Tauri ne déplace la fenêtre que si l'élément cliqué porte
+// lui-même `data-tauri-drag-region`, ici le bandeau en dessous.
 .wallpaper {
   position: absolute;
+  pointer-events: none;
   inset: 0 0 auto;
   height: calc(100% + 120px);
   background-position: center;
