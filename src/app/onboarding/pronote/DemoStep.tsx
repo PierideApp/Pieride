@@ -1,14 +1,12 @@
 // L'adresse de l'établissement (maquette 07-url-pronote) : collée telle quelle, nettoyée, puis
 // vérifiée auprès de PRONOTE, qui donne le nom de l'établissement et son ENT.
 import { Check } from "@getpapillon/papicons";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { InfoCard } from "@/components/InfoCard/InfoCard";
 import { Spinner } from "@/components/Spinner/Spinner";
-import { TextField } from "@/components/TextField/TextField";
 import { useLookup } from "@/hooks/useLookup";
 import { findInstance, type InstanceInfo } from "@/services/pronote/login";
 
@@ -29,7 +27,7 @@ export function DemoStep({
   onNext: (instance: InstanceInfo) => void;
 }) {
   const { t } = useTranslation();
-  const value: String = "https://demo.index-education.net/pronote"
+  const value: string = "https://demo.index-education.net/pronote"
   const lookup = useLookup(value.trim(), searchInstance);
   const found = lookup.status === "ready" ? lookup.data : null;
 

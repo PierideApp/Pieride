@@ -20,10 +20,10 @@ export function InfoCard({
   return (
     <Card tone={type} className={styles.card}>
       <p className={styles.title}>
-        { (type == "info" || !type) && <Info size={16} aria-hidden="true" /> }
-        { type == "danger" && <AlertCircle size={16} aria-hidden="true" /> }
-        { type == "success" && <Check size={16} aria-hidden="true" /> }
-        { type == "warn" && <AlertTriangle size={16} aria-hidden="true" /> }
+        { (type === "info" || !type) && <Info size={16} aria-hidden="true" /> }
+        { type === "danger" && <AlertCircle size={16} aria-hidden="true" /> }
+        { type === "success" && <Check size={16} aria-hidden="true" /> }
+        { type === "warn" && <AlertTriangle size={16} aria-hidden="true" /> }
         {title}
       </p>
       <div className={styles.content}>{children}</div>

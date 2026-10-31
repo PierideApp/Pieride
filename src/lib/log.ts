@@ -107,7 +107,6 @@ export function logText(): string {
  * ou du système, qui ne portent qu'un code : celles d'un service passent par leur type.
  */
 export function report(source: string, error: unknown): void {
-  // eslint-disable-next-line no-console
   console.error(error);
   log("error", source, error instanceof Error ? error.name : String(error));
 }

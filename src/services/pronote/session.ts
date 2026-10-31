@@ -179,7 +179,7 @@ export class PronoteSession {
   private async login(): Promise<SessionHandle> {
     const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
       this.secret;
-    if(url === demoURL) return this.loginDemo();
+    if(url === demoURL) { return this.loginDemo(); };
     const handle = createSessionHandle(pronoteFetcher);
     try {
       const next = await loginToken(handle, {

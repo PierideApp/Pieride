@@ -19,7 +19,6 @@ export function useLoaded<T>(load: () => Promise<T>, key: string): Loaded<T> {
       current = false;
     };
     // `load` est recréée à chaque rendu : `key` dit quand elle change vraiment.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
   return state;
 }

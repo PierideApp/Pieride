@@ -273,7 +273,7 @@ export async function loginWithEnt(
   | { kind: "pin"; finish: (pin: string) => Promise<PronoteLogin> }
 > {
   console.log("PRONOTE : Initialisation connexion, instance :", url)
-  if(url === demoURL) return loginDemo();
+  if(url === demoURL) { return loginDemo(); };
   await allowInstance(url);
   const session = createSessionHandle(pronoteFetcher);
   let challenge: SecurityError;

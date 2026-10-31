@@ -193,7 +193,6 @@ function read(files: Record<string, string>) {
       } catch (error) {
         // `pnpm test` refuse un fichier cassé avant la publication ; s'il passe quand même,
         // les autres versions restent affichées.
-        // eslint-disable-next-line no-console
         console.error(error);
         return [];
       }
