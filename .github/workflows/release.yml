@@ -1,0 +1,151 @@
+name: Build and publish release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  mark-prerelease:
+    name: Ensure this release is a prerelease
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mark as prerelease and keep it out of Latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ github.event.release.id }}
+        run: >-
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
+          --method PATCH
+          --field prerelease=true
+          --field make_latest=false
+
+  wait-for-main-ci:
+    name: Wait for the main CI result
+    needs: mark-prerelease
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Wait for CI on this release commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          deadline=$((SECONDS + 5400))
+          while (( SECONDS < deadline )); do
+            runs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=main&head_sha=${RELEASE_COMMIT}&per_page=100")"
+            main_run="$(jq -c '[.workflow_runs[] | select(.event == "push" and .head_branch == "main")] | sort_by(.run_number) | last // empty' <<< "$runs")"
+
+            if [[ -n "$main_run" ]]; then
+              status="$(jq -r '.status' <<< "$main_run")"
+              conclusion="$(jq -r '.conclusion // empty' <<< "$main_run")"
+              echo "CI de main pour ${RELEASE_COMMIT} : ${status}${conclusion:+ / ${conclusion}}"
+
+              if [[ "$status" == "completed" ]]; then
+                if [[ "$conclusion" == "success" ]]; then
+                  exit 0
+                fi
+                echo "Le CI de main n'a pas réussi (${conclusion}). Aucun build de release ne sera publié."
+                exit 1
+              fi
+            else
+              echo "En attente du lancement du CI de main pour ${RELEASE_COMMIT}."
+            fi
+
+            sleep 20
+          done
+
+          echo "Délai dépassé en attendant le CI de main. Aucun build de release ne sera publié."
+          exit 1
+
+  build:
+    name: Build ${{ matrix.os }}
+    needs: wait-for-main-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis
+          - os: macos-latest
+            bundles: app,dmg
+          - os: ubuntu-24.04
+            bundles: deb,rpm,appimage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            file \
+            libayatana-appindicator3-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            patchelf \
+            wget
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set version from release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/set-release-version.mjs
+
+      - name: Build and attach platform bundles
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --bundles ${{ matrix.bundles }}
+          releaseId: ${{ github.event.release.id }}
+          tagName: ${{ github.event.release.tag_name }}
+          releaseDraft: false
+          prerelease: true
+
+      - name: Build and attach portable Windows executable
+        if: runner.os == 'Windows'
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --no-bundle --config src-tauri/tauri.portable.conf.json
+          releaseId: ${{ github.event.release.id }}
+          tagName: ${{ github.event.release.tag_name }}
+          releaseDraft: false
+          prerelease: true
+          uploadPlainBinary: true
+          releaseAssetNamePattern: "[name]-portable-[version]-[platform][ext]"

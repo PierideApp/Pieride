@@ -17,7 +17,11 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b",
     "test": "vitest run --passWithNoTests",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "build:win": "node scripts/build-desktop.mjs win",
+    "build:win:portable": "node scripts/build-desktop.mjs win-portable",
+    "build:mac": "node scripts/build-desktop.mjs mac",
+    "build:linux": "node scripts/build-desktop.mjs linux"
   },
   "dependencies": {
     "@blockshub/pawnote-lts": "1.6.4",
