@@ -126,9 +126,9 @@ function createFetcher(userAgent?: string): Fetcher {
         method,
         content,
         headers,
-        redirect
-      }
-      console.log("[HTTP] -->", formattedRequest)
+        redirect,
+      };
+      console.log("[HTTP] -->", formattedRequest);
       const response = await externalFetch(url, {
         method,
         headers: finalHeaders,
@@ -140,15 +140,15 @@ function createFetcher(userAgent?: string): Fetcher {
         status: response.status,
         content: await response.text(),
         headers: response.headers,
-      }
-      console.log("[HTTP] <--", { 
+      };
+      console.log("[HTTP] <--", {
         content: parseJsonOrText(formattedResponse.content),
         status: formattedResponse.status,
-        headers: formattedResponse.headers
-      })
+        headers: formattedResponse.headers,
+      });
       return formattedResponse;
     } catch (error) {
-      console.error("[HTTP] <--", error)
+      console.error("[HTTP] <--", error);
       if (error instanceof ServiceUnavailable) {
         throw error;
       }

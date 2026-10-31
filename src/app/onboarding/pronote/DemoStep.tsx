@@ -27,7 +27,7 @@ export function DemoStep({
   onNext: (instance: InstanceInfo) => void;
 }) {
   const { t } = useTranslation();
-  const value: string = "https://demo.index-education.net/pronote"
+  const value: string = "https://demo.index-education.net/pronote";
   const lookup = useLookup(value.trim(), searchInstance);
   const found = lookup.status === "ready" ? lookup.data : null;
 
@@ -48,37 +48,37 @@ export function DemoStep({
         <p>{t("onboarding.pronote.demoContinue")}</p>
       </div>
 
-        {lookup.status === "loading" && (
-            <p className={pronote.status}>
-            <Spinner />
-            {t("onboarding.pronote.checking")}
-            </p>
-        )}
-        {lookup.status === "error" && (
-            <p className={styles.error} role="alert">
-            {typeof lookup.error === "string"
-                ? t(errorKey(lookup.error))
-                : t("onboarding.pronote.instanceFailed")}
-            </p>
-        )}
-        {found && (
-            <Card tone="success" className={pronote.found} role="status">
-            <Check size={18} aria-hidden="true" />
-            <span>
-                <strong>{found.name}</strong>
-                <small>
-                {[
-                    found.version && `PRONOTE ${found.version}`,
-                    found.ent
-                    ? t("onboarding.pronote.instanceEnt", { ent: found.ent })
-                    : t("onboarding.pronote.instanceDirect"),
-                ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </small>
-            </span>
-            </Card>
-        )}
+      {lookup.status === "loading" && (
+        <p className={pronote.status}>
+          <Spinner />
+          {t("onboarding.pronote.checking")}
+        </p>
+      )}
+      {lookup.status === "error" && (
+        <p className={styles.error} role="alert">
+          {typeof lookup.error === "string"
+            ? t(errorKey(lookup.error))
+            : t("onboarding.pronote.instanceFailed")}
+        </p>
+      )}
+      {found && (
+        <Card tone="success" className={pronote.found} role="status">
+          <Check size={18} aria-hidden="true" />
+          <span>
+            <strong>{found.name}</strong>
+            <small>
+              {[
+                found.version && `PRONOTE ${found.version}`,
+                found.ent
+                  ? t("onboarding.pronote.instanceEnt", { ent: found.ent })
+                  : t("onboarding.pronote.instanceDirect"),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </small>
+          </span>
+        </Card>
+      )}
 
       <footer className={styles.footer}>
         <Button

@@ -150,20 +150,24 @@ export function ConnectStep({
     }
   };
 
-  const loginWithDemo = async() => {
+  const loginWithDemo = async () => {
     setPhase({ id: "syncing", done: 0 });
     try {
       const result = await loginDemo();
-      await complete(result.login)
-    }
-    catch (failure) {
+      await complete(result.login);
+    } catch (failure) {
       fail(failure);
     }
-  }
+  };
 
-  useEffect(() => () => {
-    if(school.url === "https://demo.index-education.net/pronote") { loginWithDemo(); };
-  }, [])
+  useEffect(
+    () => () => {
+      if (school.url === "https://demo.index-education.net/pronote") {
+        loginWithDemo();
+      }
+    },
+    []
+  );
 
   const confirmPin = async (finish: (pin: string) => Promise<PronoteLogin>) => {
     setError(null);

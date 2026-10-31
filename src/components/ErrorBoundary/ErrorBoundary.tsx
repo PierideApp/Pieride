@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component<
 
   componentDidCatch(error: unknown) {
     // Le détail sert au débogage dans la console de la WebView.
-     
+
     console.error(error);
   }
 
