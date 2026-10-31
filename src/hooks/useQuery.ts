@@ -118,7 +118,6 @@ export function useQuery<T>(
   useEffect(() => {
     source.refresh(key, stamp, load);
     // `load` est recréée à chaque rendu : `key` dit quand elle change vraiment.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, key, stamp]);
   // Avant l'effet, `entry` peut dater d'avant le nouveau `stamp` : elle va être relue.
   const fetching = syncing || isStale(entry, stamp);

@@ -10,6 +10,7 @@ import {
   BadCredentialsError,
   BusyPageError,
   createSessionHandle,
+  loginCredentials,
   loginToken,
   PageUnavailableError,
   RateLimitedError,
@@ -27,6 +28,9 @@ import {
   SecurityChallenge,
   ServiceUnavailable,
 } from "@/services/shared/errors";
+
+/** L'URL de l'instance de démonstration PRONOTE. */
+const demoURL = "https://demo.index-education.net/pronote";
 
 /** Au-delà, la session est refaite avant une requête : PRONOTE oublie les sessions inactives. */
 export const SESSION_TTL = 5 * 60_000;
@@ -76,6 +80,10 @@ export function parseSecret(text: string): PronoteSecret | null {
  */
 export function toServiceError(error: unknown): unknown {
   if (error instanceof SecurityError) {
+    console.error(
+      "PRONOTE : Échec de la connexion, une erreur de sécurité est survenue.",
+      error
+    );
     return new SecurityChallenge("PRONOTE demande une vérification");
   }
   if (
@@ -83,11 +91,21 @@ export function toServiceError(error: unknown): unknown {
     error instanceof AccessDeniedError ||
     error instanceof AccountDisabledError
   ) {
-    return new AuthenticationError("PRONOTE a refusé la connexion");
+    console.error(
+      "PRONOTE : Échec de la connexion, PRONOTE a refusé l'authentification.",
+      error
+    );
+    return new AuthenticationError(
+      "Une erreur d'authentification est survenue"
+    );
   }
   if (error instanceof SuspendedIPError || error instanceof RateLimitedError) {
+    console.error(
+      "PRONOTE : Échec de la connexion, l'adresse IP a été temporairement bloquée.",
+      error
+    );
     return new ServiceUnavailable(
-      "PRONOTE limite les requêtes de cette adresse"
+      "Ton adresse IP a été bloquée de manière temporaire par PRONOTE"
     );
   }
   // Fermeture, maintenance, page indisponible : le jeton reste bon.
@@ -99,6 +117,10 @@ export function toServiceError(error: unknown): unknown {
     error instanceof SessionExpiredError ||
     error instanceof UnreachableError
   ) {
+    console.error(
+      "PRONOTE : Échec de la connexion, l'instante PRONOTE ne semble pas être disponible.",
+      error
+    );
     return new ServiceUnavailable("PRONOTE est indisponible");
   }
   return error;
@@ -142,10 +164,39 @@ export class PronoteSession {
     }
   }
 
-  private async login(): Promise<SessionHandle> {
+  private async loginDemo(): Promise<SessionHandle> {
     const handle = createSessionHandle(pronoteFetcher);
+    try {
+      const next = await loginCredentials(handle, {
+        url: demoURL,
+        kind: AccountKind.STUDENT,
+        username: "demonstration",
+        password: "pronotevs",
+        deviceUUID: "0",
+      });
+      this.secret = {
+        ...this.secret,
+        url: next.url,
+        username: next.username,
+        token: next.token,
+        kind: next.kind,
+        navigatorIdentifier: next.navigatorIdentifier,
+      };
+    } catch (error) {
+      throw toServiceError(error);
+    }
+    await this.saveSecret(JSON.stringify(this.secret));
+    this.current = { handle, openedAt: Date.now() };
+    return handle;
+  }
+
+  private async login(): Promise<SessionHandle> {
     const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
       this.secret;
+    if (url === demoURL) {
+      return this.loginDemo();
+    }
+    const handle = createSessionHandle(pronoteFetcher);
     try {
       const next = await loginToken(handle, {
         url,

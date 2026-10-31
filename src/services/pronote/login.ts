@@ -11,6 +11,7 @@ import {
   type GeolocatedInstance,
   geolocation,
   instance,
+  loginCredentials,
   loginToken,
   type RefreshInformation,
   securityCheckPIN,
@@ -33,6 +34,9 @@ import { type PronoteSecret, toServiceError } from "./session";
 const DEVICE_NAME = "Piéride";
 /** Le libellé de la fenêtre de connexion, le même que dans pronote_login.rs. */
 const LOGIN_WINDOW = "pronote-login";
+
+/** L'URL de l'instance de démonstration PRONOTE. */
+const demoURL = "https://demo.index-education.net/pronote";
 
 /** PRONOTE demande un nouveau mot de passe ou de choisir sa double authentification. */
 export class LoginBlocked extends Error {
@@ -236,6 +240,26 @@ function loginOf(
   };
 }
 
+export async function loginDemo(): Promise<{
+  kind: "done";
+  login: PronoteLogin;
+}> {
+  await allowInstance(demoURL);
+  const session = createSessionHandle(pronoteFetcher);
+
+  const refresh = await loginCredentials(session, {
+    url: demoURL,
+    kind: AccountKind.STUDENT,
+    username: "demonstration",
+    password: "pronotevs",
+    deviceUUID: "0",
+  }).catch(error => {
+    throw toServiceError(error);
+  });
+
+  return { kind: "done", login: await loginOf(session, refresh, "0") };
+}
+
 /**
  * Première connexion avec ce que renvoie la fenêtre, une fois l'adresse ouverte au réseau
  * (rejetée sinon avec un code de `allowInstance`). Si PRONOTE veut seulement connaître
@@ -250,6 +274,10 @@ export async function loginWithEnt(
   | { kind: "done"; login: PronoteLogin }
   | { kind: "pin"; finish: (pin: string) => Promise<PronoteLogin> }
 > {
+  console.log("PRONOTE : Initialisation connexion, instance :", url);
+  if (url === demoURL) {
+    return loginDemo();
+  }
   await allowInstance(url);
   const session = createSessionHandle(pronoteFetcher);
   let challenge: SecurityError;
@@ -270,6 +298,9 @@ export async function loginWithEnt(
   }
   const { handle } = challenge;
   if (handle.shouldCustomPassword || handle.shouldCustomDoubleAuth) {
+    console.error(
+      "PRONOTE : Abandon connexion, l'utilisateur doit changer son mot de passe ou sa méthode de double authentification."
+    );
     throw new LoginBlocked("À faire d'abord sur le site de PRONOTE");
   }
   const finish = async (pin?: string) => {

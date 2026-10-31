@@ -1,6 +1,6 @@
 // Comment te connecter à PRONOTE ? (maquette 05-methode-connexion) : chercher l'établissement
 // par ville, ou coller son adresse. Pas de QR-Code ni de position (UX §9).
-import { Link, Search } from "@getpapillon/papicons";
+import { GraduationHat, Link, Search } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,10 +14,10 @@ import pronote from "./pronote.module.scss";
 export function MethodStep({
   onNext,
 }: {
-  onNext: (method: "city" | "url") => void;
+  onNext: (method: "city" | "url" | "demo") => void;
 }) {
   const { t } = useTranslation();
-  const [method, setMethod] = useState<"city" | "url">("city");
+  const [method, setMethod] = useState<"city" | "url" | "demo">("city");
 
   return (
     <div className={styles.step}>
@@ -45,6 +45,13 @@ export function MethodStep({
             text={t("onboarding.pronote.urlText")}
             selected={method === "url"}
             onClick={() => setMethod("url")}
+          />
+          <ChoiceCard
+            icon={GraduationHat}
+            title={t("onboarding.pronote.demo")}
+            text={t("onboarding.pronote.demoText")}
+            selected={method === "demo"}
+            onClick={() => setMethod("demo")}
           />
         </div>
         <InfoCard title={t("onboarding.pronote.entTitle")}>

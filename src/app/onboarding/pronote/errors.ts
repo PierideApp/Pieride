@@ -53,7 +53,6 @@ export function logFailure(source: string, error: unknown): void {
       : String(error).slice(0, 200)
   );
   if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
     console.error(error);
   }
 }

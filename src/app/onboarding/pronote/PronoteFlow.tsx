@@ -7,6 +7,7 @@ import type { InstanceInfo, School } from "@/services/pronote/login";
 import { BackButton } from "../BackButton";
 import { CityStep } from "./CityStep";
 import { ConnectStep, type Relink } from "./ConnectStep";
+import { DemoStep } from "./DemoStep";
 import { MethodStep } from "./MethodStep";
 import { UrlStep } from "./UrlStep";
 
@@ -14,6 +15,7 @@ type Step =
   | { id: "method" }
   | { id: "city" }
   | { id: "url" }
+  | { id: "demo" }
   | { id: "connect"; school: School | InstanceInfo };
 
 export function PronoteFlow({
@@ -46,6 +48,9 @@ export function PronoteFlow({
       )}
       {step.id === "url" && (
         <UrlStep onNext={school => go({ id: "connect", school })} />
+      )}
+      {step.id === "demo" && (
+        <DemoStep onNext={school => go({ id: "connect", school })} />
       )}
       {step.id === "connect" && (
         <ConnectStep

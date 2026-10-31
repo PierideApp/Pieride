@@ -16,6 +16,7 @@ import type { SyncedCapability } from "@/services/account-manager";
 import {
   closeEntLogin,
   loadPhoto,
+  loginDemo,
   loginWithEnt,
   openEntLogin,
   type PronoteLogin,
@@ -148,6 +149,25 @@ export function ConnectStep({
       fail(failure);
     }
   };
+
+  const loginWithDemo = async () => {
+    setPhase({ id: "syncing", done: 0 });
+    try {
+      const result = await loginDemo();
+      await complete(result.login);
+    } catch (failure) {
+      fail(failure);
+    }
+  };
+
+  useEffect(
+    () => () => {
+      if (school.url === "https://demo.index-education.net/pronote") {
+        loginWithDemo();
+      }
+    },
+    []
+  );
 
   const confirmPin = async (finish: (pin: string) => Promise<PronoteLogin>) => {
     setError(null);

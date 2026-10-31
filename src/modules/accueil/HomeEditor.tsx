@@ -211,7 +211,6 @@ export function useHomeEditor({
       window.removeEventListener("pointercancel", onCancel);
     };
     // Les fonctions lisent `latest` et les éléments : seul le début du geste compte.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   const slotProps = (id: HomeWidget) => ({

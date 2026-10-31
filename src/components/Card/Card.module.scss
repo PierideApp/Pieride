@@ -16,3 +16,39 @@
   color: var(--color-success);
   background: var(--color-success-bg);
 }
+
+.card[data-tone="success"] svg {
+  color: var(--color-success);
+}
+
+.card[data-tone="success"] p {
+  color: var(--color-success);
+}
+
+.card[data-tone="warn"] {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.card[data-tone="warn"] svg {
+  color: var(--color-warning);
+}
+
+.card[data-tone="warn"] p {
+  color: var(--color-warning);
+}
+
+.card[data-tone="danger"] {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.card[data-tone="danger"] svg {
+  color: var(--color-error);
+}
+
+.card[data-tone="danger"] p {
+  color: var(--color-error);
+}
