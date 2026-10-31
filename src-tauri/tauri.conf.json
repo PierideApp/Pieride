@@ -21,7 +21,8 @@
         "minWidth": 720,
         "decorations": false,
         "center": true,
-        "visible": false
+        "visible": false,
+        "dragDropEnabled": false
       }
     ],
     "security": {
