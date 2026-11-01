@@ -11,6 +11,7 @@ import { Segmented } from "@/components/Segmented/Segmented";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
+import { useJump } from "@/hooks/useJump";
 import { useNow } from "@/hooks/useNow";
 import { type CourseView, useTimetable } from "@/hooks/useTimetable";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@/lib/week";
 import type { ModulePageProps } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
-import { useDetailStore } from "@/stores/detail";
+import { type DetailContent, useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
 
 import { CourseDetail } from "./CourseDetail";
@@ -47,23 +48,34 @@ export function CoursPage({ module }: ModulePageProps) {
   const timetable = useTimetable(accountId, date);
 
   const week = view === "week";
+  const detailOf = (course: CourseView): DetailContent => ({
+    title: course.label,
+    subtitle: `${capitalize(formats.longDate.format(course.from), formats.locale)} · ${t(
+      "cours.time",
+      {
+        from: formats.time.format(course.from),
+        to: formats.time.format(course.to),
+      }
+    )}`,
+    media: <SubjectEmoji emoji={course.emoji} color={course.color} size={48} />,
+    body: <CourseDetail accountId={accountId} course={course} />,
+  });
   const open = (course: CourseView) => {
     setSelected(course.id);
-    openDetail({
-      title: course.label,
-      subtitle: `${capitalize(formats.longDate.format(course.from), formats.locale)} · ${t(
-        "cours.time",
-        {
-          from: formats.time.format(course.from),
-          to: formats.time.format(course.to),
-        }
-      )}`,
-      media: (
-        <SubjectEmoji emoji={course.emoji} color={course.color} size={48} />
-      ),
-      body: <CourseDetail accountId={accountId} course={course} />,
-    });
+    openDetail(detailOf(course));
   };
+  // Un cours choisi dans la palette : son jour, dans la vue en cours.
+  useJump(
+    timetable.status === "ready" ? timetable.data : [],
+    !timetable.fetching,
+    {
+      aim: jump => {
+        setDate(new Date(jump.at));
+        setSelected(jump.id);
+      },
+      open: course => openDetail(detailOf(course)),
+    }
+  );
 
   const navigation = (
     <DateNav

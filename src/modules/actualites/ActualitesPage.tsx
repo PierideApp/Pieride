@@ -14,6 +14,7 @@ import { SearchField } from "@/components/SearchField/SearchField";
 import { Segmented } from "@/components/Segmented/Segmented";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { useDateFormats } from "@/hooks/useFormats";
+import { useJump } from "@/hooks/useJump";
 import { type NewsView, useNews } from "@/hooks/useNews";
 import { log } from "@/lib/log";
 import { matches } from "@/lib/search";
@@ -53,8 +54,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
   const current =
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
 
-  const open = (item: NewsView) => {
-    setSelected(`${item.serviceId}:${item.id}`);
+  const markRead = (item: NewsView) => {
     if (!item.read) {
       accountManager.markNewsRead(item.serviceId, item.id).then(
         () => reload("news"),
@@ -64,6 +64,19 @@ export function ActualitesPage({ module }: ModulePageProps) {
       );
     }
   };
+  const open = (item: NewsView) => {
+    setSelected(`${item.serviceId}:${item.id}`);
+    markRead(item);
+  };
+  // Une actualité choisie dans la palette : affichée, même lue, et marquée comme lue.
+  useJump(all, !items.fetching, {
+    aim: jump => {
+      setFilter("all");
+      setQuery("");
+      setSelected(`${jump.serviceId}:${jump.id}`);
+    },
+    open: markRead,
+  });
 
   const actions = (
     <>
