@@ -150,6 +150,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         modules={modules}
         accounts={list}
         current={current}
+        onSync={syncManually}
         onSettings={openSettings}
       />
       <Settings

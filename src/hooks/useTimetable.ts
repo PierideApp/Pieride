@@ -23,7 +23,7 @@ export interface CourseView extends Course {
   emoji: string;
 }
 
-async function loadCourses(
+export async function loadCourses(
   accountId: string,
   from: Date,
   to: Date
