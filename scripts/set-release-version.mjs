@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import process from "node:process";
 
 const releaseTag = process.env.RELEASE_TAG;
 const version = releaseTag?.replace(/^v/, "");

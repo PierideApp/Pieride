@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import process from "node:process";
 
 const builds = {
   win: {
@@ -68,5 +69,7 @@ const result = spawnSync(tauriCommand, build.args, {
   shell: isWindows,
 });
 
-if (result.error) throw result.error;
+if (result.error) {
+  throw result.error;
+}
 process.exitCode = result.status ?? 1;
