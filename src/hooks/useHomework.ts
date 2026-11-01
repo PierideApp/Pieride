@@ -19,7 +19,7 @@ export interface HomeworkView extends Homework {
   emoji: string;
 }
 
-async function loadHomework(
+export async function loadHomework(
   accountId: string,
   from: Date,
   to: Date

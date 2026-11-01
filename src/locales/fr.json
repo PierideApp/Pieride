@@ -75,14 +75,20 @@
   "palette": {
     "label": "Palette de commandes",
     "search": "Rechercher",
-    "placeholder": "Aller à une page, lancer une action…",
+    "placeholder": "Chercher une tâche, une note, un cours…",
     "goto": "Aller à",
     "actions": "Actions",
     "switchAccount": "Changer de compte",
     "empty": "Aucun résultat",
     "navigate": "naviguer",
     "open": "ouvrir",
-    "close": "fermer"
+    "close": "fermer",
+    "sync": "Synchroniser maintenant",
+    "openHint": "Ouvrir",
+    "loading": "Recherche dans tes données…",
+    "unavailable": "Tes données n'ont pas pu être lues.",
+    "dueNear": "pour {{day}}",
+    "dueDate": "pour le {{date}}"
   },
   "keys": {
     "escape": "Échap",

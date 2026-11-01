@@ -75,14 +75,20 @@
   "palette": {
     "label": "Command palette",
     "search": "Search",
-    "placeholder": "Go to a page, run an action…",
+    "placeholder": "Search tasks, grades, classes…",
     "goto": "Go to",
     "actions": "Actions",
     "switchAccount": "Switch account",
     "empty": "No results",
     "navigate": "navigate",
     "open": "open",
-    "close": "close"
+    "close": "close",
+    "sync": "Sync now",
+    "openHint": "Open",
+    "loading": "Searching your data…",
+    "unavailable": "Your data couldn't be read.",
+    "dueNear": "due {{day}}",
+    "dueDate": "due {{date}}"
   },
   "keys": {
     "escape": "Esc",

@@ -1,6 +1,12 @@
 // Le cadre de la fenêtre (UX §3) : barre latérale, boutons de la fenêtre, page du module affiché,
 // panneau détail, palette de commandes et Paramètres.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Route, Routes, useLocation } from "react-router";
 
@@ -84,7 +90,11 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     }
   }, [currentAccountId, syncNow]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
-  useEffect(() => closeDetail(), [pathname, currentAccountId, closeDetail]);
+  // Avant les effets de la nouvelle page, qui peut en ouvrir un tout de suite (palette, `useJump`).
+  useLayoutEffect(
+    () => closeDetail(),
+    [pathname, currentAccountId, closeDetail]
+  );
 
   useTrayGlance(currentAccountId);
 
@@ -150,6 +160,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         modules={modules}
         accounts={list}
         current={current}
+        onSync={syncManually}
         onSettings={openSettings}
       />
       <Settings
