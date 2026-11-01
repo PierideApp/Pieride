@@ -15,7 +15,7 @@ export interface NewsView extends News {
   service: ServiceKind;
 }
 
-async function loadNews(accountId: string): Promise<NewsView[]> {
+export async function loadNews(accountId: string): Promise<NewsView[]> {
   const rows = await db
     .select({ item: news, service: services.kind })
     .from(news)

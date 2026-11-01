@@ -44,7 +44,7 @@ export interface GradesData {
 
 const orUndefined = <T>(value: T | null) => value ?? undefined;
 
-async function loadGrades(accountId: string): Promise<GradesData> {
+export async function loadGrades(accountId: string): Promise<GradesData> {
   const own = eq(services.accountId, accountId);
   const [periodRows, gradeRows, averageRows] = await Promise.all([
     db

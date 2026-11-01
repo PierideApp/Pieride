@@ -100,6 +100,9 @@ const GROUPS: readonly { id: string; sections: readonly Section[] }[] = [
   },
 ];
 
+/** Toutes les sections, dans l'ordre : la palette de commandes les propose aussi. */
+export const SETTINGS_SECTIONS = GROUPS.flatMap(group => group.sections);
+
 export function Settings({
   open,
   onClose,
@@ -115,9 +118,7 @@ export function Settings({
   const [active, setActive] = useState(() => {
     const asked = useSettingsDialog.getState().section;
     return (
-      GROUPS.flatMap(group => group.sections).find(
-        section => section.id === asked
-      ) ?? APPEARANCE
+      SETTINGS_SECTIONS.find(section => section.id === asked) ?? APPEARANCE
     );
   });
   const [signingOut, setSigningOut] = useState(false);

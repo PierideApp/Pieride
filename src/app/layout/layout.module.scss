@@ -206,6 +206,13 @@
   color: var(--color-text-2);
 }
 
+// Recherche en cours ou base illisible, sous les résultats déjà trouvés.
+.paletteNote {
+  margin: var(--space-3);
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+
 .paletteItem {
   display: flex;
   align-items: center;
@@ -219,6 +226,11 @@
 
     strong {
       color: var(--color-accent-text);
+    }
+
+    .paletteIcon {
+      color: var(--color-on-accent);
+      background: var(--color-accent);
     }
   }
 }
@@ -240,9 +252,24 @@
   flex-direction: column;
   min-width: 0;
 
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   small {
     color: var(--color-text-2);
   }
+}
+
+// « Ouvrir » à droite de la ligne choisie, quand elle n'a pas de raccourci.
+.paletteHint {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent-text);
 }
 
 .paletteKeys {
