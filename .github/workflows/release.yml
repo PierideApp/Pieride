@@ -1,151 +1,132 @@
-name: Build and publish release
+name: Release
 
+# Lancement manuel depuis Actions > Release > Run workflow, sur une branche
+# release/* uniquement. Il faut d'abord créer sur GitHub une release en brouillon
+# dont le tag est v + la version de package.json (ex. v0.2.0 ou v1.0.0).
+# Tests, puis builds dans le brouillon, puis publication si tout a réussi.
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 permissions:
-  actions: read
-  contents: write
+  contents: read
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: publication-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  mark-prerelease:
-    name: Ensure this release is a prerelease
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Mark as prerelease and keep it out of Latest
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_ID: ${{ github.event.release.id }}
-        run: >-
-          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
-          --method PATCH
-          --field prerelease=true
-          --field make_latest=false
+  ci:
+    uses: ./.github/workflows/ci.yml
 
-  wait-for-main-ci:
-    name: Wait for the main CI result
-    needs: mark-prerelease
+  prepare:
+    name: Préparer la release
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
     steps:
-      - name: Wait for CI on this release commit
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Retrouver le brouillon et le fixer sur ce commit
+        id: release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_COMMIT: ${{ github.sha }}
-        shell: bash
+          GH_TOKEN: ${{ github.token }}
         run: |
-          deadline=$((SECONDS + 5400))
-          while (( SECONDS < deadline )); do
-            runs="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?branch=main&head_sha=${RELEASE_COMMIT}&per_page=100")"
-            main_run="$(jq -c '[.workflow_runs[] | select(.event == "push" and .head_branch == "main")] | sort_by(.run_number) | last // empty' <<< "$runs")"
+          if [[ "$GITHUB_REF" != refs/heads/release/* ]]; then
+            echo "::error::Lance le workflow depuis une branche release/*, pas depuis $GITHUB_REF_NAME."
+            exit 1
+          fi
 
-            if [[ -n "$main_run" ]]; then
-              status="$(jq -r '.status' <<< "$main_run")"
-              conclusion="$(jq -r '.conclusion // empty' <<< "$main_run")"
-              echo "CI de main pour ${RELEASE_COMMIT} : ${status}${conclusion:+ / ${conclusion}}"
+          tag="v$(node -p 'require("./package.json").version')"
 
-              if [[ "$status" == "completed" ]]; then
-                if [[ "$conclusion" == "success" ]]; then
-                  exit 0
-                fi
-                echo "Le CI de main n'a pas réussi (${conclusion}). Aucun build de release ne sera publié."
-                exit 1
-              fi
-            else
-              echo "En attente du lancement du CI de main pour ${RELEASE_COMMIT}."
-            fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" > /dev/null 2>&1; then
+            echo "::error::Le tag $tag existe déjà. Augmente la version dans package.json."
+            exit 1
+          fi
 
-            sleep 20
-          done
+          id="$(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" \
+            --jq ".[] | select(.draft and .tag_name == \"$tag\") | .id" | head -n 1)"
+          if [[ -z "$id" ]]; then
+            echo "::error::Aucune release en brouillon avec le tag $tag. Crée-la sur GitHub (Save draft) puis relance."
+            exit 1
+          fi
 
-          echo "Délai dépassé en attendant le CI de main. Aucun build de release ne sera publié."
-          exit 1
+          # Le tag sera créé à la publication, sur le commit testé ici
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -f target_commitish="$GITHUB_SHA" > /dev/null
+          echo "Brouillon $tag ($id) fixé sur $GITHUB_SHA"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
   build:
-    name: Build ${{ matrix.os }}
-    needs: wait-for-main-ci
+    name: Build ${{ matrix.name }}
+    needs: [ci, prepare]
+    permissions:
+      contents: write
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
-          - os: windows-latest
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
             bundles: nsis
-          - os: macos-latest
-            bundles: app,dmg
-          - os: ubuntu-24.04
+          - name: Windows arm64
+            os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            bundles: nsis
+          - name: macOS universel
+            os: macos-latest
+            target: universal-apple-darwin
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            bundles: dmg
+          # 22.04 : glibc plus ancienne, l'AppImage tourne sur plus de distributions
+          - name: Linux x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,rpm,appimage
+          - name: Linux arm64
+            os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
             bundles: deb,rpm,appimage
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install Linux dependencies
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Dépendances système de Tauri
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            file \
-            libayatana-appindicator3-dev \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            librsvg2-dev \
-            libxdo-dev \
-            patchelf \
-            wget
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets || matrix.target }}
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Set version from release tag
+      - run: pnpm install --frozen-lockfile
+      - uses: tauri-apps/tauri-action@v1
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: node scripts/set-release-version.mjs
-
-      - name: Build and attach platform bundles
-        uses: tauri-apps/tauri-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
-          args: --bundles ${{ matrix.bundles }}
-          releaseId: ${{ github.event.release.id }}
-          tagName: ${{ github.event.release.tag_name }}
-          releaseDraft: false
-          prerelease: true
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
-      - name: Build and attach portable Windows executable
-        if: runner.os == 'Windows'
-        uses: tauri-apps/tauri-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --no-bundle --config src-tauri/tauri.portable.conf.json
-          releaseId: ${{ github.event.release.id }}
-          tagName: ${{ github.event.release.tag_name }}
-          releaseDraft: false
-          prerelease: true
-          uploadPlainBinary: true
-          releaseAssetNamePattern: "[name]-portable-[version]-[platform][ext]"
+  publish:
+    name: Publier la release
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false
