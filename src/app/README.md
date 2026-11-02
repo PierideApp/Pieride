@@ -9,7 +9,7 @@ La coquille de l'application.
   - `Sidebar.tsx` : compte, liens des modules, état de la synchronisation ; rail d'icônes sous 1280 px.
   - `WindowControls.tsx` : réduire, agrandir, fermer sous Windows et Linux (la fenêtre n'a pas de décorations).
   - `NotFound.tsx` : adresse inconnue ou module caché pour le compte.
-  - `CommandPalette.tsx` : palette de commandes (`Ctrl/⌘ K`) : aller à un module, synchroniser, changer de compte, ouvrir les Paramètres.
+  - `CommandPalette.tsx` : palette de commandes (`Ctrl/⌘ K`) : aller à un module, ouvrir une tâche, une note, un cours ou une actualité déjà en base (`paletteSearch.ts`), une section des Paramètres, synchroniser, changer de compte.
   - `DetailPanel.tsx` : panneau détail à droite, ouvert par une page via `stores/detail.ts`.
   - `layout.module.scss` : les styles de tout le cadre.
 - `onboarding/` : le premier lancement (maquettes `01-premier-lancement`). `Onboarding.tsx` mène les étapes : `Welcome`, `ProfileStep` (qui es-tu ?), `ServiceStep`, `OfflineAccountStep`. Seul le compte hors ligne se crée pour l'instant.

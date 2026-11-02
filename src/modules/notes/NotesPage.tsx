@@ -20,11 +20,12 @@ import {
   type PeriodView,
   useGrades,
 } from "@/hooks/useGrades";
+import { useJump } from "@/hooks/useJump";
 import { useNow } from "@/hooks/useNow";
 import { matches } from "@/lib/search";
 import type { ModulePageProps } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
-import { useDetailStore } from "@/stores/detail";
+import { type DetailContent, useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
 
 import { GradesTable } from "./GradesTable";
@@ -86,14 +87,26 @@ export function NotesPage({ module }: ModulePageProps) {
         : a.label.localeCompare(b.label, formats.locale)
   );
 
+  const gradeDetail = (grade: GradeView): DetailContent => ({
+    title: grade.title || grade.label,
+    subtitle: `${grade.label} · ${formats.longDate.format(grade.date)}`,
+    body: <GradeDetail grade={grade} all={periodGrades} method={method} />,
+  });
   const openGrade = (grade: GradeView) => {
     setSelected(grade.id);
-    openDetail({
-      title: grade.title || grade.label,
-      subtitle: `${grade.label} · ${formats.longDate.format(grade.date)}`,
-      body: <GradeDetail grade={grade} all={periodGrades} method={method} />,
-    });
+    openDetail(gradeDetail(grade));
   };
+  // Une note choisie dans la palette : sa période, sans recherche.
+  useJump(allGrades, !data.fetching, {
+    aim: jump => {
+      if (jump.periodId) {
+        setChosen(`${jump.serviceId}:${jump.periodId}`);
+      }
+      setQuery("");
+      setSelected(jump.id);
+    },
+    open: grade => openDetail(gradeDetail(grade)),
+  });
   const openSubject = (summary: SubjectSummary) => {
     setSelected(null);
     openDetail({

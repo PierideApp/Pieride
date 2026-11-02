@@ -16,12 +16,13 @@ import { Spinner } from "@/components/Spinner/Spinner";
 import { SubjectEmoji } from "@/components/SubjectEmoji/SubjectEmoji";
 import { useDateFormats } from "@/hooks/useFormats";
 import { type HomeworkView, useHomework } from "@/hooks/useHomework";
+import { useJump } from "@/hooks/useJump";
 import { useNow } from "@/hooks/useNow";
 import { matches } from "@/lib/search";
 import { addDays, displayedToday, isoWeek, weekDays } from "@/lib/week";
 import type { ModulePageProps } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
-import { useDetailStore } from "@/stores/detail";
+import { type DetailContent, useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
 
 import styles from "./taches.module.scss";
@@ -93,24 +94,35 @@ export function TachesPage({ module }: ModulePageProps) {
         : a.dueAt.getTime() - b.dueAt.getTime()
     );
 
+  const detailOf = (item: HomeworkView): DetailContent => ({
+    title: item.label,
+    subtitle: `${t("taches.dueFor", {
+      day: formats.relativeDay(item.dueAt, now),
+    })} · ${formats.longDate.format(item.dueAt)}`,
+    media: <SubjectEmoji emoji={item.emoji} color={item.color} size={48} />,
+    body: (
+      <TaskDetail
+        accountId={accountId}
+        dueAt={item.dueAt}
+        serviceId={item.serviceId}
+        id={item.id}
+      />
+    ),
+  });
   const open = (item: HomeworkView) => {
     setSelected(item.id);
-    openDetail({
-      title: item.label,
-      subtitle: `${t("taches.dueFor", {
-        day: formats.relativeDay(item.dueAt, now),
-      })} · ${formats.longDate.format(item.dueAt)}`,
-      media: <SubjectEmoji emoji={item.emoji} color={item.color} size={48} />,
-      body: (
-        <TaskDetail
-          accountId={accountId}
-          dueAt={item.dueAt}
-          serviceId={item.serviceId}
-          id={item.id}
-        />
-      ),
-    });
+    openDetail(detailOf(item));
   };
+  // Un devoir choisi dans la palette : sa semaine, tous les filtres levés.
+  useJump(all, !tasks.fetching, {
+    aim: jump => {
+      setWeek(new Date(jump.at));
+      setFilter("all");
+      setQuery("");
+      setSelected(jump.id);
+    },
+    open: item => openDetail(detailOf(item)),
+  });
 
   const navigation = (
     <DateNav
