@@ -959,3 +959,10 @@
     "close": "Close"
   }
 }
+  "whatsNew": {
+    "title": "What's new in version {{version}}",
+    "subtitle": "Discover the latest improvements and bug fixes.",
+    "version": "Version {{version}}",
+    "since": "Available since {{date}}",
+    "confirm": "Let's go!"
+  },

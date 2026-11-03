@@ -1,0 +1,91 @@
+// Dialogue des nouveautés : 600 px, en-tête, bandeau de la marque, notes qui défilent, bouton.
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(600px, calc(100% - 2 * var(--space-5)));
+  max-height: min(640px, calc(100% - 2 * var(--space-5)));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  color: var(--color-text);
+  background: var(--color-surface);
+
+  // `display: flex` ci-dessus écraserait le `display: none` d'un dialogue fermé.
+  &:not([open]) {
+    display: none;
+  }
+
+  &::backdrop {
+    background: var(--color-overlay);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: 13.5px;
+  color: var(--color-text-2);
+}
+
+.close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-m);
+  color: var(--color-text-2);
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+// Sur un seul axe : la page derrière ne doit pas glisser avec les notes.
+.body {
+  flex: 1;
+  padding: var(--space-3) var(--space-5) var(--space-4);
+  overflow: hidden auto;
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-l);
+  color: var(--brand-lavender);
+  background: var(--brand-surface);
+
+  time {
+    font-size: 13px;
+  }
+}
+
+.version {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--on-brand);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}

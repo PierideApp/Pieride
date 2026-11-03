@@ -147,6 +147,9 @@ interface SettingsState extends Preferences {
   moduleOrder: Record<string, string[]>;
   setPreference: <K extends keyof Preferences>(
     key: K,
+  /** Dernière version dont les nouveautés ont été montrées (WhatsNewDialog). */
+  lastSeenVersion: string | null;
+  setLastSeenVersion: (version: string) => void;
     value: Preferences[K]
   ) => void;
   setModuleHidden: (
@@ -236,6 +239,8 @@ export const useSettingsStore = create<SettingsState>()(
       setPreference: (key, value) => set({ [key]: value }),
       setModuleHidden: (accountId, moduleId, hidden) =>
         set(state => {
+      lastSeenVersion: null,
+      setLastSeenVersion: version => set({ lastSeenVersion: version }),
           const others = (state.hiddenModules[accountId] ?? []).filter(
             id => id !== moduleId
           );

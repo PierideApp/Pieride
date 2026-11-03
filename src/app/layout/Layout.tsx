@@ -33,6 +33,7 @@ import styles from "./layout.module.scss";
 import { NotFound } from "./NotFound";
 import { Sidebar } from "./Sidebar";
 import { WindowControls } from "./WindowControls";
+import { WhatsNewDialog } from "./WhatsNewDialog";
 
 export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { t } = useTranslation();
@@ -173,4 +174,5 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
       />
     </div>
   );
+      <WhatsNewDialog />
 }
