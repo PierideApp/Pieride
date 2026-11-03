@@ -7,6 +7,8 @@ fn main() {
             "pronote_login",
             "show_app",
             "is_minimized",
+            "can_self_update",
+            "restart_app",
             "secret_get",
             "secret_set",
             "secret_delete",

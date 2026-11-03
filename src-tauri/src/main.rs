@@ -63,6 +63,19 @@ fn is_minimized() -> bool {
     std::env::args().any(|arg| arg == MINIMIZED)
 }
 
+/// Vrai si Piéride peut se remplacer elle-même. Sur Linux, seul l'AppImage le peut : un paquet
+/// .deb ou .rpm ne se met à jour que par le système (variable posée par le lanceur AppImage).
+#[tauri::command]
+fn can_self_update() -> bool {
+    !cfg!(target_os = "linux") || std::env::var_os("APPIMAGE").is_some()
+}
+
+/// Relance l'app, après l'installation d'une mise à jour.
+#[tauri::command]
+fn restart_app(app: AppHandle) {
+    app.restart();
+}
+
 /// Origine d'une URL HTTPS vers un nom de domaine public. Les erreurs sont des codes,
 /// qui ne recopient jamais l'URL : elle peut contenir un jeton.
 fn instance_origin(url: &str) -> Result<String, &'static str> {
@@ -116,6 +129,7 @@ fn main() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec![MINIMIZED]),
@@ -137,6 +151,8 @@ fn main() {
             pronote_login::pronote_login,
             show_app,
             is_minimized,
+            can_self_update,
+            restart_app,
             secrets::secret_get,
             secrets::secret_set,
             secrets::secret_delete,
