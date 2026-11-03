@@ -627,6 +627,10 @@
       "quietDuringClasses": {
         "title": "Quiet during classes",
         "text": "Notifications wait until the class ends"
+      },
+      "autoUpdate": {
+        "title": "Check for updates automatically",
+        "text": "On launch, then every 6 hours. Nothing is installed without your approval"
       }
     },
     "features": {
@@ -736,7 +740,6 @@
       "autostartFailed": "Launch at startup could not be set on this system.",
       "updates": "Updates",
       "version": "Piéride {{version}}",
-      "updatesText": "Automatic updates come with version 1.0.",
       "releases": "See releases",
       "shortcuts": "Keyboard shortcuts",
       "to": "to",
@@ -746,7 +749,18 @@
         "sync": "Sync (at most every 5 minutes)",
         "settings": "Settings",
         "close": "Close a panel or window"
-      }
+      },
+      "notChecked": "Not checked yet",
+      "checking": "Checking…",
+      "upToDate": "Up to date · checked at {{time}}",
+      "available": "Version {{version}} is available",
+      "availableManual": "Version {{version}} is available. Install it with the package on the releases page",
+      "downloading": "Downloading… {{percent}}",
+      "ready": "Version {{version}} is installed. Restart to use it",
+      "updateFailed": "The update could not complete. Check your connection and try again",
+      "check": "Check for updates",
+      "install": "Install",
+      "restart": "Restart"
     },
     "notifications": {
       "sampleFrom": "Piéride · now",
@@ -953,6 +967,13 @@
         "WrongPin": "That PIN isn't right."
       }
     }
+  },
+  "whatsNew": {
+    "title": "What's new in version {{version}}",
+    "subtitle": "Discover the latest improvements and bug fixes.",
+    "version": "Version {{version}}",
+    "since": "Available since {{date}}",
+    "confirm": "Let's go!"
   },
   "dialog": {
     "cancel": "Cancel",

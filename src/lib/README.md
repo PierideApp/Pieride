@@ -8,7 +8,7 @@ Les briques techniques partagées :
 - **Plateforme** (`platform.ts`) : `isMac`, le nom du système et la touche des raccourcis affichée (`⌘` ou `Ctrl`).
 - **Images** (`image.ts`) : photo de profil et fond d'écran choisis par l'utilisateur, redimensionnés ou recadrés en URL `data:` JPEG ; la clarté du haut d'un fond d'écran est mesurée pour le voile du bandeau (avec `luminance` et `shadeFor` de `color.ts`).
 - **Liens** (`links.ts`) : les adresses ouvertes dans le navigateur (plugin opener), toutes déclarées dans `capabilities/`.
-- **Notes de version** (`changelog.ts`) : lit les fichiers Markdown de `changelog/`, un par version (le format est décrit en tête du fichier ; aucun pour l'instant).
+- **Notes de version** (`changelog.ts`) : lit les fichiers Markdown de `.github/changelog/`, un par version (le format est décrit en tête du fichier ; aucun pour l'instant).
 - **Matières** (`subjects.ts`) : nom, couleur et emoji affichés (`subjectLook`), avec des valeurs par défaut stables.
 - **Semaines** (`week.ts`) : lundi d'une semaine, numéro ISO, jours affichés, jour suivant sans le week-end masqué.
 - **Emploi du temps** (`timetable.ts`) : plage horaire de la grille, cours qui se chevauchent côte à côte, pauses entre deux cours.

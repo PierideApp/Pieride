@@ -34,4 +34,6 @@ strip = true
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
+# Mises à jour signées (clé publique dans tauri.conf.json), téléchargées depuis les releases GitHub.
+tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"

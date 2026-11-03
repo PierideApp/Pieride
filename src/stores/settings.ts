@@ -123,6 +123,8 @@ export interface Preferences {
   closeToTray: boolean;
   /** Cours actuel et suivant dans le menu de l'icône de la barre des tâches. */
   trayGlance: boolean;
+  /** Chercher une mise à jour au lancement puis toutes les 6 heures (jamais installée seule). */
+  autoUpdate: boolean;
   /** Notifications du système, par sujet (M5 : synchro en arrière-plan). */
   notifyGrades: boolean;
   notifyCourses: boolean;
@@ -145,6 +147,9 @@ interface SettingsState extends Preferences {
   hiddenModules: Record<string, string[]>;
   /** Ordre choisi des modules, par compte. Absent : celui du registre. */
   moduleOrder: Record<string, string[]>;
+  /** Dernière version dont les nouveautés ont été montrées (WhatsNewDialog). */
+  lastSeenVersion: string | null;
+  setLastSeenVersion: (version: string) => void;
   setPreference: <K extends keyof Preferences>(
     key: K,
     value: Preferences[K]
@@ -224,6 +229,7 @@ export const useSettingsStore = create<SettingsState>()(
       startMinimized: true,
       closeToTray: false,
       trayGlance: true,
+      autoUpdate: true,
       notifyGrades: true,
       notifyCourses: true,
       notifyHomework: true,
@@ -233,6 +239,8 @@ export const useSettingsStore = create<SettingsState>()(
       quietDuringClasses: true,
       hiddenModules: {},
       moduleOrder: {},
+      lastSeenVersion: null,
+      setLastSeenVersion: version => set({ lastSeenVersion: version }),
       setPreference: (key, value) => set({ [key]: value }),
       setModuleHidden: (accountId, moduleId, hidden) =>
         set(state => {

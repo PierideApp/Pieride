@@ -19,6 +19,8 @@
     "allow-pronote-login",
     "allow-show-app",
     "allow-is-minimized",
+    "allow-can-self-update",
+    "allow-restart-app",
     "allow-secret-get",
     "allow-secret-set",
     "allow-secret-delete",

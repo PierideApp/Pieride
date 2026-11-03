@@ -17,7 +17,7 @@ describe("parseRelease", () => {
   it("lit l'en-tête et garde les notes", () => {
     expect(
       parseRelease(
-        "changelog/v0.2.0.md",
+        ".github/changelog/v0.2.0.md",
         file("v0.2.0", "Vue semaine", "### Ajouts\n\n- Une chose\n")
       )
     ).toEqual({
@@ -89,10 +89,10 @@ describe("parseInline", () => {
 
 describe("releases", () => {
   const files = {
-    "../../changelog/0.1.0.md": file("0.1.0", "Première"),
-    "../../changelog/0.2.0.md": file("0.2.0", "Deuxième"),
-    "../../changelog/en/0.2.0.md": file("0.2.0", "Second"),
-    "../../changelog/README.md": "# Notes de version",
+    "/.github/changelog/0.1.0.md": file("0.1.0", "Première"),
+    "/.github/changelog/0.2.0.md": file("0.2.0", "Deuxième"),
+    "/.github/changelog/en/0.2.0.md": file("0.2.0", "Second"),
+    "/.github/changelog/README.md": "# Notes de version",
   };
 
   it("donne la traduction quand elle existe, sinon le français, du plus récent au plus ancien", () => {
@@ -107,7 +107,7 @@ describe("releases", () => {
   });
 });
 
-describe("les fichiers de changelog/", () => {
+describe("les fichiers de .github/changelog/", () => {
   const names = Object.keys(CHANGELOG_FILES).filter(isReleaseFile);
 
   it("ont tous un en-tête valide", () => {

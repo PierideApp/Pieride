@@ -1,4 +1,4 @@
-// Notes de version : les fichiers de `changelog/` (lib/changelog.ts), de la plus récente à la
+// Notes de version : les fichiers de `.github/changelog/` (lib/changelog.ts), de la plus récente à la
 // plus ancienne. Pour chaque version, son numéro et sa date à gauche, ses notes à droite,
 // comme sur le site de StewardPad.
 import { Paper } from "@getpapillon/papicons";
@@ -8,45 +8,12 @@ import { useTranslation } from "react-i18next";
 import { Card } from "@/components/Card/Card";
 import { Chip } from "@/components/Chip/Chip";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
+import { ReleaseNotes } from "@/components/ReleaseNotes/ReleaseNotes";
 import { useLoaded } from "@/hooks/useLoaded";
-import { type Block, parseInline, parseNotes, releases } from "@/lib/changelog";
+import { releases } from "@/lib/changelog";
 import { useSettingsStore } from "@/stores/settings";
 
 import styles from "./settings.module.scss";
-
-function Inline({ text }: { text: string }) {
-  return parseInline(text).map((part, index) =>
-    part.kind === "strong" ? (
-      <strong key={index}>{part.text}</strong>
-    ) : part.kind === "code" ? (
-      <code key={index}>{part.text}</code>
-    ) : (
-      part.text
-    )
-  );
-}
-
-function Notes({ blocks }: { blocks: Block[] }) {
-  return blocks.map((block, index) =>
-    block.kind === "heading" ? (
-      <h4 key={index}>
-        <Inline text={block.text} />
-      </h4>
-    ) : block.kind === "list" ? (
-      <ul key={index}>
-        {block.items.map((item, itemIndex) => (
-          <li key={itemIndex}>
-            <Inline text={item} />
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p key={index}>
-        <Inline text={block.text} />
-      </p>
-    )
-  );
-}
 
 export function ReleaseNotesSettings() {
   const { t, i18n } = useTranslation();
@@ -75,10 +42,7 @@ export function ReleaseNotesSettings() {
           <Chip>{t("settings.releaseNotes.installed")}</Chip>
         )}
       </div>
-      <div className={styles.releaseNotes}>
-        {title && <h3>{title}</h3>}
-        <Notes blocks={parseNotes(body)} />
-      </div>
+      <ReleaseNotes title={title} body={body} />
     </article>
   ));
 }
