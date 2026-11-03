@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { Page } from "@/components/Page/Page";
 import type { AccountSummary } from "@/hooks/useAccounts";
+import { useAutoUpdate } from "@/hooks/useAutoUpdate";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useTrayGlance } from "@/hooks/useTrayGlance";
@@ -32,8 +33,8 @@ import { DetailPanel } from "./DetailPanel";
 import styles from "./layout.module.scss";
 import { NotFound } from "./NotFound";
 import { Sidebar } from "./Sidebar";
-import { WindowControls } from "./WindowControls";
 import { WhatsNewDialog } from "./WhatsNewDialog";
+import { WindowControls } from "./WindowControls";
 
 export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const detailOpen = useDetailStore(state => state.content !== null);
   const closeDetail = useDetailStore(state => state.close);
   const { pathname } = useLocation();
+  useAutoUpdate();
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
   const settingsAt = useSettingsDialog(state => state.openAt);
@@ -172,7 +174,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
         account={current}
         accounts={list}
       />
+      <WhatsNewDialog />
     </div>
   );
-      <WhatsNewDialog />
 }

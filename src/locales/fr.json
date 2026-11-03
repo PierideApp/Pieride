@@ -627,6 +627,10 @@
       "quietDuringClasses": {
         "title": "Silencieux pendant les cours",
         "text": "Les notifications attendent la fin du cours"
+      },
+      "autoUpdate": {
+        "title": "Rechercher les mises à jour automatiquement",
+        "text": "Au lancement, puis toutes les 6 heures. Rien ne s'installe sans ton accord"
       }
     },
     "features": {
@@ -736,7 +740,6 @@
       "autostartFailed": "Le lancement au démarrage n'a pas pu être réglé sur ce système.",
       "updates": "Mises à jour",
       "version": "Piéride {{version}}",
-      "updatesText": "Les mises à jour automatiques arrivent avec la version 1.0.",
       "releases": "Voir les versions",
       "shortcuts": "Raccourcis clavier",
       "to": "à",
@@ -746,7 +749,18 @@
         "sync": "Synchroniser (au plus toutes les 5 minutes)",
         "settings": "Paramètres",
         "close": "Fermer un panneau ou une fenêtre"
-      }
+      },
+      "notChecked": "Pas encore vérifié",
+      "checking": "Recherche en cours…",
+      "upToDate": "À jour · vérifié à {{time}}",
+      "available": "La version {{version}} est disponible",
+      "availableManual": "La version {{version}} est disponible. Installe-la avec le paquet de la page des versions",
+      "downloading": "Téléchargement… {{percent}}",
+      "ready": "La version {{version}} est installée. Redémarre pour l'utiliser",
+      "updateFailed": "La mise à jour n'a pas pu aboutir. Vérifie ta connexion puis réessaie",
+      "check": "Rechercher des mises à jour",
+      "install": "Installer",
+      "restart": "Redémarrer"
     },
     "notifications": {
       "sampleFrom": "Piéride · maintenant",
@@ -954,11 +968,6 @@
       }
     }
   },
-  "dialog": {
-    "cancel": "Annuler",
-    "close": "Fermer"
-  }
-}
   "whatsNew": {
     "title": "Nouveautés de la version {{version}}",
     "subtitle": "Découvre les dernières améliorations et corrections de bugs.",
@@ -966,3 +975,8 @@
     "since": "Disponible depuis le {{date}}",
     "confirm": "C'est parti !"
   },
+  "dialog": {
+    "cancel": "Annuler",
+    "close": "Fermer"
+  }
+}
