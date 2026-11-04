@@ -1,71 +1,52 @@
 <p align="center">
-  <img src="src-tauri/icons/128x128@2x.png" width="96" alt="" />
+  <a href="https://github.com/PierideApp/Pieride/actions/workflows/ci.yml"><img src="https://github.com/PierideApp/Pieride/actions/workflows/ci.yml/badge.svg?branch=main" alt="État de la CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-GPL--3.0-2B2BC2" alt="Licence GPL-3.0" /></a>
 </p>
-
-<h1 align="center">Piéride</h1>
 
 <p align="center">
-  Ta vie scolaire sur ordinateur : emploi du temps, notes, devoirs et actualités de PRONOTE, ÉcoleDirecte, Skolengo et plus, réunis dans une application de bureau. Pour Windows, macOS et Linux.
+  <img src=".github/assets/readme/entete.png" alt="Piéride : ta vie scolaire, en grand écran. Windows, macOS et Linux." />
 </p>
 
-> [!NOTE]
-> Piéride est en cours de développement, il n'y a pas encore de version à télécharger.
+<p align="center">
+  L'application de bureau libre et open source pour ta vie scolaire.
+</p>
 
-## Stack
+<p align="center">
+  <!-- <a href="https://github.com/PierideApp/Pieride/releases/latest"><img src=".github/assets/readme/bouton-telecharger.png" alt="Télécharger" height="44" /></a> -->
+  <a href="docs"><img src=".github/assets/readme/bouton-documentation.png" alt="Documentation" height="44" /></a>
+</p>
 
-- [Tauri 2](https://v2.tauri.app) (Rust) + [React](https://react.dev) + TypeScript, avec [Vite](https://vite.dev)
-- SQLite + [Drizzle](https://orm.drizzle.team) pour la base locale
-- [Zustand](https://zustand.docs.pmnd.rs) pour l'état, [i18next](https://www.i18next.com) pour les traductions
-- [pnpm](https://pnpm.io) comme gestionnaire de paquets
+> Piéride est en cours de développement : il n'y a pas encore de version à télécharger, et les aperçus ci-dessous viennent des maquettes.
 
-## Démarrer
+<br />
 
-Prérequis : Node.js 22 ou plus, Rust stable et les [dépendances système de Tauri](https://v2.tauri.app/start/prerequisites/).
+<p align="center">
+  <img src=".github/assets/readme/presentation-accueil.png" alt="Accueil : toute ta journée, d'un coup d'œil." />
+</p>
 
-```bash
-corepack enable pnpm
-pnpm install
-pnpm tauri dev
-```
+<p align="center">
+  <img src=".github/assets/readme/presentation-cours.png" alt="Cours : la semaine, le détail à droite." />
+</p>
 
-| Commande           | Rôle                                       |
-| ------------------ | ------------------------------------------ |
-| `pnpm tauri dev`   | Lance l'application en développement       |
-| `pnpm tauri build` | Construit l'application et ses installeurs |
-| `pnpm lint`        | ESLint                                     |
-| `pnpm format`      | Prettier                                   |
-| `pnpm typecheck`   | Vérifie les types                          |
-| `pnpm test`        | Tests (Vitest)                             |
+<p align="center">
+  <img src=".github/assets/readme/presentation-notes.png" alt="Notes et devoirs : tes moyennes par matière et tes devoirs de la semaine." />
+</p>
 
-## Structure
-
-```
-src/                    interface + cœur métier (TypeScript)
-  app/                  fenêtre, barre latérale, routeur
-  modules/              une page = un module
-  components/           kit d'interface (design system)
-  hooks/                hooks de données (lisent SQLite)
-  services/             AccountManager + un dossier par service
-  database/             schéma Drizzle, migrations
-  stores/               Zustand
-  lib/                  réseau, trousseau, logger
-  locales/              traductions
-src-tauri/              Rust : fenêtre, commandes, permissions, icônes
-docs/                   architecture et modules
-```
-
-Chaque dossier de `src/` a un README qui explique son rôle.
-
-## Documentation
-
-- [Schéma d'architecture](docs/architecture.excalidraw), à ouvrir sur [excalidraw.com](https://excalidraw.com) : vue d'ensemble, réseau et sécurité, services, modèle de données, feuille de route.
-- [Modules](docs/modules.md) : comment la barre latérale s'adapte aux services du compte.
-- [Contribuer](CONTRIBUTING.md)
+<p align="center">
+  <img src=".github/assets/readme/vie-privee.png" alt="Tes données restent chez toi : identifiants dans le trousseau du système, consultables hors ligne, rien n'est envoyé sans ton accord." />
+</p>
 
 ## Remerciements
 
-Piéride s'inspire de [Papillon](https://github.com/PapillonApp/Papillon), avec l'accord de son équipe, et utilise ses icônes [Papicons](https://github.com/PapillonApp/Papicons).
+<p align="center">
+  <img src=".github/assets/readme/remerciements.png" alt="Piéride ne vole pas seul : merci à Papillon, Papicons, Pawnote, SN Pro et Unbounded." />
+</p>
 
-## Licence
+- [Papillon](https://github.com/PapillonApp/Papillon) : Piéride s'en inspire, avec l'accord de son équipe.
+- [Papicons](https://github.com/PapillonApp/Papicons) : les icônes de l'application.
+- [Pawnote](https://www.npmjs.com/package/@blockshub/pawnote-lts) : la connexion à PRONOTE.
+- Les polices [SN Pro](https://github.com/supernotes/sn-pro) et [Unbounded](https://github.com/googlefonts/unbounded), sous licence [OFL](https://openfontlicense.org).
 
-[GPL-3.0](LICENSE)
+<p align="center">
+  <img src=".github/assets/readme/pied-de-page.png" alt="Merci de ta visite ! Piéride est libre et fait à plusieurs. Une étoile sur le dépôt nous aide beaucoup." />
+</p>
