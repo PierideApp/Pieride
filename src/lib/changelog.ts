@@ -4,8 +4,11 @@
 // Repris du site de StewardPad (même auteur).
 //
 // Format : `0.2.0.md` en français (la référence), `en/0.2.0.md` pour sa traduction.
-// Un en-tête `version`, `date` (AAAA-MM-JJ) et `title` entre deux lignes `---`, puis des sections `### Ajouts`, `### Changements`, `### Corrections`. Seuls les titres,
-// listes `- `, paragraphes, `**gras**` et `` `code` `` sont lus.
+// Un en-tête `version`, `date` (AAAA-MM-JJ) et `title` entre deux lignes `---`, puis les notes :
+// une intro, puis `### ✨ Nouveautés`, `### 🛠️ Changements`, `### 🐛 Corrections` dans cet ordre
+// (`### ✨ New`, `### 🛠️ Changed`, `### 🐛 Fixed` en anglais), 3800 caractères au plus. Le même
+// texte sert à la release GitHub et à l'annonce Discord. Seuls les titres, listes `- `,
+// paragraphes, `**gras**` et `` `code` `` sont lus.
 import type { Language } from "@/stores/settings";
 
 /** Une version, telle que l'écrit son fichier. */
