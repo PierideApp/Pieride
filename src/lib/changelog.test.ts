@@ -18,18 +18,18 @@ describe("parseRelease", () => {
     expect(
       parseRelease(
         ".github/changelog/v0.2.0.md",
-        file("v0.2.0", "Vue semaine", "### Ajouts\n\n- Une chose\n")
+        file("v0.2.0", "Vue semaine", "### ✨ Nouveautés\n\n- Une chose\n")
       )
     ).toEqual({
       version: "0.2.0",
       date: "2026-10-14",
       title: "Vue semaine",
-      body: "### Ajouts\n\n- Une chose",
+      body: "### ✨ Nouveautés\n\n- Une chose",
     });
   });
 
   it("nomme le fichier quand l'en-tête est faux", () => {
-    expect(() => parseRelease("0.2.0.md", "### Ajouts")).toThrow(
+    expect(() => parseRelease("0.2.0.md", "### ✨ Nouveautés")).toThrow(
       /0\.2\.0\.md : .*en-tête/
     );
     expect(() => parseRelease("0.2.0.md", file("0.3.0"))).toThrow(
@@ -66,11 +66,11 @@ describe("parseNotes", () => {
   it("découpe titres, listes et paragraphes, lignes continuées comprises", () => {
     expect(
       parseNotes(
-        "Un paragraphe\nsur deux lignes.\n\n### Ajouts\n\n- **Un** point\n  qui continue.\n- Un autre."
+        "Un paragraphe\nsur deux lignes.\n\n### ✨ Nouveautés\n\n- **Un** point\n  qui continue.\n- Un autre."
       )
     ).toEqual([
       { kind: "paragraph", text: "Un paragraphe sur deux lignes." },
-      { kind: "heading", text: "Ajouts" },
+      { kind: "heading", text: "✨ Nouveautés" },
       { kind: "list", items: ["**Un** point qui continue.", "Un autre."] },
     ]);
   });
@@ -128,6 +128,24 @@ describe("les fichiers de .github/changelog/", () => {
       /changelog\/[a-z]{2}\//.test(name)
     )) {
       expect(french).toContain(name.replace(/^.*\//, ""));
+    }
+  });
+
+  // Le modèle des notes, commun à l'app, à la release GitHub et à l'annonce Discord
+  const sections = {
+    fr: ["✨ Nouveautés", "🛠️ Changements", "🐛 Corrections"],
+    en: ["✨ New", "🛠️ Changed", "🐛 Fixed"],
+  };
+
+  it("suivent le modèle : sections ### dans l'ordre, 3800 caractères au plus", () => {
+    for (const name of names) {
+      const { body } = parseRelease(name, CHANGELOG_FILES[name] ?? "");
+      const titles = body.split(/\r?\n/).filter(line => line.startsWith("#"));
+      const expected = sections[/changelog\/en\//.test(name) ? "en" : "fr"]
+        .map(section => `### ${section}`)
+        .filter(title => titles.includes(title));
+      expect(titles, name).toEqual(expected);
+      expect(body.length, name).toBeLessThanOrEqual(3800);
     }
   });
 });

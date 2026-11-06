@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <!-- <a href="https://github.com/PierideApp/Pieride/releases/latest"><img src=".github/assets/readme/bouton-telecharger.png" alt="Télécharger" height="44" /></a> -->
-  <a href="docs"><img src=".github/assets/readme/bouton-documentation.png" alt="Documentation" height="44" /></a>
+  <a href="https://github.com/PierideApp/Pieride/releases/latest"><img src=".github/assets/readme/bouton-telecharger.png" alt="Télécharger" height="44" /></a>
+  <a href="https://github.com/PierideApp/Pieride/wiki"><img src=".github/assets/readme/bouton-documentation.png" alt="Documentation" height="44" /></a>
 </p>
 
 > Piéride est en cours de développement : il n'y a pas encore de version à télécharger, et les aperçus ci-dessous viennent des maquettes.

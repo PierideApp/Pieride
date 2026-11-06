@@ -3,7 +3,7 @@ name: Release
 # Lancement manuel depuis Actions > Release > Run workflow, sur une branche
 # release/* uniquement. Il faut d'abord créer sur GitHub une release en brouillon
 # dont le tag est v + la version de package.json (ex. v0.2.0 ou v1.0.0).
-# Tests, puis builds dans le brouillon, puis publication si tout a réussi.
+# Tests, puis builds dans le brouillon, puis publication si tout a réussi et annonce Discord.
 on:
   workflow_dispatch:
 
@@ -132,3 +132,46 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
         run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false
+
+  # Pas de workflow `on: release` : une publication par GITHUB_TOKEN ne le lancerait pas
+  notify:
+    name: Annoncer sur Discord
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Envoyer les notes sur le salon
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          IMAGE_URL: https://raw.githubusercontent.com/PierideApp/Pieride/main/.github/assets/changelog.png
+        run: |
+          : "${DISCORD_WEBHOOK_URL:?Ajoute le secret DISCORD_WEBHOOK_URL au dépôt}"
+          payload="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" | jq '
+            ((.name | select(. != "")) // .tag_name) as $titre
+            | ["\n" + (.body // "" | gsub("\r"; "")) | splits("\n(?=### )") | trim] as $blocs
+            | [
+                { type: 10, content: ("## \($titre)\n\($blocs[0])" | trim) },
+                { type: 14, divider: true, spacing: 1 },
+                ($blocs[1:][] | { type: 10, content: . }),
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "-# [Télécharger sur GitHub](<\(.html_url)>)" }
+              ] as $textes
+            | ($textes | map(.content // "") | add | length) as $taille
+            | if $taille > 4000 then error("Notes trop longues pour Discord : \($taille) caractères sur 4000") else . end
+            | {
+                flags: 32768,
+                allowed_mentions: { parse: [] },
+                components: [{
+                  type: 17,
+                  accent_color: 3289658,
+                  components: [
+                    ($ENV.IMAGE_URL // "" | select(. != "") | { type: 12, items: [{ media: { url: . } }] }),
+                    $textes[]
+                  ]
+                }]
+              }
+          ')"
+          curl -sS --fail-with-body -H "Content-Type: application/json" -d "$payload" \
+            "$DISCORD_WEBHOOK_URL?with_components=true"
