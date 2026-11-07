@@ -232,7 +232,8 @@ body {
   animation-play-state: running;
 }
 
-.splash-screen-loader, .splash-screen-error {
+.splash-screen-loader,
+.splash-screen-error {
   position: absolute;
   display: flex;
   gap: 10px;

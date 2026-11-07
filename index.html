@@ -38,8 +38,14 @@
           <p id="splash-screen-error-text" class="loader-text error"></p>
         </div>
         <div class="splash-screen-error-info">
-          <button id="splash-screen-error-retry-button" class="splash-screen-error-button"></button>
-          <button id="splash-screen-error-close-button" class="splash-screen-error-button"></button>
+          <button
+            id="splash-screen-error-retry-button"
+            class="splash-screen-error-button"
+          ></button>
+          <button
+            id="splash-screen-error-close-button"
+            class="splash-screen-error-button"
+          ></button>
         </div>
       </div>
     </div>
@@ -66,12 +72,18 @@
       const loaderText = document.getElementById("loader-text");
       const errorDisplay = document.getElementById("splash-screen-error");
       const errorText = document.getElementById("splash-screen-error-text");
-      const closeAppButton = document.getElementById("splash-screen-error-close-button");
-      const retryButton = document.getElementById("splash-screen-error-retry-button");
+      const closeAppButton = document.getElementById(
+        "splash-screen-error-close-button"
+      );
+      const retryButton = document.getElementById(
+        "splash-screen-error-retry-button"
+      );
       const currentLanguage = localStorage.getItem("language") || "fr";
-      const translations = await import(`./src/locales/${currentLanguage}.json`);
+      const translations = await import(
+        `./src/locales/${currentLanguage}.json`
+      );
 
-      if(!localStorage.getItem("language")) {
+      if (!localStorage.getItem("language")) {
         localStorage.setItem("language", "fr"); // Définit la langue par défaut à français si aucune langue n'est définie.
       }
 
@@ -108,14 +120,14 @@
         setTimeout(() => {
           console.log("Animation finished");
           animationFinished = true;
-          if(appIsReady) {
+          if (appIsReady) {
             hideSplash();
-          }
-          else if(appError) {
-            errorDisplay.style.animation = "loading-appear 500ms ease-in-out forwards";
-          }
-          else {
-            loader.style.animation = "loading-appear 500ms ease-in-out forwards";
+          } else if (appError) {
+            errorDisplay.style.animation =
+              "loading-appear 500ms ease-in-out forwards";
+          } else {
+            loader.style.animation =
+              "loading-appear 500ms ease-in-out forwards";
           }
         }, 3600);
       }
@@ -137,21 +149,21 @@
       window.appIsReady = () => {
         appIsReady = true;
         console.log("appIsReady");
-        if(animationFinished) {
+        if (animationFinished) {
           hideSplash();
         }
-      }
+      };
 
-      window.appError = (error) => {
+      window.appError = error => {
         console.log("appError", error);
         appError = true;
         errorText.textContent = error;
-        if(animationFinished) {
+        if (animationFinished) {
           loader.style.opacity = "0";
           loader.style.animation = "none";
           errorDisplay.style.opacity = "1";
         }
-      }
+      };
 
       closeAppButton.addEventListener("click", async () => {
         appWindow.close();
