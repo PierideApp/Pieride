@@ -29,6 +29,7 @@ import {
   translateToWeekNumber,
 } from "@blockshub/pawnote-lts";
 
+import { ServiceUnavailable } from "../shared/errors";
 import type {
   Attachment,
   Attendance,
@@ -109,33 +110,127 @@ export function toCourse(
 }
 
 /**
- * L'adresse d'un fichier porte l'identifiant de la session PRONOTE (`?Session=`) : on ne le
- * garde pas. Elle ne sert plus de toute façon une fois la session finie.
+ * Où retrouver une pièce jointe pour en redemander l'adresse : PRONOTE y chiffre le fichier
+ * avec la clé de la session. `week` : la semaine des devoirs ou du cahier de textes.
  */
-const toAttachment = (attachment: PronoteAttachment): Attachment =>
-  attachment.kind === AttachmentKind.Link
-    ? { kind: "link", name: attachment.name, url: attachment.url }
-    : {
-        kind: "file",
-        name: attachment.name,
-        url: attachment.url.split("?")[0] ?? "",
-      };
+type Origin =
+  | { source: "news"; news: string }
+  | { source: "homework" | "resources"; week: number };
 
-const toCourseContent = (content: ResourceContent): CourseContent => ({
-  title: content.title,
-  description: content.description,
-  category: content.categoryText,
-  attachments: content.files.map(toAttachment),
-});
+/**
+ * L'adresse d'un fichier porte l'identifiant de la session PRONOTE (`?Session=`) : on ne le
+ * garde pas. Elle ne sert plus de toute façon une fois la session finie : `ref` dit où en
+ * redemander une (`downloadAttachment`).
+ */
+const toAttachment =
+  (origin: Origin) =>
+  (attachment: PronoteAttachment): Attachment =>
+    attachment.kind === AttachmentKind.Link
+      ? { kind: "link", name: attachment.name, url: attachment.url }
+      : {
+          kind: "file",
+          name: attachment.name,
+          url: attachment.url.split("?")[0] ?? "",
+          ref: JSON.stringify({ ...origin, file: attachment.id }),
+        };
 
-export function toHomework(assignment: Assignment): Homework {
+/** La `ref` d'une pièce jointe, ou `null` si elle est illisible (ligne d'avant les `ref`). */
+function parseRef(ref: string | undefined): (Origin & { file: string }) | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(ref ?? "");
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const fields: Partial<Record<"source" | "news" | "week" | "file", unknown>> =
+    value;
+  const { source, news: newsId, week, file } = fields;
+  if (typeof file !== "string") {
+    return null;
+  }
+  if (source === "news" && typeof newsId === "string") {
+    return { source, news: newsId, file };
+  }
+  if (
+    (source === "homework" || source === "resources") &&
+    typeof week === "number"
+  ) {
+    return { source, week, file };
+  }
+  return null;
+}
+
+/** Les fichiers de l'endroit d'où vient la pièce jointe, avec les adresses de cette session. */
+async function filesAt(
+  handle: SessionHandle,
+  origin: Origin
+): Promise<readonly PronoteAttachment[]> {
+  if (origin.source === "news") {
+    const item = (await news(handle)).items.find(
+      candidate => candidate.id === origin.news
+    );
+    if (!item) {
+      return [];
+    }
+    return item.is === "information"
+      ? item.attachments
+      : item.questions.flatMap(question => question.attachments);
+  }
+  if (origin.source === "homework") {
+    return (await assignmentsFromWeek(handle, origin.week)).flatMap(
+      assignment => assignment.attachments
+    );
+  }
+  return (await resourcesFromWeek(handle, origin.week)).flatMap(resource =>
+    resource.contents.flatMap(content => content.files)
+  );
+}
+
+/** Le contenu d'un fichier, retrouvé là où il a été vu pour avoir une adresse valable. */
+export const downloadAttachment =
+  (session: PronoteSession) => (attachment: Attachment) =>
+    session.run(async handle => {
+      const ref = parseRef(attachment.ref);
+      const file =
+        ref &&
+        (await filesAt(handle, ref)).find(
+          candidate => candidate.id === ref.file
+        );
+      if (!file) {
+        throw new ServiceUnavailable("Pièce jointe introuvable chez PRONOTE");
+      }
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new ServiceUnavailable(
+          `Pièce jointe refusée par PRONOTE : ${response.status}`
+        );
+      }
+      return new Uint8Array(await response.arrayBuffer());
+    });
+
+const toCourseContent =
+  (week: number) =>
+  (content: ResourceContent): CourseContent => ({
+    title: content.title,
+    description: content.description,
+    category: content.categoryText,
+    attachments: content.files.map(toAttachment({ source: "resources", week })),
+  });
+
+/** `week` : la semaine PRONOTE où les devoirs ont été demandés, pour leurs pièces jointes. */
+export function toHomework(assignment: Assignment, week: number): Homework {
   return {
     id: assignment.id,
     subject: assignment.subject.name,
     content: assignment.description,
     dueAt: assignment.deadline,
     done: assignment.done,
-    attachments: assignment.attachments.map(toAttachment),
+    attachments: assignment.attachments.map(
+      toAttachment({ source: "homework", week })
+    ),
   };
 }
 
@@ -147,6 +242,7 @@ export function toHomework(assignment: Assignment): Homework {
 export function toNews(item: NewsInformation | NewsSurvey): News {
   // pawnote cherche la rubrique dans la liste reçue : elle peut manquer.
   const category: NewsCategory | undefined = item.category;
+  const attachment = toAttachment({ source: "news", news: item.id });
   const common = {
     id: item.id,
     title: item.title,
@@ -163,7 +259,7 @@ export function toNews(item: NewsInformation | NewsSurvey): News {
       needsAcknowledgement: false,
       acknowledged: false,
       attachments: item.questions.flatMap(question =>
-        question.attachments.map(toAttachment)
+        question.attachments.map(attachment)
       ),
     };
   }
@@ -173,7 +269,7 @@ export function toNews(item: NewsInformation | NewsSurvey): News {
     content: item.content,
     needsAcknowledgement: item.needToAcknowledge,
     acknowledged: item.acknowledged,
-    attachments: item.attachments.map(toAttachment),
+    attachments: item.attachments.map(attachment),
   };
 }
 
@@ -269,7 +365,7 @@ export function capabilities(
         const contents = new Map(
           resources.map(resource => [
             resource.id,
-            resource.contents.map(toCourseContent),
+            resource.contents.map(toCourseContent(week)),
           ])
         );
         return found.classes.map(item => toCourse(item, contents));
@@ -277,11 +373,12 @@ export function capabilities(
   };
   const homework: CapabilityMethods["HOMEWORK"] = {
     getHomeworks: weekStart =>
-      session.run(async handle =>
-        (await assignmentsFromWeek(handle, weekNumber(handle, weekStart))).map(
-          toHomework
-        )
-      ),
+      session.run(async handle => {
+        const week = weekNumber(handle, weekStart);
+        return (await assignmentsFromWeek(handle, week)).map(assignment =>
+          toHomework(assignment, week)
+        );
+      }),
     setHomeworkCompletion: (id, done) =>
       session.run(handle => assignmentStatus(handle, id, done)),
   };

@@ -180,7 +180,18 @@
   },
   "attachmentList": {
     "file": "Fichier",
-    "link": "Lien"
+    "link": "Lien",
+    "opening": "Ouverture…",
+    "confirmTitle": "Ouvrir ce lien ?",
+    "confirmText": "Il mène vers {{site}}, qui s'ouvrira dans ton navigateur. Ouvre-le seulement si tu fais confiance à ce site.",
+    "confirm": "Ouvrir le lien",
+    "errors": {
+      "download": "Le fichier n'a pas pu être téléchargé. Vérifie ta connexion, synchronise, puis réessaie.",
+      "link": "Ce lien ne peut pas s'ouvrir depuis Piéride.",
+      "type_refused": "Ce type de fichier ne s'ouvre pas depuis Piéride, pour ta sécurité. Récupère-le sur le site de ton établissement.",
+      "too_large": "Ce fichier est trop lourd pour être ouvert depuis Piéride.",
+      "open_failed": "Aucune app de ton ordinateur ne sait ouvrir ce fichier."
+    }
   },
   "cours": {
     "view": "Affichage",

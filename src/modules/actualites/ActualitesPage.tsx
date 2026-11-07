@@ -6,6 +6,7 @@ import { Font, Paper } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AttachmentList } from "@/components/AttachmentList/AttachmentList";
 import { Avatar } from "@/components/Avatar/Avatar";
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
@@ -20,6 +21,7 @@ import { Tip } from "@/components/Tip/Tip";
 import { useDateFormats } from "@/hooks/useFormats";
 import { useJump } from "@/hooks/useJump";
 import { type NewsView, useNews } from "@/hooks/useNews";
+import { useOpenAttachment } from "@/hooks/useOpenAttachment";
 import { log } from "@/lib/log";
 import { matches } from "@/lib/search";
 import type { ModulePageProps } from "@/modules/registry";
@@ -63,6 +65,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
   );
   const current =
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
+  const attachments = useOpenAttachment(current?.serviceId);
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`
       ? acknowledgement.status
@@ -245,19 +248,13 @@ export function ActualitesPage({ module }: ModulePageProps) {
               ))}
             </div>
             {current.attachments.length > 0 && (
-              <ul className={styles.attachments}>
-                {current.attachments.map(attachment => (
-                  <li key={attachment.url}>
-                    <span className={styles.fileIcon} aria-hidden="true">
-                      <Paper size={18} />
-                    </span>
-                    <span>
-                      <strong>{attachment.name}</strong>
-                      <small>{t(`attachmentList.${attachment.kind}`)}</small>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <AttachmentList
+                variant="tiles"
+                attachments={current.attachments}
+                onOpen={attachments.open}
+                opening={attachments.opening}
+                error={attachments.error}
+              />
             )}
             {current.needsAcknowledgement && (
               <div className={styles.acknowledgement}>

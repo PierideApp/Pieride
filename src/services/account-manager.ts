@@ -18,6 +18,7 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
+import { forgetFiles, openFile } from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
@@ -31,6 +32,7 @@ import {
 } from "./shared/errors";
 import type {
   Account,
+  Attachment,
   Attendance,
   LinkedService,
   ServiceKind,
@@ -221,7 +223,17 @@ export class AccountManager {
       this.plugins.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
+    await Promise.all(linked.map(({ id }) => this.forgetFiles(id)));
     return failed;
+  }
+
+  /** Les fichiers ouverts d'un service : un échec n'empêche rien, le lancement les efface. */
+  private async forgetFiles(serviceId: string): Promise<void> {
+    try {
+      await forgetFiles(serviceId);
+    } catch (error) {
+      log("warn", "fichiers", `Pièces jointes non effacées : ${String(error)}`);
+    }
   }
 
   /**
@@ -286,6 +298,7 @@ export class AccountManager {
     }
     this.plugins.delete(serviceId);
     await this.db.delete(services).where(eq(services.id, serviceId));
+    await this.forgetFiles(serviceId);
   }
 
   async refreshAll(
@@ -422,6 +435,28 @@ export class AccountManager {
       .from(services)
       .where(eq(services.id, serviceId));
     return service && (await this.plugin(service)).capabilities.NEWS;
+  }
+
+  /**
+   * Télécharge une pièce jointe avec une adresse à jour (celle du service expire), puis
+   * l'ouvre avec l'app du système. Hors ligne ou en panne, l'erreur remonte à l'écran.
+   */
+  async openAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<void> {
+    const [service] = await this.db
+      .select()
+      .from(services)
+      .where(eq(services.id, serviceId));
+    const plugin = service && (await this.plugin(service));
+    if (!plugin?.downloadAttachment) {
+      throw new UnsupportedService(
+        "Ce service ne donne pas ses pièces jointes"
+      );
+    }
+    const bytes = await plugin.downloadAttachment(attachment);
+    await openFile(serviceId, attachment.name, bytes);
   }
 
   /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */

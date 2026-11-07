@@ -56,6 +56,26 @@ describe("données fictives", () => {
     expect(again).toMatchObject({ read: true, acknowledged: true });
   });
 
+  it("donne un vrai PDF pour une pièce jointe fictive", async () => {
+    const bytes = await mockPlugin().downloadAttachment?.({
+      kind: "file",
+      name: "Fiche suites.pdf",
+      url: "mock:Fiche suites.pdf",
+    });
+    const pdf = String.fromCharCode(...(bytes ?? []));
+    expect(pdf.startsWith("%PDF-1.4")).toBe(true);
+    expect(pdf).toContain("(Document fictif : Fiche suites.pdf)");
+    // Chaque entrée de la table `xref` pointe sur le début de son objet.
+    const table = Number(/startxref\n(\d+)/.exec(pdf)?.[1]);
+    const offsets = [...pdf.slice(table).matchAll(/(\d{10}) 00000 n/g)].map(
+      ([, offset]) => Number(offset)
+    );
+    expect(offsets).toHaveLength(5);
+    offsets.forEach((offset, index) =>
+      expect(pdf.startsWith(`${index + 1} 0 obj`, offset)).toBe(true)
+    );
+  });
+
   it("garde un devoir coché pour la session", async () => {
     const [first] = (await HOMEWORK?.getHomeworks(weekStart(NOW))) ?? [];
     await HOMEWORK?.setHomeworkCompletion(first?.id ?? "", !first?.done);

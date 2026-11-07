@@ -2,6 +2,7 @@
 // Développeur). En dev seulement : l'app publiée ne contient pas ce fichier (services/index.ts).
 // Aucun réseau : tout est calculé à partir de la semaine demandée. Élève, professeurs et
 // établissement sont inventés, comme sur les maquettes (Camille Martin, 1re G3).
+import { ServiceUnavailable } from "../shared/errors";
 import type {
   Course,
   CourseContent,
@@ -252,6 +253,7 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
 
   return {
     kind: "mock",
+    downloadAttachment: async ({ name }) => sampleFile(name),
     capabilities: {
       NEWS: {
         getNews: async () =>
@@ -346,6 +348,81 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
       },
     },
   };
+}
+
+/**
+ * Un vrai petit fichier pour chaque pièce jointe fictive, qui dit ce qu'il est : de quoi
+ * tester l'ouverture sans compte scolaire. Seulement les types utilisés plus haut.
+ */
+async function sampleFile(name: string): Promise<Uint8Array> {
+  const extension = name.split(".").pop()?.toLowerCase();
+  const title = `Document fictif : ${name}`;
+  if (extension === "pdf") {
+    return samplePdf(title);
+  }
+  if (extension === "csv") {
+    // Le BOM et le point-virgule : un tableur ouvre le fichier en français, accents compris.
+    return new TextEncoder().encode(
+      "\uFEFFMesure;Volume versé (mL);pH\n1;0;3,1\n2;5;4,8\n3;10;7,0\n4;15;9,2\n"
+    );
+  }
+  if (extension === "png" || extension === "jpg" || extension === "jpeg") {
+    return sampleImage(title, extension === "png" ? "image/png" : "image/jpeg");
+  }
+  throw new ServiceUnavailable(`Pas de fichier fictif pour « .${extension} »`);
+}
+
+/** Un PDF d'une page, écrit à la main : Helvetica, police standard, ne connaît que le Latin-1. */
+function samplePdf(title: string): Uint8Array {
+  const text = title.replace(/[^\x20-\xff]/g, "?").replace(/[\\()]/g, "\\$&");
+  const content = `BT /F1 20 Tf 56 770 Td (${text}) Tj ET`;
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+  ];
+  // Un caractère, un octet : la longueur du texte donne les positions de la table `xref`.
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((body, index) => {
+    const offset = pdf.length;
+    pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+    return offset;
+  });
+  const table = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  pdf += offsets
+    .map(offset => `${String(offset).padStart(10, "0")} 00000 n \n`)
+    .join("");
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${table}\n%%EOF\n`;
+  return Uint8Array.from(pdf, character => character.charCodeAt(0));
+}
+
+/** Une image dessinée dans un canevas : un fond pâle et le nom du fichier. */
+async function sampleImage(
+  title: string,
+  type: "image/png" | "image/jpeg"
+): Promise<Uint8Array> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 960;
+  canvas.height = 540;
+  const context = canvas.getContext("2d");
+  if (context) {
+    // Le contenu d'un faux fichier, pas l'interface : les couleurs de la marque, en dur.
+    context.fillStyle = "#eceeff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#2b2bc2";
+    context.font = "bold 36px sans-serif";
+    context.fillText(title, 48, canvas.height / 2);
+  }
+  const blob = await new Promise<Blob | null>(resolve =>
+    canvas.toBlob(resolve, type)
+  );
+  if (!blob) {
+    throw new ServiceUnavailable("Image fictive impossible à dessiner");
+  }
+  return new Uint8Array(await blob.arrayBuffer());
 }
 
 /** Moyennes fictives de chaque matière : celle des notes, la classe un peu autour. */

@@ -171,7 +171,7 @@ describe("toHomework", () => {
       themes: [],
       return: { kind: AssignmentReturnKind.None, canUpload: false },
     };
-    expect(toHomework(assignment)).toEqual({
+    expect(toHomework(assignment, 9)).toEqual({
       id: "h1",
       subject: "MATHEMATIQUES",
       content: "<p>Exercices 12 à 15</p>",
@@ -183,6 +183,8 @@ describe("toHomework", () => {
           kind: "file",
           name: "sujet.pdf",
           url: "https://exemple.fr/f/sujet.pdf",
+          // Où redemander une adresse valable : les devoirs de la semaine 9.
+          ref: JSON.stringify({ source: "homework", week: 9, file: "f1" }),
         },
       ],
     });
@@ -253,6 +255,7 @@ describe("toNews", () => {
           kind: "file",
           name: "autorisation.pdf",
           url: "https://exemple.fr/f/autorisation.pdf",
+          ref: JSON.stringify({ source: "news", news: "n1", file: "f1" }),
         },
       ],
     });

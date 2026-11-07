@@ -41,6 +41,11 @@ export interface Attachment {
   kind: "link" | "file";
   name: string;
   url: string;
+  /**
+   * Pour un fichier : de quoi redemander au service une adresse à jour, celle de PRONOTE ne
+   * valant que pour sa session. Propre au service : l'app ne fait que le lui rendre.
+   */
+  ref?: string;
 }
 
 /** Une matière, telle que l'app l'affiche (nom, couleur et emoji choisis localement). */

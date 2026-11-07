@@ -15,6 +15,7 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
+import { forgetFiles, openFile } from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { addDays } from "@/lib/week";
@@ -24,8 +25,12 @@ import {
   MANUAL_SYNC_INTERVAL,
   SYNC_INTERVAL,
 } from "./account-manager";
-import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
-import type { Course } from "./shared/models";
+import {
+  AuthenticationError,
+  ServiceUnavailable,
+  UnsupportedService,
+} from "./shared/errors";
+import type { Attachment, Course } from "./shared/models";
 import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
 
 const secrets = vi.hoisted(() => new Map<string, string>());
@@ -37,6 +42,10 @@ vi.mock("@/lib/keyring", () => ({
   deleteSecret: vi.fn(async (id: string) => void secrets.delete(id)),
 }));
 vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
+vi.mock("@/lib/files", () => ({
+  openFile: vi.fn(async () => undefined),
+  forgetFiles: vi.fn(async () => undefined),
+}));
 
 // Lundi 26 octobre 2026, 10 h : la semaine va du 26 au 2 novembre.
 const NOW = new Date(2026, 9, 26, 10);
@@ -440,6 +449,44 @@ describe("AccountManager", () => {
     expect(secrets.size).toBe(0);
     expect(await db.select().from(services)).toEqual([]);
     expect(await db.select().from(courses)).toEqual([]);
+    // Les pièces jointes déjà ouvertes aussi.
+    expect(forgetFiles).toHaveBeenCalledWith("pronote-1");
+  });
+
+  it("télécharge une pièce jointe chez le service, puis l'ouvre", async () => {
+    const { manager } = await setup();
+    const bytes = new Uint8Array([37, 80, 68, 70]);
+    const downloadAttachment = vi.fn(async () => bytes);
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+      downloadAttachment,
+    }));
+    const attachment: Attachment = {
+      kind: "file",
+      name: "sujet.pdf",
+      url: "https://exemple.fr/f/sujet.pdf",
+      ref: "r1",
+    };
+
+    await manager.openAttachment("pronote-1", attachment);
+    expect(downloadAttachment).toHaveBeenCalledWith(attachment);
+    expect(openFile).toHaveBeenCalledWith("pronote-1", "sujet.pdf", bytes);
+  });
+
+  it("refuse d'ouvrir la pièce jointe d'un service qui ne la donne pas", async () => {
+    const { manager } = await setup();
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+    }));
+    await expect(
+      manager.openAttachment("pronote-1", {
+        kind: "file",
+        name: "sujet.pdf",
+        url: "https://exemple.fr/f/sujet.pdf",
+      })
+    ).rejects.toBeInstanceOf(UnsupportedService);
   });
 
   it("ne garde pas de service si le trousseau refuse le secret", async () => {

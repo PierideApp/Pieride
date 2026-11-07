@@ -180,7 +180,18 @@
   },
   "attachmentList": {
     "file": "File",
-    "link": "Link"
+    "link": "Link",
+    "opening": "Opening…",
+    "confirmTitle": "Open this link?",
+    "confirmText": "It leads to {{site}}, which will open in your browser. Only open it if you trust this site.",
+    "confirm": "Open link",
+    "errors": {
+      "download": "The file could not be downloaded. Check your connection, sync, then try again.",
+      "link": "This link cannot be opened from Piéride.",
+      "type_refused": "This type of file does not open from Piéride, for your safety. Get it from your school's website.",
+      "too_large": "This file is too large to be opened from Piéride.",
+      "open_failed": "No app on your computer can open this file."
+    }
   },
   "cours": {
     "view": "View",

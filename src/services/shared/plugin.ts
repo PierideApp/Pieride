@@ -2,6 +2,7 @@
 // (services/shared/types.ts, GPLv3) : https://github.com/PapillonApp/Papillon
 // Différence voulue : une capability n'existe que si ses méthodes sont fournies.
 import type {
+  Attachment,
   Attendance,
   Balance,
   Booking,
@@ -60,6 +61,8 @@ export interface SchoolServicePlugin {
   readonly kind: ServiceKind;
   /** Déclarer une capability, c'est fournir toutes ses méthodes. */
   readonly capabilities: Partial<CapabilityMethods>;
+  /** Le contenu d'une pièce jointe de type fichier, téléchargé avec une adresse à jour. */
+  downloadAttachment?(attachment: Attachment): Promise<Uint8Array>;
 }
 
 /**

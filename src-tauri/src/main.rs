@@ -1,6 +1,7 @@
 // Évite d'ouvrir une console en plus sous Windows en release, ne pas retirer.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod attachments;
 mod database;
 mod pronote_login;
 mod secrets;
@@ -136,6 +137,7 @@ fn main() {
         ))
         .manage(AllowedInstances::default())
         .setup(|app| {
+            attachments::clear(app.handle());
             // Sans base, l'app s'ouvre quand même : le front affiche l'erreur (commandes `db_*` en échec).
             match tauri::async_runtime::block_on(database::open(app.handle())) {
                 Ok(database) => {
@@ -159,7 +161,9 @@ fn main() {
             database::db_select,
             database::db_execute,
             database::db_batch,
-            database::db_apply_migration
+            database::db_apply_migration,
+            attachments::attachment_open,
+            attachments::attachments_forget
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
