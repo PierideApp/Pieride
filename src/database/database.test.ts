@@ -32,6 +32,7 @@ describe("migrate", () => {
       ["0002_moyennes"],
       ["0003_vie_scolaire"],
       ["0004_contenu_cours"],
+      ["0005_actualites"],
     ]);
   });
 

@@ -11,6 +11,7 @@ import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
 import { useHomework } from "@/hooks/useHomework";
+import { useOpenAttachment } from "@/hooks/useOpenAttachment";
 import { useSubjects } from "@/hooks/useSubjects";
 import { subjectStyle } from "@/lib/subjects";
 
@@ -42,6 +43,7 @@ export function TaskDetail({
   const tasks = useHomework(accountId, dueAt);
   const subjects = useSubjects(accountId);
   const { toggle, error, pending } = useToggleHomework();
+  const attachments = useOpenAttachment(serviceId);
   const item =
     tasks.status === "ready"
       ? tasks.data.find(task => task.serviceId === serviceId && task.id === id)
@@ -109,7 +111,12 @@ export function TaskDetail({
       </Section>
       {item.attachments.length > 0 && (
         <Section title={t("taches.attachments")}>
-          <AttachmentList attachments={item.attachments} />
+          <AttachmentList
+            attachments={item.attachments}
+            onOpen={attachments.open}
+            opening={attachments.opening}
+            error={attachments.error}
+          />
         </Section>
       )}
       <Section title={t("taches.information")}>

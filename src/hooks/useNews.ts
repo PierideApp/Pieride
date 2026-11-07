@@ -25,6 +25,7 @@ export async function loadNews(accountId: string): Promise<NewsView[]> {
   return rows.map(({ item, service }) => ({
     ...item,
     title: item.title ?? undefined,
+    category: item.category ?? undefined,
     content: htmlToText(item.content),
     service,
   }));
