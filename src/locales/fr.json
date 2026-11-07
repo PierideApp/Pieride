@@ -39,6 +39,11 @@
     "noAccount": "Pas encore de compte",
     "switchAccount": "Changer de compte"
   },
+  "internet": {
+    "title": "Statut de ta connexion à Internet",
+    "online": "Connexion Internet récupérée",
+    "offline": "Pas de connexion Internet"
+  },
   "sync": {
     "never": "Pas encore synchronisé",
     "running": "Synchronisation…",
