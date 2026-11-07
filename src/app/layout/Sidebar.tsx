@@ -84,6 +84,7 @@ function AccountSwitcher({
 /** Le refus d'un `Ctrl R` reste affiché ce temps-là, puis l'état revient. */
 const REFUSED_NOTICE = 4000;
 
+/** « Pas de connexion Internet » ou « Connexion rétablie », le connexion rétablie est affiché pendant 4 secondes. */
 function InternetStatus() {
   console.log("navigator is online?", navigator.onLine)
   const [online, setOnline] = useState<boolean>(navigator.onLine);
@@ -202,15 +203,15 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
         <span className={styles.syncSpinner}>
           <Spinner />
         </span>
-      ) : lastSync.status === "error" ? (
+      ) : lastSync.status === "error" ? ( // Si la synchro a échoué
         <AlertCircle size={20} style={{ color: "var(--color-error)" }} className={styles.syncIcon} />
-      ) : lastSync.status === "ready" && lastSyncMinutes > 0 ? (
+      ) : lastSync.status === "ready" && lastSyncMinutes > 0 ? ( // Si la synchro est bloquée par le `Ctrl R` refusé
           <Info size={20} style={{ color: "var(--color-info)" }} className={styles.syncIcon} />
-      ) : lastSync.status === "ready" && lastSyncMinutes <= -10 ? (
+      ) : lastSync.status === "ready" && lastSyncMinutes <= -10 ? ( // Si la synchro date de plus de 10 minutes
         <Clock size={20} className={styles.syncIcon} /> 
-      ) : lastSync.status === "ready" && lastSync.data ? (
+      ) : lastSync.status === "ready" && lastSync.data ? ( // Si la synchro est OK
         <Check size={20} style={{ color: "var(--color-success)" }} className={styles.syncIcon} />
-      ) : (
+      ) : ( // Si la synchro n'a jamais eu lieu
         <Info size={20} className={styles.syncIcon} />
       )}
 
