@@ -283,6 +283,26 @@ describe("AccountManager", () => {
     expect(secrets.get("pronote-1")).toBe("nouveau-jeton");
   });
 
+  it("retrouve le compte d'un service déjà lié : même adresse, même secret", async () => {
+    const { manager } = await setup();
+    const url = "https://0000000a.index-education.net/pronote/";
+    const same = (secret: string) => secret === "jeton";
+
+    expect(await manager.findLinkedAccount("pronote", url, same)).toBe(
+      "camille"
+    );
+    expect(
+      await manager.findLinkedAccount("pronote", url, () => false)
+    ).toBeUndefined();
+    expect(
+      await manager.findLinkedAccount(
+        "pronote",
+        "https://0000000b.index-education.net/pronote/",
+        same
+      )
+    ).toBeUndefined();
+  });
+
   it("coche un devoir chez le service, puis dans la base", async () => {
     const { db, manager } = await setup();
     const setCompletion = vi.fn(async (id: string, done: boolean) => {

@@ -2,6 +2,11 @@
 // `pronote_login`, trousseau) ou une erreur des services. Jamais le message lui-même.
 import { log } from "@/lib/log";
 
+/** Ce compte est déjà dans Piéride (même établissement, même identifiant). */
+export class AlreadyLinked extends Error {
+  name = "AlreadyLinked";
+}
+
 const INSTANCE_CODES = new Set([
   "invalid_url",
   "https_required",
@@ -21,6 +26,7 @@ const LOGIN_ERRORS = new Set([
   "SecurityChallenge",
   "LoginBlocked",
   "WrongPin",
+  "AlreadyLinked",
 ]);
 
 export function errorKey(error: unknown): string {

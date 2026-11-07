@@ -929,9 +929,9 @@
       "demoWarn": "Pay attention",
       "demoWarnText": "You are going to use the PRONOTE demonstration account. This account doesn't have your school data.",
       "demoWarnText2": "If you want to have your school data, go back and select one of the two other options.",
-      "demoWarnText3": "The demonstration instance doesn't save data modification, so if you re-synchronize, the data will go back at their default values.",
+      "demoWarnText3": "The demonstration instance does not save changes: at each sync, the data goes back to its original values.",
       "demoOrigin": "The demonstration account comes from the public PRONOTE demonstration instance.",
-      "demoContinue": "Click on \"Continue\" to login to the demonstration account.",
+      "demoContinue": "Click “Continue” to sign in to the demonstration account.",
       "loginEyebrow": "Sign in",
       "loginTitle": "Sign in to {{name}}",
       "loginText": "Your school's sign-in page, or your ENT's, opens in a separate window. Sign in as usual.",
@@ -964,7 +964,8 @@
         "ServiceUnavailable": "PRONOTE isn't responding right now. Try again in a moment.",
         "SecurityChallenge": "PRONOTE is asking for a check Piéride can't handle yet.",
         "LoginBlocked": "PRONOTE wants you to change your password or set up two-factor authentication. Do it on the PRONOTE website first, then come back here.",
-        "WrongPin": "That PIN isn't right."
+        "WrongPin": "That PIN isn't right.",
+        "AlreadyLinked": "This account is already in Piéride. Choose it at the top of the sidebar."
       }
     }
   },

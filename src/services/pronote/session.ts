@@ -29,8 +29,12 @@ import {
   ServiceUnavailable,
 } from "@/services/shared/errors";
 
-/** L'URL de l'instance de démonstration PRONOTE. */
-const demoURL = "https://demo.index-education.net/pronote";
+/** L'instance de démonstration publique de PRONOTE et son compte élève, publics eux aussi. */
+export const DEMO_URL = "https://demo.index-education.net/pronote";
+export const DEMO_CREDENTIALS = {
+  username: "demonstration",
+  password: "pronotevs",
+};
 
 /** Au-delà, la session est refaite avant une requête : PRONOTE oublie les sessions inactives. */
 export const SESSION_TTL = 5 * 60_000;
@@ -168,10 +172,9 @@ export class PronoteSession {
     const handle = createSessionHandle(pronoteFetcher);
     try {
       const next = await loginCredentials(handle, {
-        url: demoURL,
+        url: DEMO_URL,
         kind: AccountKind.STUDENT,
-        username: "demonstration",
-        password: "pronotevs",
+        ...DEMO_CREDENTIALS,
         deviceUUID: "0",
       });
       this.secret = {
@@ -193,7 +196,7 @@ export class PronoteSession {
   private async login(): Promise<SessionHandle> {
     const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
       this.secret;
-    if (url === demoURL) {
+    if (url === DEMO_URL) {
       return this.loginDemo();
     }
     const handle = createSessionHandle(pronoteFetcher);

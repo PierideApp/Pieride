@@ -28,15 +28,18 @@ import { resizeImage } from "@/lib/image";
 import { ServiceUnavailable } from "@/services/shared/errors";
 import type { Account } from "@/services/shared/models";
 
-import { type PronoteSecret, toServiceError } from "./session";
+import {
+  DEMO_CREDENTIALS,
+  DEMO_URL,
+  parseSecret,
+  type PronoteSecret,
+  toServiceError,
+} from "./session";
 
 /** Le nom de Piéride dans la liste des appareils connus de PRONOTE (30 caractères au plus). */
 const DEVICE_NAME = "Piéride";
 /** Le libellé de la fenêtre de connexion, le même que dans pronote_login.rs. */
 const LOGIN_WINDOW = "pronote-login";
-
-/** L'URL de l'instance de démonstration PRONOTE. */
-const demoURL = "https://demo.index-education.net/pronote";
 
 /** PRONOTE demande un nouveau mot de passe ou de choisir sa double authentification. */
 export class LoginBlocked extends Error {
@@ -240,24 +243,31 @@ function loginOf(
   };
 }
 
+/**
+ * Vrai si ce secret du trousseau est celui du même élève que `login` : un même compte
+ * ajouté deux fois ferait deux comptes dans Piéride. L'adresse se compare à part.
+ */
+export const isSameStudent = (login: PronoteLogin) => (secret: string) =>
+  parseSecret(secret)?.username === login.secret.username;
+
+/** Connexion au compte de démonstration : identifiants publics, pas de fenêtre. */
 export async function loginDemo(): Promise<{
   kind: "done";
   login: PronoteLogin;
 }> {
-  await allowInstance(demoURL);
+  await allowInstance(DEMO_URL);
   const session = createSessionHandle(pronoteFetcher);
 
   const refresh = await loginCredentials(session, {
-    url: demoURL,
+    url: DEMO_URL,
     kind: AccountKind.STUDENT,
-    username: "demonstration",
-    password: "pronotevs",
+    ...DEMO_CREDENTIALS,
     deviceUUID: "0",
   }).catch(error => {
     throw toServiceError(error);
   });
 
-  return { kind: "done", login: await loginOf(session, refresh, "0") };
+  return { kind: "done", login: loginOf(session, refresh, "0") };
 }
 
 /**
@@ -274,10 +284,6 @@ export async function loginWithEnt(
   | { kind: "done"; login: PronoteLogin }
   | { kind: "pin"; finish: (pin: string) => Promise<PronoteLogin> }
 > {
-  console.log("PRONOTE : Initialisation connexion, instance :", url);
-  if (url === demoURL) {
-    return loginDemo();
-  }
   await allowInstance(url);
   const session = createSessionHandle(pronoteFetcher);
   let challenge: SecurityError;

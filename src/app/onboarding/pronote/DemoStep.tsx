@@ -1,6 +1,7 @@
-// L'adresse de l'établissement (maquette 07-url-pronote) : collée telle quelle, nettoyée, puis
-// vérifiée auprès de PRONOTE, qui donne le nom de l'établissement et son ENT.
+// Le compte de démonstration : l'instance publique de PRONOTE, vérifiée comme une adresse
+// collée (nom et version), puis la connexion au clic sur « Continuer » (ConnectStep).
 import { Check } from "@getpapillon/papicons";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
@@ -8,7 +9,8 @@ import { Card } from "@/components/Card/Card";
 import { InfoCard } from "@/components/InfoCard/InfoCard";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { useLookup } from "@/hooks/useLookup";
-import { findInstance, type InstanceInfo } from "@/services/pronote/login";
+import { findInstance } from "@/services/pronote/login";
+import { DEMO_URL } from "@/services/pronote/session";
 
 import styles from "../onboarding.module.scss";
 import { errorKey, logFailure } from "./errors";
@@ -23,12 +25,14 @@ const searchInstance = (input: string) =>
 
 export function DemoStep({
   onNext,
+  message,
 }: {
-  onNext: (instance: InstanceInfo) => void;
+  onNext: () => void;
+  /** L'échec de la dernière connexion. */
+  message?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const value: string = "https://demo.index-education.net/pronote";
-  const lookup = useLookup(value.trim(), searchInstance);
+  const lookup = useLookup(DEMO_URL, searchInstance);
   const found = lookup.status === "ready" ? lookup.data : null;
 
   return (
@@ -43,7 +47,7 @@ export function DemoStep({
           <p>{t("onboarding.pronote.demoWarnText3")}</p>
         </InfoCard>
         <InfoCard type="info" title={t("onboarding.pronote.demoOrigin")}>
-          <p>https://demo.index-education.net/pronote</p>
+          <p>{DEMO_URL}</p>
         </InfoCard>
         <p>{t("onboarding.pronote.demoContinue")}</p>
       </div>
@@ -79,13 +83,14 @@ export function DemoStep({
           </span>
         </Card>
       )}
+      {message}
 
       <footer className={styles.footer}>
         <Button
           variant="primary"
           size="large"
           disabled={!found}
-          onClick={() => found && onNext(found)}
+          onClick={onNext}
         >
           {t("onboarding.continue")}
         </Button>

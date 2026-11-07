@@ -124,6 +124,30 @@ export class AccountManager {
     await this.started;
   }
 
+  /**
+   * Le compte où ce service est déjà lié (même service, même adresse, et un secret que
+   * `same` reconnaît), pour ne pas ajouter deux fois le même élève.
+   */
+  async findLinkedAccount(
+    kind: ServiceKind,
+    instanceUrl: string,
+    same: (secret: string) => boolean
+  ): Promise<string | undefined> {
+    const linked = await this.db
+      .select({ id: services.id, accountId: services.accountId })
+      .from(services)
+      .where(
+        and(eq(services.kind, kind), eq(services.instanceUrl, instanceUrl))
+      );
+    for (const { id, accountId } of linked) {
+      const secret = await getSecret(id);
+      if (secret !== null && same(secret)) {
+        return accountId;
+      }
+    }
+    return undefined;
+  }
+
   async addAccount(account: Account): Promise<void> {
     await this.db.insert(accounts).values(account);
   }
