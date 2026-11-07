@@ -1,13 +1,17 @@
 {
   "app": {
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "close": "Fermer Piéride",
+    "retry": "Réessayer"
   },
   "errors": {
-    "database": "Impossible d'ouvrir tes données. Redémarre Piéride, et si ça continue, signale-le.",
+    "database": "Impossible d'ouvrir tes données. Redémarre Piéride. Si cette erreur persiste, signale-la.",
     "AuthenticationError": "Reconnecte-toi à ce service.",
     "ServiceUnavailable": "Service injoignable pour l'instant : tu vois les dernières données enregistrées.",
     "SecurityChallenge": "Ce service demande une vérification.",
     "Unknown": "Une erreur inattendue est survenue.",
+    "startError": "Une erreur inattendue est survenue et Piéride n'a pas pu démarrer. Redémarre Piéride. Si cette erreur persiste, signale-la.",
+    "crashed": "Une erreur inattendue est survenue et Piéride a planté. Redémarre Piéride. Si cette erreur persiste, signale-la.",
     "keyring_unavailable": "Le trousseau de ton système est inaccessible : impossible d'enregistrer tes identifiants.",
     "UnsupportedService": "Ce service n'est pas encore pris en charge par Piéride.",
     "instance": {
