@@ -33,6 +33,11 @@
     "actualites": "News",
     "assiduite": "Attendance"
   },
+  "internet": {
+    "title": "Internet Connection Status",
+    "online": "Internet connection recovered",
+    "offline": "No internet connection"
+  },
   "sidebar": {
     "label": "Navigation",
     "school": "School life",
