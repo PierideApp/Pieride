@@ -12,8 +12,11 @@ import {
   gradesOverview,
   type GradeValue,
   news,
+  type NewsCategory,
   type NewsInformation,
+  newsInformationAcknowledge,
   newsRead,
+  type NewsSurvey,
   type Notebook,
   notebook,
   parseTimetable,
@@ -26,6 +29,7 @@ import {
   translateToWeekNumber,
 } from "@blockshub/pawnote-lts";
 
+import { ServiceUnavailable } from "../shared/errors";
 import type {
   Attachment,
   Attendance,
@@ -106,45 +110,166 @@ export function toCourse(
 }
 
 /**
- * L'adresse d'un fichier porte l'identifiant de la session PRONOTE (`?Session=`) : on ne le
- * garde pas. Elle ne sert plus de toute façon une fois la session finie.
+ * Où retrouver une pièce jointe pour en redemander l'adresse : PRONOTE y chiffre le fichier
+ * avec la clé de la session. `week` : la semaine des devoirs ou du cahier de textes.
  */
-const toAttachment = (attachment: PronoteAttachment): Attachment =>
-  attachment.kind === AttachmentKind.Link
-    ? { kind: "link", name: attachment.name, url: attachment.url }
-    : {
-        kind: "file",
-        name: attachment.name,
-        url: attachment.url.split("?")[0] ?? "",
-      };
+type Origin =
+  | { source: "news"; news: string }
+  | { source: "homework" | "resources"; week: number };
 
-const toCourseContent = (content: ResourceContent): CourseContent => ({
-  title: content.title,
-  description: content.description,
-  category: content.categoryText,
-  attachments: content.files.map(toAttachment),
-});
+/**
+ * L'adresse d'un fichier porte l'identifiant de la session PRONOTE (`?Session=`) : on ne le
+ * garde pas. Elle ne sert plus de toute façon une fois la session finie : `ref` dit où en
+ * redemander une (`downloadAttachment`).
+ */
+const toAttachment =
+  (origin: Origin) =>
+  (attachment: PronoteAttachment): Attachment =>
+    attachment.kind === AttachmentKind.Link
+      ? { kind: "link", name: attachment.name, url: attachment.url }
+      : {
+          kind: "file",
+          name: attachment.name,
+          url: attachment.url.split("?")[0] ?? "",
+          ref: JSON.stringify({ ...origin, file: attachment.id }),
+        };
 
-export function toHomework(assignment: Assignment): Homework {
+/** La `ref` d'une pièce jointe, ou `null` si elle est illisible (ligne d'avant les `ref`). */
+function parseRef(ref: string | undefined): (Origin & { file: string }) | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(ref ?? "");
+  } catch {
+    return null;
+  }
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const fields: Partial<Record<"source" | "news" | "week" | "file", unknown>> =
+    value;
+  const { source, news: newsId, week, file } = fields;
+  if (typeof file !== "string") {
+    return null;
+  }
+  if (source === "news" && typeof newsId === "string") {
+    return { source, news: newsId, file };
+  }
+  if (
+    (source === "homework" || source === "resources") &&
+    typeof week === "number"
+  ) {
+    return { source, week, file };
+  }
+  return null;
+}
+
+/** Les fichiers de l'endroit d'où vient la pièce jointe, avec les adresses de cette session. */
+async function filesAt(
+  handle: SessionHandle,
+  origin: Origin
+): Promise<readonly PronoteAttachment[]> {
+  if (origin.source === "news") {
+    const item = (await news(handle)).items.find(
+      candidate => candidate.id === origin.news
+    );
+    if (!item) {
+      return [];
+    }
+    return item.is === "information"
+      ? item.attachments
+      : item.questions.flatMap(question => question.attachments);
+  }
+  if (origin.source === "homework") {
+    return (await assignmentsFromWeek(handle, origin.week)).flatMap(
+      assignment => assignment.attachments
+    );
+  }
+  return (await resourcesFromWeek(handle, origin.week)).flatMap(resource =>
+    resource.contents.flatMap(content => content.files)
+  );
+}
+
+/** Le contenu d'un fichier, retrouvé là où il a été vu pour avoir une adresse valable. */
+export const downloadAttachment =
+  (session: PronoteSession) => (attachment: Attachment) =>
+    session.run(async handle => {
+      const ref = parseRef(attachment.ref);
+      const file =
+        ref &&
+        (await filesAt(handle, ref)).find(
+          candidate => candidate.id === ref.file
+        );
+      if (!file) {
+        throw new ServiceUnavailable("Pièce jointe introuvable chez PRONOTE");
+      }
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new ServiceUnavailable(
+          `Pièce jointe refusée par PRONOTE : ${response.status}`
+        );
+      }
+      return new Uint8Array(await response.arrayBuffer());
+    });
+
+const toCourseContent =
+  (week: number) =>
+  (content: ResourceContent): CourseContent => ({
+    title: content.title,
+    description: content.description,
+    category: content.categoryText,
+    attachments: content.files.map(toAttachment({ source: "resources", week })),
+  });
+
+/** `week` : la semaine PRONOTE où les devoirs ont été demandés, pour leurs pièces jointes. */
+export function toHomework(assignment: Assignment, week: number): Homework {
   return {
     id: assignment.id,
     subject: assignment.subject.name,
     content: assignment.description,
     dueAt: assignment.deadline,
     done: assignment.done,
-    attachments: assignment.attachments.map(toAttachment),
+    attachments: assignment.attachments.map(
+      toAttachment({ source: "homework", week })
+    ),
   };
 }
 
-export function toNews(item: NewsInformation): News {
-  return {
+/**
+ * Une information ou un sondage. La date est celle de la création, avec son heure, comme
+ * dans Papillon et la maquette ; le début de diffusion peut n'en pas avoir. Un sondage ne se
+ * remplit que sur PRONOTE : on garde le texte et les pièces jointes de ses questions.
+ */
+export function toNews(item: NewsInformation | NewsSurvey): News {
+  // pawnote cherche la rubrique dans la liste reçue : elle peut manquer.
+  const category: NewsCategory | undefined = item.category;
+  const attachment = toAttachment({ source: "news", news: item.id });
+  const common = {
     id: item.id,
     title: item.title,
+    category: category?.name,
     author: item.author,
-    date: item.startDate,
-    content: item.content,
+    date: item.creationDate,
     read: item.read,
-    attachments: item.attachments.map(toAttachment),
+  };
+  if (item.is === "survey") {
+    return {
+      ...common,
+      kind: "survey",
+      content: item.questions.map(question => question.content).join(""),
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: item.questions.flatMap(question =>
+        question.attachments.map(attachment)
+      ),
+    };
+  }
+  return {
+    ...common,
+    kind: "information",
+    content: item.content,
+    needsAcknowledgement: item.needToAcknowledge,
+    acknowledged: item.acknowledged,
+    attachments: item.attachments.map(attachment),
   };
 }
 
@@ -240,7 +365,7 @@ export function capabilities(
         const contents = new Map(
           resources.map(resource => [
             resource.id,
-            resource.contents.map(toCourseContent),
+            resource.contents.map(toCourseContent(week)),
           ])
         );
         return found.classes.map(item => toCourse(item, contents));
@@ -248,11 +373,12 @@ export function capabilities(
   };
   const homework: CapabilityMethods["HOMEWORK"] = {
     getHomeworks: weekStart =>
-      session.run(async handle =>
-        (await assignmentsFromWeek(handle, weekNumber(handle, weekStart))).map(
-          toHomework
-        )
-      ),
+      session.run(async handle => {
+        const week = weekNumber(handle, weekStart);
+        return (await assignmentsFromWeek(handle, week)).map(assignment =>
+          toHomework(assignment, week)
+        );
+      }),
     setHomeworkCompletion: (id, done) =>
       session.run(handle => assignmentStatus(handle, id, done)),
   };
@@ -295,20 +421,24 @@ export function capabilities(
         };
       }),
   };
+  // PRONOTE veut l'actualité telle qu'il l'a envoyée : on la redemande.
+  const findNews = async (handle: SessionHandle, id: string) =>
+    (await news(handle)).items.find(candidate => candidate.id === id);
   const newsMethods: CapabilityMethods["NEWS"] = {
     getNews: () =>
-      session.run(async handle =>
-        (await news(handle)).items
-          .filter((item): item is NewsInformation => item.is === "information")
-          .map(toNews)
-      ),
-    setNewsAsAcknowledged: id =>
+      session.run(async handle => (await news(handle)).items.map(toNews)),
+    setNewsAsRead: id =>
       session.run(async handle => {
-        const item = (await news(handle)).items.find(
-          candidate => candidate.id === id
-        );
+        const item = await findNews(handle, id);
         if (item) {
           await newsRead(handle, item, true);
+        }
+      }),
+    setNewsAsAcknowledged: id =>
+      session.run(async handle => {
+        const item = await findNews(handle, id);
+        if (item?.is === "information") {
+          await newsInformationAcknowledge(handle, item);
         }
       }),
   };

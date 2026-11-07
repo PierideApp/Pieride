@@ -2,7 +2,7 @@
 // nouveau compte est dans `login.ts`, la session et le jeton dans `session.ts`.
 import { AuthenticationError } from "../shared/errors";
 import type { ConnectService } from "../shared/plugin";
-import { capabilities } from "./data";
+import { capabilities, downloadAttachment } from "./data";
 import { parseSecret, PronoteSession } from "./session";
 
 export const connectPronote: ConnectService = async (
@@ -20,5 +20,6 @@ export const connectPronote: ConnectService = async (
   return {
     kind: "pronote",
     capabilities: capabilities(session, handle.user.authorizations.tabs),
+    downloadAttachment: downloadAttachment(session),
   };
 };

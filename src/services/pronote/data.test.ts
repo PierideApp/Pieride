@@ -7,13 +7,17 @@ import {
   AttachmentKind,
   type Grade,
   GradeKind,
+  type NewsInformation,
+  type NewsQuestion,
+  NewsQuestionKind,
+  type NewsSurvey,
   TabLocation,
   type TimetableClassLesson,
 } from "@blockshub/pawnote-lts";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Course } from "../shared/models";
-import { capabilities, toCourse, toGrade, toHomework } from "./data";
+import { capabilities, toCourse, toGrade, toHomework, toNews } from "./data";
 import { PronoteSession } from "./session";
 
 vi.mock("@/lib/http", () => ({}));
@@ -167,7 +171,7 @@ describe("toHomework", () => {
       themes: [],
       return: { kind: AssignmentReturnKind.None, canUpload: false },
     };
-    expect(toHomework(assignment)).toEqual({
+    expect(toHomework(assignment, 9)).toEqual({
       id: "h1",
       subject: "MATHEMATIQUES",
       content: "<p>Exercices 12 à 15</p>",
@@ -179,8 +183,100 @@ describe("toHomework", () => {
           kind: "file",
           name: "sujet.pdf",
           url: "https://exemple.fr/f/sujet.pdf",
+          // Où redemander une adresse valable : les devoirs de la semaine 9.
+          ref: JSON.stringify({ source: "homework", week: 9, file: "f1" }),
         },
       ],
+    });
+  });
+});
+
+describe("toNews", () => {
+  const CREATED = new Date(2026, 9, 13, 16, 42);
+  const item = {
+    id: "n1",
+    title: "Sortie au musée",
+    category: { id: "c1", name: "Histoire-géographie", default: false },
+    creationDate: CREATED,
+    startDate: new Date(2026, 9, 14),
+    endDate: new Date(2026, 10, 14),
+    author: "Mme Leroy",
+    public: null,
+    read: false,
+  };
+  const question = (changes: Partial<NewsQuestion>): NewsQuestion => ({
+    id: "q1",
+    position: 1,
+    kind: NewsQuestionKind.InformationText,
+    fullTitle: "",
+    title: "",
+    shouldRespectMaximumChoices: false,
+    maximumChoices: 0,
+    maximumLength: 0,
+    attachments: [],
+    content: "",
+    answerID: "r1",
+    shouldAnswer: false,
+    choices: [],
+    answered: false,
+    ...changes,
+  });
+  const PDF = {
+    kind: AttachmentKind.File,
+    name: "autorisation.pdf",
+    url: "https://exemple.fr/f/autorisation.pdf?Session=1234",
+    id: "f1",
+  };
+
+  it("reprend une information, sa rubrique, sa date de création et l'accusé demandé", () => {
+    const information: NewsInformation = {
+      ...item,
+      is: "information",
+      question: question({ content: "<p>Départ à 8h</p>", shouldAnswer: true }),
+      content: "<p>Départ à 8h</p>",
+      attachments: [PDF],
+      acknowledged: false,
+      acknowledgedDate: undefined,
+      needToAcknowledge: true,
+    };
+    expect(toNews(information)).toEqual({
+      id: "n1",
+      kind: "information",
+      title: "Sortie au musée",
+      category: "Histoire-géographie",
+      author: "Mme Leroy",
+      date: CREATED,
+      content: "<p>Départ à 8h</p>",
+      read: false,
+      needsAcknowledgement: true,
+      acknowledged: false,
+      attachments: [
+        {
+          kind: "file",
+          name: "autorisation.pdf",
+          url: "https://exemple.fr/f/autorisation.pdf",
+          ref: JSON.stringify({ source: "news", news: "n1", file: "f1" }),
+        },
+      ],
+    });
+  });
+
+  it("garde un sondage : le texte et les pièces jointes de ses questions", () => {
+    const survey: NewsSurvey = {
+      ...item,
+      is: "survey",
+      isAnonymous: false,
+      questions: [
+        question({ content: "<p>Viendras-tu ?</p>", attachments: [PDF] }),
+        question({ id: "q2", content: "<p>Avec qui ?</p>" }),
+      ],
+    };
+    expect(toNews(survey)).toMatchObject({
+      kind: "survey",
+      content: "<p>Viendras-tu ?</p><p>Avec qui ?</p>",
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: [{ kind: "file", name: "autorisation.pdf" }],
     });
   });
 });
