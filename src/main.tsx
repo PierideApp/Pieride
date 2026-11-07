@@ -23,7 +23,7 @@ declare global {
     appIsReady: () => void;
     appError: (error: string) => void;
   }
-};
+}
 
 document.documentElement.dataset.platform = isMac ? "mac" : "other";
 
@@ -69,8 +69,7 @@ migrateDatabase().then(
           </ErrorBoundary>
         </StrictMode>
       );
-    }
-    catch (error) {
+    } catch (error) {
       console.log("App render error", error);
       reportError(error, "errors.startError");
     }

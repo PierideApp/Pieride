@@ -14,7 +14,7 @@ export default function App() {
 
   useLayoutEffect(() => {
     window.appIsReady();
-  }, [])
+  }, []);
 
   // Quelques millisecondes : sans ça, le cadre s'afficherait un instant avant le premier lancement.
   if (accounts.status === "loading") {
