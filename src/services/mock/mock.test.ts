@@ -45,6 +45,44 @@ describe("données fictives", () => {
     expect(later).toEqual([]);
   });
 
+  it("couvre chaque cas que PRONOTE peut renvoyer", async () => {
+    const week = (await TIMETABLE?.getWeeklyTimetable(weekStart(NOW))) ?? [];
+    const homework = (await HOMEWORK?.getHomeworks(weekStart(NOW))) ?? [];
+    const news = (await NEWS?.getNews()) ?? [];
+    const kinds = (attachments: { kind: string }[]) =>
+      new Set(attachments.map(attachment => attachment.kind));
+
+    expect(new Set(week.map(course => course.status))).toEqual(
+      new Set([undefined, "canceled", "edited", "online", "evaluated"])
+    );
+    expect(week.some(course => course.group)).toBe(true);
+    expect(week.some(course => !course.room && !course.teacher)).toBe(true);
+    expect(
+      kinds(
+        week.flatMap(course =>
+          (course.contents ?? []).flatMap(content => content.attachments)
+        )
+      )
+    ).toEqual(new Set(["file", "link"]));
+    expect(kinds(homework.flatMap(item => item.attachments))).toEqual(
+      new Set(["file", "link"])
+    );
+
+    expect(news.some(item => item.kind === "survey")).toBe(true);
+    expect(news.some(item => item.title === undefined)).toBe(true);
+    expect(news.some(item => item.category === undefined)).toBe(true);
+    expect(
+      new Set(
+        news
+          .filter(item => item.needsAcknowledgement)
+          .map(item => item.acknowledged)
+      )
+    ).toEqual(new Set([false, true]));
+    expect(kinds(news.flatMap(item => item.attachments))).toEqual(
+      new Set(["file", "link"])
+    );
+  });
+
   it("garde lue ou accusée une actualité pour la session", async () => {
     const pending = (await NEWS?.getNews())?.find(
       item => item.needsAcknowledgement && !item.acknowledged
