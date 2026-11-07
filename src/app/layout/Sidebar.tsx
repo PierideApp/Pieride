@@ -2,7 +2,7 @@
 // Paramètres.
 // Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss), sauf si
 // l'utilisateur l'a refusé dans les Paramètres.
-import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
+import { AlertCircle, Check, ChevronDown, Clock, Gears, Globe, GlobeCross, Info, Search } from "@getpapillon/papicons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
@@ -84,6 +84,63 @@ function AccountSwitcher({
 /** Le refus d'un `Ctrl R` reste affiché ce temps-là, puis l'état revient. */
 const REFUSED_NOTICE = 4000;
 
+function InternetStatus() {
+  console.log("navigator is online?", navigator.onLine)
+  const [online, setOnline] = useState<boolean>(navigator.onLine);
+  const [displayStatus, setDisplayStatus] = useState<boolean>(false);
+  const { t } = useTranslation();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if(!online) setDisplayStatus(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  function handleOffline() {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setDisplayStatus(true);
+    setOnline(false);
+  }
+
+  function handleOnline() {
+    setDisplayStatus(true);
+    setOnline(true);
+    timeoutRef.current = setTimeout(() => {
+      setDisplayStatus(false);
+      timeoutRef.current = null;
+    }, 4000);
+  }
+
+  return displayStatus && (
+    <p
+      className={`${styles.item} ${styles.status}`}
+      title={t("internet.title")}
+    >
+      {
+        online ? (
+          <Globe size={20} style={{ color: "var(--color-success)" }} className={styles.syncIcon} />
+        ) : (
+          <GlobeCross size={20} style={{ color: "var(--color-error)" }} className={styles.syncIcon} />
+        )
+      }
+
+      <span className={styles.label}>{ t(online ? "internet.online" : "internet.offline") }</span>
+    </p>
+  );
+}
+
 /**
  * « Synchronisé il y a 2 minutes ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
  * la relance au plus toutes les 5 minutes (« Réessaie dans 3 minutes » sinon).
@@ -96,6 +153,8 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const manualAt = useSyncStore(state => state.manualAt);
   const refusedAt = useSyncStore(state => state.refusedAt);
   const [now, setNow] = useState(() => Date.now());
+
+  let lastSyncMinutes: number = 0;
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
@@ -122,15 +181,16 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
     refusedAt !== null &&
     now < refusedAt + REFUSED_NOTICE
   ) {
-    const minutes = Math.ceil(
+    lastSyncMinutes = Math.ceil(
       (manualAt + MANUAL_SYNC_INTERVAL - refusedAt) / 60_000
     );
-    label = t("sync.wait", { when: relative.format(minutes, "minute") });
+    label = t("sync.wait", { when: relative.format(lastSyncMinutes, "minute") });
   } else if (failed || lastSync.status === "error") {
     label = t("sync.failed");
   } else if (lastSync.status === "ready" && lastSync.data) {
-    const minutes = Math.round((lastSync.data.getTime() - now) / 60_000);
-    label = t("sync.done", { when: relative.format(minutes, "minute") });
+    lastSyncMinutes = Math.round((lastSync.data.getTime() - now) / 60_000);
+    console.log("lastSyncMinutes", lastSyncMinutes, lastSync.data, now);
+    label = t("sync.done", { when: relative.format(lastSyncMinutes, "minute") });
   }
 
   return (
@@ -142,9 +202,18 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
         <span className={styles.syncSpinner}>
           <Spinner />
         </span>
+      ) : lastSync.status === "error" ? (
+        <AlertCircle size={20} style={{ color: "var(--color-error)" }} className={styles.syncIcon} />
+      ) : lastSync.status === "ready" && lastSyncMinutes > 0 ? (
+          <Info size={20} style={{ color: "var(--color-info)" }} className={styles.syncIcon} />
+      ) : lastSync.status === "ready" && lastSyncMinutes <= -10 ? (
+        <Clock size={20} className={styles.syncIcon} /> 
+      ) : lastSync.status === "ready" && lastSync.data ? (
+        <Check size={20} style={{ color: "var(--color-success)" }} className={styles.syncIcon} />
       ) : (
-        <Check size={20} className={styles.syncIcon} />
+        <Info size={20} className={styles.syncIcon} />
       )}
+
       <span className={styles.label}>{label}</span>
     </p>
   );
@@ -271,6 +340,7 @@ export function Sidebar({
       )}
 
       <div className={styles.footer}>
+        <InternetStatus />
         <SyncStatus account={current} />
         <button
           type="button"
