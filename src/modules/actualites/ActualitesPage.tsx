@@ -1,18 +1,22 @@
 // Actualités (maquette 06-vie-scolaire/01-actualites) : en messagerie, la liste à gauche
 // (recherche, non lues en gras) et l'actualité choisie à droite, avec ses pièces jointes.
-// L'ouvrir la marque comme lue chez le service.
+// L'ouvrir la marque comme lue chez le service. L'accusé de réception, lui, ne part que sur
+// le bouton « J'en ai pris connaissance » : c'est une déclaration faite à l'établissement.
 import { Font, Paper } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Avatar } from "@/components/Avatar/Avatar";
+import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
+import { InfoCard } from "@/components/InfoCard/InfoCard";
 import { Menu } from "@/components/Menu/Menu";
 import { Page } from "@/components/Page/Page";
 import { SearchField } from "@/components/SearchField/SearchField";
 import { Segmented } from "@/components/Segmented/Segmented";
 import { Spinner } from "@/components/Spinner/Spinner";
+import { Tip } from "@/components/Tip/Tip";
 import { useDateFormats } from "@/hooks/useFormats";
 import { useJump } from "@/hooks/useJump";
 import { type NewsView, useNews } from "@/hooks/useNews";
@@ -20,6 +24,7 @@ import { log } from "@/lib/log";
 import { matches } from "@/lib/search";
 import type { ModulePageProps } from "@/modules/registry";
 import { accountManager } from "@/services";
+import { SERVICE_NAMES } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
@@ -44,6 +49,11 @@ export function ActualitesPage({ module }: ModulePageProps) {
   const [query, setQuery] = useState("");
   const [large, setLarge] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  // L'accusé de réception en cours d'envoi, ou refusé, et l'actualité qu'il concerne.
+  const [acknowledgement, setAcknowledgement] = useState<{
+    key: string;
+    status: "sending" | "failed";
+  } | null>(null);
 
   const all = items.status === "ready" ? items.data : [];
   const shown = all.filter(
@@ -53,6 +63,10 @@ export function ActualitesPage({ module }: ModulePageProps) {
   );
   const current =
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
+  const ackStatus =
+    current && acknowledgement?.key === `${current.serviceId}:${current.id}`
+      ? acknowledgement.status
+      : undefined;
 
   const markRead = (item: NewsView) => {
     if (!item.read) {
@@ -67,6 +81,20 @@ export function ActualitesPage({ module }: ModulePageProps) {
   const open = (item: NewsView) => {
     setSelected(`${item.serviceId}:${item.id}`);
     markRead(item);
+  };
+  const acknowledge = (item: NewsView) => {
+    const key = `${item.serviceId}:${item.id}`;
+    setAcknowledgement({ key, status: "sending" });
+    accountManager.acknowledgeNews(item.serviceId, item.id).then(
+      () => {
+        setAcknowledgement(null);
+        reload("news");
+      },
+      () => {
+        log("warn", "news", "Accusé de réception non envoyé");
+        setAcknowledgement({ key, status: "failed" });
+      }
+    );
   };
   // Une actualité choisie dans la palette : affichée, même lue, et marquée comme lue.
   useJump(all, !items.fetching, {
@@ -187,16 +215,30 @@ export function ActualitesPage({ module }: ModulePageProps) {
               <span>
                 <strong>{current.author}</strong>
                 <small>
-                  {t("actualites.publishedAt", {
-                    date: formats.shortDate.format(current.date),
-                    time: formats.time.format(current.date),
-                  })}
+                  {[
+                    current.category,
+                    t("actualites.publishedAt", {
+                      date: formats.shortDate.format(current.date),
+                      time: formats.time.format(current.date),
+                    }),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </small>
               </span>
             </header>
             <h2 className={styles.readerTitle}>
               {current.title ?? t("actualites.untitled")}
             </h2>
+            {current.kind === "survey" && (
+              <div className={styles.survey}>
+                <Tip>
+                  {t("actualites.survey", {
+                    service: SERVICE_NAMES[current.service],
+                  })}
+                </Tip>
+              </div>
+            )}
             <div className={styles.readerBody}>
               {current.content.split("\n").map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>
@@ -216,6 +258,33 @@ export function ActualitesPage({ module }: ModulePageProps) {
                   </li>
                 ))}
               </ul>
+            )}
+            {current.needsAcknowledgement && (
+              <div className={styles.acknowledgement}>
+                {current.acknowledged ? (
+                  <InfoCard
+                    type="success"
+                    title={t("actualites.acknowledgement.done")}
+                  >
+                    <p>{t("actualites.acknowledgement.doneText")}</p>
+                  </InfoCard>
+                ) : (
+                  <InfoCard title={t("actualites.acknowledgement.title")}>
+                    <p>
+                      {ackStatus === "failed"
+                        ? t("actualites.acknowledgement.failed")
+                        : t("actualites.acknowledgement.text")}
+                    </p>
+                    <Button
+                      variant="primary"
+                      disabled={ackStatus === "sending"}
+                      onClick={() => acknowledge(current)}
+                    >
+                      {t("actualites.acknowledgement.action")}
+                    </Button>
+                  </InfoCard>
+                )}
+              </div>
             )}
           </Card>
         )}

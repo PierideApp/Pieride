@@ -6,7 +6,9 @@ import { mockPlugin } from ".";
 
 // Lundi 26 octobre 2026 : premier trimestre de l'année 2026-2027.
 const NOW = new Date(2026, 9, 26, 10);
-const { TIMETABLE, HOMEWORK, GRADES } = mockPlugin(() => NOW).capabilities;
+const { TIMETABLE, HOMEWORK, GRADES, NEWS } = mockPlugin(
+  () => NOW
+).capabilities;
 
 describe("données fictives", () => {
   it("remplit la semaine demandée, avec des identifiants propres à chaque semaine", async () => {
@@ -41,6 +43,17 @@ describe("données fictives", () => {
     expect(now?.length).toBeGreaterThan(0);
     expect(now?.every(grade => grade.date <= NOW)).toBe(true);
     expect(later).toEqual([]);
+  });
+
+  it("garde lue ou accusée une actualité pour la session", async () => {
+    const pending = (await NEWS?.getNews())?.find(
+      item => item.needsAcknowledgement && !item.acknowledged
+    );
+    await NEWS?.setNewsAsAcknowledged(pending?.id ?? "");
+    const again = (await NEWS?.getNews())?.find(
+      item => item.id === pending?.id
+    );
+    expect(again).toMatchObject({ read: true, acknowledged: true });
   });
 
   it("garde un devoir coché pour la session", async () => {

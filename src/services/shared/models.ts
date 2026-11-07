@@ -133,12 +133,21 @@ export interface PeriodGrades {
 
 export interface News {
   id: string;
+  /** Un sondage se remplit chez le service : l'app n'en montre que les questions. */
+  kind: "information" | "survey";
   title?: string;
+  /** Rubrique choisie par l'établissement (« Vie scolaire »…). */
+  category?: string;
   author: string;
+  /** Date de publication. */
   date: Date;
   /** HTML venant du service : à nettoyer avant affichage. */
   content: string;
   read: boolean;
+  /** L'établissement demande un accusé de réception (« J'en ai pris connaissance »). */
+  needsAcknowledgement: boolean;
+  /** Accusé de réception envoyé. */
+  acknowledged: boolean;
   attachments: Attachment[];
 }
 

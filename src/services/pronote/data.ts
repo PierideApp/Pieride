@@ -12,8 +12,11 @@ import {
   gradesOverview,
   type GradeValue,
   news,
+  type NewsCategory,
   type NewsInformation,
+  newsInformationAcknowledge,
   newsRead,
+  type NewsSurvey,
   type Notebook,
   notebook,
   parseTimetable,
@@ -136,14 +139,40 @@ export function toHomework(assignment: Assignment): Homework {
   };
 }
 
-export function toNews(item: NewsInformation): News {
-  return {
+/**
+ * Une information ou un sondage. La date est celle de la création, avec son heure, comme
+ * dans Papillon et la maquette ; le début de diffusion peut n'en pas avoir. Un sondage ne se
+ * remplit que sur PRONOTE : on garde le texte et les pièces jointes de ses questions.
+ */
+export function toNews(item: NewsInformation | NewsSurvey): News {
+  // pawnote cherche la rubrique dans la liste reçue : elle peut manquer.
+  const category: NewsCategory | undefined = item.category;
+  const common = {
     id: item.id,
     title: item.title,
+    category: category?.name,
     author: item.author,
-    date: item.startDate,
-    content: item.content,
+    date: item.creationDate,
     read: item.read,
+  };
+  if (item.is === "survey") {
+    return {
+      ...common,
+      kind: "survey",
+      content: item.questions.map(question => question.content).join(""),
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: item.questions.flatMap(question =>
+        question.attachments.map(toAttachment)
+      ),
+    };
+  }
+  return {
+    ...common,
+    kind: "information",
+    content: item.content,
+    needsAcknowledgement: item.needToAcknowledge,
+    acknowledged: item.acknowledged,
     attachments: item.attachments.map(toAttachment),
   };
 }
@@ -295,20 +324,24 @@ export function capabilities(
         };
       }),
   };
+  // PRONOTE veut l'actualité telle qu'il l'a envoyée : on la redemande.
+  const findNews = async (handle: SessionHandle, id: string) =>
+    (await news(handle)).items.find(candidate => candidate.id === id);
   const newsMethods: CapabilityMethods["NEWS"] = {
     getNews: () =>
-      session.run(async handle =>
-        (await news(handle)).items
-          .filter((item): item is NewsInformation => item.is === "information")
-          .map(toNews)
-      ),
-    setNewsAsAcknowledged: id =>
+      session.run(async handle => (await news(handle)).items.map(toNews)),
+    setNewsAsRead: id =>
       session.run(async handle => {
-        const item = (await news(handle)).items.find(
-          candidate => candidate.id === id
-        );
+        const item = await findNews(handle, id);
         if (item) {
           await newsRead(handle, item, true);
+        }
+      }),
+    setNewsAsAcknowledged: id =>
+      session.run(async handle => {
+        const item = await findNews(handle, id);
+        if (item?.is === "information") {
+          await newsInformationAcknowledge(handle, item);
         }
       }),
   };

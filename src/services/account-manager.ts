@@ -414,20 +414,42 @@ export class AccountManager {
       .where(and(eq(homework.serviceId, serviceId), eq(homework.id, id)));
   }
 
-  /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
-  async markNewsRead(serviceId: string, id: string): Promise<void> {
+  private async newsMethods(
+    serviceId: string
+  ): Promise<CapabilityMethods["NEWS"] | undefined> {
     const [service] = await this.db
       .select()
       .from(services)
       .where(eq(services.id, serviceId));
-    const methods = service && (await this.plugin(service)).capabilities.NEWS;
+    return service && (await this.plugin(service)).capabilities.NEWS;
+  }
+
+  /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
+  async markNewsRead(serviceId: string, id: string): Promise<void> {
+    const methods = await this.newsMethods(serviceId);
     if (!methods) {
       return;
+    }
+    await methods.setNewsAsRead(id);
+    await this.db
+      .update(news)
+      .set({ read: true })
+      .where(and(eq(news.serviceId, serviceId), eq(news.id, id)));
+  }
+
+  /**
+   * Envoie l'accusé de réception demandé par l'établissement : chez le service d'abord, puis
+   * dans la base. Hors ligne ou en panne, rien ne change et l'erreur remonte à l'écran.
+   */
+  async acknowledgeNews(serviceId: string, id: string): Promise<void> {
+    const methods = await this.newsMethods(serviceId);
+    if (!methods) {
+      throw new UnsupportedService("Ce service ne gère pas les actualités");
     }
     await methods.setNewsAsAcknowledged(id);
     await this.db
       .update(news)
-      .set({ read: true })
+      .set({ read: true, acknowledged: true })
       .where(and(eq(news.serviceId, serviceId), eq(news.id, id)));
   }
 

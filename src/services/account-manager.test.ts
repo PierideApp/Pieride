@@ -362,13 +362,17 @@ describe("AccountManager", () => {
           getNews: async () => [
             {
               id: "n1",
+              kind: "information",
               author: "Direction",
               date: at(20, 8),
               content: "<p>Bonjour</p>",
               read: false,
+              needsAcknowledgement: false,
+              acknowledged: false,
               attachments: [],
             },
           ],
+          setNewsAsRead: async () => undefined,
           setNewsAsAcknowledged: async () => undefined,
         },
         ATTENDANCE: {

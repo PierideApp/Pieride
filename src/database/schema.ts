@@ -16,6 +16,7 @@ import type {
   Attendance,
   Course,
   CourseContent,
+  News,
   ServiceKind,
 } from "@/services/shared/models";
 import type { Capability } from "@/services/shared/plugin";
@@ -101,11 +102,21 @@ export const news = sqliteTable(
   {
     serviceId: serviceId(),
     id: text("id").notNull(),
+    // Les valeurs par défaut ne servent qu'aux lignes d'avant la migration, remplacées à la
+    // synchro suivante.
+    kind: text("kind").$type<News["kind"]>().notNull().default("information"),
     title: text("title"),
+    category: text("category"),
     author: text("author").notNull(),
     date: integer("date", { mode: "timestamp_ms" }).notNull(),
     content: text("content").notNull(),
     read: integer("read", { mode: "boolean" }).notNull(),
+    needsAcknowledgement: integer("needs_acknowledgement", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    acknowledged: integer("acknowledged", { mode: "boolean" })
+      .notNull()
+      .default(false),
     attachments: text("attachments", { mode: "json" })
       .$type<Attachment[]>()
       .notNull(),

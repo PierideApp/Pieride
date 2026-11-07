@@ -33,6 +33,8 @@ export interface CapabilityMethods {
   };
   NEWS: {
     getNews(): Promise<News[]>;
+    setNewsAsRead(id: string): Promise<void>;
+    /** Envoie l'accusé de réception demandé, et marque l'actualité comme lue. */
     setNewsAsAcknowledged(id: string): Promise<void>;
   };
   ATTENDANCE: {

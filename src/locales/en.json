@@ -409,7 +409,16 @@
     "untitled": "Untitled",
     "hasAttachments": "Attachments",
     "noMatch": "No news matches.",
-    "publishedAt": "{{date}} at {{time}}"
+    "publishedAt": "{{date}} at {{time}}",
+    "survey": "This survey is filled in on {{service}}.",
+    "acknowledgement": {
+      "title": "Acknowledgement requested",
+      "text": "Your school asks you to confirm that you have read this news.",
+      "action": "I have read it",
+      "failed": "The acknowledgement was not sent. Check your connection and try again.",
+      "done": "Acknowledgement sent",
+      "doneText": "Your school knows you have read this news."
+    }
   },
   "assiduite": {
     "year": "Whole year",

@@ -168,6 +168,11 @@
   line-height: 34px;
 }
 
+// « Ce sondage se remplit sur PRONOTE », entre le titre et le texte.
+.survey {
+  margin-bottom: 20px;
+}
+
 .readerBody p {
   margin: 0 0 var(--space-3);
   font-size: 15px;
@@ -216,6 +221,16 @@
   small {
     font-size: 12px;
     color: var(--color-text-3);
+  }
+}
+
+// Accusé de réception, après le texte et les pièces jointes : on lit d'abord.
+.acknowledgement {
+  width: min(480px, 100%);
+  margin-top: var(--space-5);
+
+  button {
+    margin-top: var(--space-3);
   }
 }
 

@@ -409,7 +409,16 @@
     "untitled": "Sans titre",
     "hasAttachments": "Pièces jointes",
     "noMatch": "Aucune actualité ne correspond.",
-    "publishedAt": "{{date}} à {{time}}"
+    "publishedAt": "{{date}} à {{time}}",
+    "survey": "Ce sondage se remplit sur {{service}}.",
+    "acknowledgement": {
+      "title": "Accusé de réception demandé",
+      "text": "Ton établissement te demande de confirmer que tu as lu cette actualité.",
+      "action": "J'en ai pris connaissance",
+      "failed": "L'accusé de réception n'est pas parti. Vérifie ta connexion et réessaie.",
+      "done": "Accusé de réception envoyé",
+      "doneText": "Ton établissement sait que tu as pris connaissance de cette actualité."
+    }
   },
   "assiduite": {
     "year": "Toute l'année",

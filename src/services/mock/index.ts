@@ -7,6 +7,7 @@ import type {
   CourseContent,
   Grade,
   Homework,
+  News,
   Period,
   SubjectAverage,
 } from "../shared/models";
@@ -161,36 +162,68 @@ function trimesters(now: Date): Period[] {
   }));
 }
 
-/** Actualités inventées : [jours avant aujourd'hui, auteur, titre, texte, lue]. */
-const NEWS: readonly [number, string, string, string, boolean][] = [
-  [
-    2,
-    "Mme Dubois",
-    "Sortie pédagogique au musée",
-    "<p>Bonjour à tous,</p><p>Les élèves de 1re G3 visiteront le musée le jeudi 5 novembre. Départ à 8h00 devant le lycée, retour vers 17h30.</p><p>Merci de rapporter l'autorisation signée avant vendredi.</p>",
-    false,
-  ],
-  [
-    5,
-    "Direction",
-    "Conseil de classe du 1er trimestre",
-    "<p>Le conseil de classe de la 1re G3 se tiendra le mardi 8 décembre à 17h30.</p>",
-    false,
-  ],
-  [
-    6,
-    "Restauration scolaire",
-    "Semaine du goût : menus spéciaux",
-    "<p>Toute la semaine, le self vous fait voyager avec un menu régional chaque jour.</p>",
-    true,
-  ],
-  [
-    13,
-    "M. Moreau",
-    "Inscriptions à l'association sportive",
-    "<p>Badminton, escalade, futsal : les inscriptions sont ouvertes jusqu'à vendredi.</p>",
-    true,
-  ],
+/** Actualités inventées, publiées `days` jours avant aujourd'hui. */
+const NEWS: readonly (Omit<News, "id" | "date" | "attachments"> & {
+  days: number;
+})[] = [
+  {
+    days: 2,
+    kind: "information",
+    title: "Sortie pédagogique au musée",
+    category: "Histoire-géographie",
+    author: "Mme Dubois",
+    content:
+      "<p>Bonjour à tous,</p><p>Les élèves de 1re G3 visiteront le musée le jeudi 5 novembre. Départ à 8h00 devant le lycée, retour vers 17h30.</p><p>Merci de rapporter l'autorisation signée avant vendredi.</p>",
+    read: false,
+    needsAcknowledgement: true,
+    acknowledged: false,
+  },
+  {
+    days: 3,
+    kind: "survey",
+    title: "Voyage en Espagne",
+    category: "Vie scolaire",
+    author: "M. Roux",
+    content:
+      "<p>Participeras-tu au voyage à Madrid au printemps ?</p><p>Quelle option choisis-tu pour l'hébergement ?</p>",
+    read: false,
+    needsAcknowledgement: false,
+    acknowledged: false,
+  },
+  {
+    days: 5,
+    kind: "information",
+    title: "Conseil de classe du 1er trimestre",
+    author: "Direction",
+    content:
+      "<p>Le conseil de classe de la 1re G3 se tiendra le mardi 8 décembre à 17h30.</p>",
+    read: false,
+    needsAcknowledgement: false,
+    acknowledged: false,
+  },
+  {
+    days: 6,
+    kind: "information",
+    title: "Semaine du goût : menus spéciaux",
+    category: "Restauration",
+    author: "Restauration scolaire",
+    content:
+      "<p>Toute la semaine, le self vous fait voyager avec un menu régional chaque jour.</p>",
+    read: true,
+    needsAcknowledgement: false,
+    acknowledged: false,
+  },
+  {
+    days: 13,
+    kind: "information",
+    title: "Inscriptions à l'association sportive",
+    author: "M. Moreau",
+    content:
+      "<p>Badminton, escalade, futsal : les inscriptions sont ouvertes jusqu'à vendredi.</p>",
+    read: true,
+    needsAcknowledgement: false,
+    acknowledged: false,
+  },
 ];
 
 /** Absences et retards inventés : [jours avant aujourd'hui, heure, minutes, motif, justifié]. */
@@ -211,24 +244,34 @@ const ATTENDANCE: readonly [
 
 /** Le faux service. `now` sert aux notes : seules celles déjà passées existent. */
 export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
-  // Cocher un devoir dure le temps de la session, comme une réponse du service.
+  // Cocher un devoir ou lire une actualité dure le temps de la session, comme une réponse
+  // du service.
   const done = new Map<string, boolean>();
+  const read = new Set<string>();
+  const acknowledged = new Set<string>();
 
   return {
     kind: "mock",
     capabilities: {
       NEWS: {
         getNews: async () =>
-          NEWS.map(([days, author, title, content, read], index) => ({
-            id: `mock-news-${index}`,
-            title,
-            author,
-            date: at(now(), -days, 16),
-            content,
-            read,
-            attachments: [],
-          })),
-        setNewsAsAcknowledged: async () => undefined,
+          NEWS.map(({ days, ...item }, index) => {
+            const id = `mock-news-${index}`;
+            return {
+              ...item,
+              id,
+              date: at(now(), -days, 16),
+              read: item.read || read.has(id) || acknowledged.has(id),
+              acknowledged: item.acknowledged || acknowledged.has(id),
+              attachments: [],
+            };
+          }),
+        setNewsAsRead: async id => {
+          read.add(id);
+        },
+        setNewsAsAcknowledged: async id => {
+          acknowledged.add(id);
+        },
       },
       ATTENDANCE: {
         getAttendancePeriods: async () => trimesters(now()),
