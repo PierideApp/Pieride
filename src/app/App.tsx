@@ -13,11 +13,7 @@ export default function App() {
   const accounts = useAccounts();
 
   useLayoutEffect(() => {
-    //window.appIsReady();
-
-    setTimeout(() => {
-      window.appError("Erreur de test");
-    }, 6000);
+    window.appIsReady();
   }, [])
 
   // Quelques millisecondes : sans ça, le cadre s'afficherait un instant avant le premier lancement.
