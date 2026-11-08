@@ -61,18 +61,13 @@ const fail = (error: unknown) => report("app", error);
 // La base doit être à jour avant le premier écran qui la lit.
 migrateDatabase().then(
   () => {
-    try {
-      root.render(
-        <StrictMode>
-          <ErrorBoundary>
-            <App />
-          </ErrorBoundary>
-        </StrictMode>
-      );
-    } catch (error) {
-      console.log("App render error", error);
-      reportError(error, "errors.startError");
-    }
+    root.render(
+      <StrictMode>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </StrictMode>
+    );
     accountManager.start().catch(fail);
     forgetOrphanSecrets().catch(fail);
     createTray().catch(fail);
