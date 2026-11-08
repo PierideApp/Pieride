@@ -82,14 +82,12 @@
 
       window.appIsReady = () => {
         appIsReady = true;
-        console.log("appIsReady");
         if (animationFinished) {
           hideSplash();
         }
       };
 
       window.appError = error => {
-        console.log("appError", error);
         appError = true;
         errorText.textContent = error;
         if (animationFinished) {
@@ -138,7 +136,6 @@
       function startAnimations() {
         document.querySelector("#splash-screen").classList.add("ready");
         setTimeout(() => {
-          console.log("Animation finished");
           animationFinished = true;
           if (appIsReady) {
             hideSplash();
