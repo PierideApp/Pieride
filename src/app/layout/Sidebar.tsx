@@ -86,7 +86,6 @@ const REFUSED_NOTICE = 4000;
 
 /** « Pas de connexion Internet » ou « Connexion rétablie », le connexion rétablie est affiché pendant 4 secondes. */
 function InternetStatus() {
-  console.log("navigator is online?", navigator.onLine)
   const [online, setOnline] = useState<boolean>(navigator.onLine);
   const [displayStatus, setDisplayStatus] = useState<boolean>(false);
   const { t } = useTranslation();
@@ -190,7 +189,6 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
     label = t("sync.failed");
   } else if (lastSync.status === "ready" && lastSync.data) {
     lastSyncMinutes = Math.round((lastSync.data.getTime() - now) / 60_000);
-    console.log("lastSyncMinutes", lastSyncMinutes, lastSync.data, now);
     label = t("sync.done", { when: relative.format(lastSyncMinutes, "minute") });
   }
 
