@@ -62,9 +62,6 @@
       const isReload = navigation?.type === "reload";
       // Les deux dernières lignes permettent de savoir si lors de l'exécution du script,
       // la page a été rechargée.
-      const launchedMinimized =
-        await window.__TAURI_INTERNALS__.invoke("is_minimized");
-      // Permet de savoir si on veut lancer l'appli sans ouvrir la fenêtre, donc minimisée.
 
       const appWindow = getCurrentWindow();
       const splash = document.getElementById("splash-screen");
@@ -78,6 +75,33 @@
       const retryButton = document.getElementById(
         "splash-screen-error-retry-button"
       );
+
+      let animationFinished = false; // Permet de savoir si l'animation du splash screen est terminée.
+      let appIsReady = false; // Permet de savoir si l'application est prête à être affichée.
+      let appError = false; // Permet de savoir si l'application a rencontré une erreur.
+
+      window.appIsReady = () => {
+        appIsReady = true;
+        console.log("appIsReady");
+        if (animationFinished) {
+          hideSplash();
+        }
+      };
+
+      window.appError = error => {
+        console.log("appError", error);
+        appError = true;
+        errorText.textContent = error;
+        if (animationFinished) {
+          loader.style.opacity = "0";
+          loader.style.animation = "none";
+          errorDisplay.style.opacity = "1";
+        }
+      };
+
+      const launchedMinimized =
+        await window.__TAURI_INTERNALS__.invoke("is_minimized");
+      // Permet de savoir si on veut lancer l'appli sans ouvrir la fenêtre, donc minimisée.
       const currentLanguage = localStorage.getItem("language") || "fr";
       const translations = await import(
         `./src/locales/${currentLanguage}.json`
@@ -86,10 +110,6 @@
       if (!localStorage.getItem("language")) {
         localStorage.setItem("language", "fr"); // Définit la langue par défaut à français si aucune langue n'est définie.
       }
-
-      let animationFinished = false; // Permet de savoir si l'animation du splash screen est terminée.
-      let appIsReady = false; // Permet de savoir si l'application est prête à être affichée.
-      let appError = false; // Permet de savoir si l'application a rencontré une erreur.
 
       loaderText.textContent = translations.app.loading;
       closeAppButton.textContent = translations.app.close;
@@ -145,25 +165,6 @@
         app.style.animation = "fadeIn 650ms ease-in-out forwards";
         app.style.display = null;
       }
-
-      window.appIsReady = () => {
-        appIsReady = true;
-        console.log("appIsReady");
-        if (animationFinished) {
-          hideSplash();
-        }
-      };
-
-      window.appError = error => {
-        console.log("appError", error);
-        appError = true;
-        errorText.textContent = error;
-        if (animationFinished) {
-          loader.style.opacity = "0";
-          loader.style.animation = "none";
-          errorDisplay.style.opacity = "1";
-        }
-      };
 
       closeAppButton.addEventListener("click", async () => {
         appWindow.close();
