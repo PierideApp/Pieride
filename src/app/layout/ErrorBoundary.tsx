@@ -24,9 +24,6 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error("Erreur lors du montage de React :", error, info);
     report("app", error);
     window.appError(i18n.t("errors.crashed"));
-
-    // Tu peux également appeler une fonction globale ici.
-    // window.appMountError(error);
   }
 
   render() {
