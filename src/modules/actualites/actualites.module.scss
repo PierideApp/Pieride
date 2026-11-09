@@ -179,6 +179,21 @@
   }
 }
 
+.readerBody img {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  height: auto;
+  margin: var(--space-3) 0;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.readerBody table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
 .attachments {
   display: flex;
   flex-direction: column;
@@ -228,4 +243,10 @@
   border-radius: 10px;
   color: var(--color-error);
   background: var(--color-error-bg);
+}
+
+.noContent {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--color-text-3);
 }

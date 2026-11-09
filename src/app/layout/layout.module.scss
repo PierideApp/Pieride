@@ -559,6 +559,10 @@
   color: var(--color-success);
 }
 
+.syncFailed {
+  color: var(--color-error);
+}
+
 // À la place de l'icône pendant la synchro, sur la même place.
 .syncSpinner {
   display: grid;

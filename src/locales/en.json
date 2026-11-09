@@ -408,6 +408,7 @@
     },
     "untitled": "Untitled",
     "hasAttachments": "Attachments",
+    "noContent": "No extra details were provided for this announcement.",
     "noMatch": "No news matches.",
     "publishedAt": "{{date}} at {{time}}"
   },
@@ -965,6 +966,27 @@
         "SecurityChallenge": "PRONOTE is asking for a check Piéride can't handle yet.",
         "LoginBlocked": "PRONOTE wants you to change your password or set up two-factor authentication. Do it on the PRONOTE website first, then come back here.",
         "WrongPin": "That PIN isn't right."
+      }
+    },
+    "ecoledirecte": {
+      "eyebrow": "Sign in to ÉcoleDirecte",
+      "loginTitle": "Sign in to ÉcoleDirecte",
+      "loginText": "Use the credentials for your ÉcoleDirecte account.",
+      "username": "Username",
+      "password": "Password",
+      "privacyTitle": "Your credentials stay private",
+      "privacyText": "Your password is only used to open the session. Piéride keeps the sign-in token in your computer's secure keychain.",
+      "challengeTitle": "Verify your account",
+      "challengeText": "ÉcoleDirecte is asking you to answer your security question.",
+      "connect": "Sign in",
+      "confirm": "Confirm",
+      "syncTitle": "Signing in…",
+      "syncText": "Getting your classes, grades and homework.",
+      "errors": {
+        "AuthenticationError": "ÉcoleDirecte refused these credentials. Check them and try again.",
+        "ServiceUnavailable": "ÉcoleDirecte isn't responding right now. Try again in a moment.",
+        "SecurityChallenge": "The security check has expired. Start signing in again.",
+        "InvalidSecurityAnswer": "That answer doesn't match. Try again."
       }
     }
   },

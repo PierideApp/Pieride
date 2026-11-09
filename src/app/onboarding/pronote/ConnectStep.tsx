@@ -32,6 +32,7 @@ import pronote from "./pronote.module.scss";
 
 /** Un service à reconnecter (Paramètres > Comptes liés). */
 export interface Relink {
+  kind: "pronote";
   accountId: string;
   serviceId: string;
   url: string;

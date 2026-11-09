@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/database";
 import { news, services } from "@/database/schema";
-import { htmlToText } from "@/lib/html";
+import { newsContentToHtml, newsContentToText } from "@/lib/html";
 import type { News, ServiceKind } from "@/services/shared/models";
 
 import { Source, useQuery } from "./useQuery";
@@ -13,6 +13,8 @@ import { Source, useQuery } from "./useQuery";
 export interface NewsView extends News {
   serviceId: string;
   service: ServiceKind;
+  /** HTML source décodée, rendue par l'écran après filtrage strict des balises et URLs. */
+  htmlContent: string;
 }
 
 export async function loadNews(accountId: string): Promise<NewsView[]> {
@@ -25,7 +27,9 @@ export async function loadNews(accountId: string): Promise<NewsView[]> {
   return rows.map(({ item, service }) => ({
     ...item,
     title: item.title ?? undefined,
-    content: htmlToText(item.content),
+    // Décode aussi les anciennes lignes enregistrées avant le correctif Base64.
+    content: newsContentToText(item.content),
+    htmlContent: newsContentToHtml(item.content),
     service,
   }));
 }

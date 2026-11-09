@@ -102,14 +102,6 @@ export type Fetcher = (request: {
   redirect?: "follow" | "manual";
 }) => Promise<{ status: number; content: string; headers: Headers }>;
 
-function parseJsonOrText(content: string) {
-  try {
-    return JSON.parse(content);
-  } catch {
-    return content;
-  }
-}
-
 function createFetcher(userAgent?: string): Fetcher {
   return async ({ url, method = "GET", content, headers, redirect }) => {
     const finalHeaders = new Headers(headers);
@@ -121,14 +113,6 @@ function createFetcher(userAgent?: string): Fetcher {
     const timer = setTimeout(() => controller.abort(), TIMEOUT);
     const { signal } = controller;
     try {
-      const formattedRequest = {
-        url,
-        method,
-        content,
-        headers,
-        redirect,
-      };
-      console.log("[HTTP] -->", formattedRequest);
       const response = await externalFetch(url, {
         method,
         headers: finalHeaders,
@@ -141,14 +125,8 @@ function createFetcher(userAgent?: string): Fetcher {
         content: await response.text(),
         headers: response.headers,
       };
-      console.log("[HTTP] <--", {
-        content: parseJsonOrText(formattedResponse.content),
-        status: formattedResponse.status,
-        headers: formattedResponse.headers,
-      });
       return formattedResponse;
     } catch (error) {
-      console.error("[HTTP] <--", error);
       if (error instanceof ServiceUnavailable) {
         throw error;
       }

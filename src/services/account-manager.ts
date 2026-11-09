@@ -1,7 +1,7 @@
 // Point d'entrée unique des données scolaires. Il synchronise les services liés dans la
 // base locale ; les écrans lisent la base (hooks), jamais un service directement.
 // Inspiré de l'AccountManager de Papillon (services/shared/index.ts, GPLv3).
-import { and, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 
 import type { Db } from "@/database/client";
@@ -278,6 +278,19 @@ export class AccountManager {
     if (errors.length > 0) {
       throw errors[0];
     }
+    const [failedCapability] = await this.db
+      .select({ serviceId: syncState.serviceId })
+      .from(syncState)
+      .innerJoin(services, eq(services.id, syncState.serviceId))
+      .where(
+        and(eq(services.accountId, accountId), isNotNull(syncState.lastError))
+      )
+      .limit(1);
+    if (failedCapability) {
+      throw new ServiceUnavailable(
+        "Certaines données scolaires n'ont pas pu être synchronisées"
+      );
+    }
   }
 
   /**
@@ -446,16 +459,19 @@ export class AccountManager {
         this.plugins.delete(service.id);
       }
       const lastError = errorKind(error);
+      const diagnostic =
+        error instanceof ServiceUnavailable ? error.diagnostic : undefined;
+      const displayedError = diagnostic
+        ? `${lastError} (${diagnostic})`
+        : lastError === "Unknown" && error instanceof Error
+          ? `${error.name} ${error.message.slice(0, 200)}`
+          : lastError;
       // En mémoire seulement, masqué par `log` (lib/log.ts) : de quoi comprendre une erreur
       // inconnue sans garder un jeton qu'une bibliothèque aurait mis dans son message.
       log(
         lastError === "Unknown" ? "error" : "warn",
         "sync",
-        `${service.kind} ${capability} : ${
-          lastError === "Unknown" && error instanceof Error
-            ? `${error.name} ${error.message.slice(0, 200)}`
-            : lastError
-        }`
+        `${service.kind} ${capability} : ${displayedError}`
       );
       await this.db.batch([
         this.db
@@ -709,7 +725,18 @@ export class AccountManager {
     serviceId: string,
     methods: CapabilityMethods["NEWS"]
   ): Promise<Write[]> {
-    const list = uniqueById(await methods.getNews());
+    const previous = await this.db
+      .select({ id: news.id, read: news.read })
+      .from(news)
+      .where(eq(news.serviceId, serviceId));
+    const previousRead = new Map(
+      previous.map(item => [item.id, item.read] as const)
+    );
+    // Les services sans accusé de lecture distant gardent leur état local entre les synchros.
+    const list = uniqueById(await methods.getNews()).map(item => ({
+      ...item,
+      read: item.read || previousRead.get(item.id) === true,
+    }));
     return [
       this.db.delete(news).where(eq(news.serviceId, serviceId)),
       ...(list.length > 0

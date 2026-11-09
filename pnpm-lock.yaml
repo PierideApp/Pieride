@@ -162,10 +162,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@blockshub/blocksdirecte@0.0.9-alpha': 12bd2cf75dcc427857138322717be8e61bb5e328c0be492e8f0036e4764f2206
+
 importers:
 
   .:
     dependencies:
+      '@blockshub/blocksdirecte':
+        specifier: 0.0.9-alpha
+        version: 0.0.9-alpha(patch_hash=12bd2cf75dcc427857138322717be8e61bb5e328c0be492e8f0036e4764f2206)
       '@blockshub/pawnote-lts':
         specifier: 1.6.4
         version: 1.6.4
@@ -345,6 +351,9 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@blockshub/blocksdirecte@0.0.9-alpha':
+    resolution: {integrity: sha512-EQK87ereafCOw4pLhM+F75UdYaNmAvFd8EqPn13kihOb6Pa+XOwd+nLxqTx/s5HEL57pZiJ4/QLwW8vFmsuH+w==}
 
   '@blockshub/pawnote-lts@1.6.4':
     resolution: {integrity: sha512-b/xq8J5vcYGICcvTpoTTE19itj/D6n+be6TNIUdsq8L7Bcx59+Ap1kV2GoW7l+RLmyf7+AJ7T8eKPtuvPS3pbA==}
@@ -2912,6 +2921,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@blockshub/blocksdirecte@0.0.9-alpha(patch_hash=12bd2cf75dcc427857138322717be8e61bb5e328c0be492e8f0036e4764f2206)': {}
 
   '@blockshub/pawnote-lts@1.6.4':
     dependencies:
