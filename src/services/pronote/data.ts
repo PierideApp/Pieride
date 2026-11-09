@@ -15,6 +15,7 @@ import {
   type NewsCategory,
   type NewsInformation,
   newsInformationAcknowledge,
+  type NewsItem,
   newsRead,
   type NewsSurvey,
   type Notebook,
@@ -163,18 +164,59 @@ function parseRef(ref: string | undefined): (Origin & { file: string }) | null {
   return null;
 }
 
+/**
+ * La clé d'une actualité : sa date de création, son auteur et son titre. L'id de PRONOTE
+ * change d'une connexion à l'autre (relevé par Papillon, database/useNews.ts), et la session
+ * est refaite toutes les 5 minutes : il ne retrouverait pas l'actualité synchronisée.
+ * `getTime()` plutôt que `toISOString()`, qui lève une erreur sur une date invalide.
+ */
+const newsKey = (item: NewsItem) =>
+  `${item.creationDate.getTime()}|${item.author}|${item.title ?? ""}`;
+
+/**
+ * L'actualité de cette session qui porte la clé `key`. Une erreur si elle a disparu (retirée
+ * par l'établissement) : rien ne doit être noté comme lu ou accusé sans l'avoir été.
+ */
+export function pickNews<T extends NewsItem>(
+  items: readonly T[],
+  key: string
+): T {
+  const item = items.find(candidate => newsKey(candidate) === key);
+  if (!item) {
+    throw new ServiceUnavailable("Actualité introuvable chez PRONOTE");
+  }
+  return item;
+}
+
+/** L'actualité telle que PRONOTE l'a envoyée : il la veut ainsi pour la marquer. */
+const findNews = async (handle: SessionHandle, key: string) =>
+  pickNews((await news(handle)).items, key);
+
+/**
+ * Le fichier d'une pièce jointe parmi ceux de cette session : par son id, ou dans une
+ * actualité par son nom, l'id pouvant changer comme celui de l'actualité. Pas par le nom
+ * dans une semaine de devoirs : deux matières y ont souvent un même « exercices.pdf ».
+ */
+export function pickFile(
+  files: readonly PronoteAttachment[],
+  ref: Origin & { file: string },
+  name: string
+): PronoteAttachment | undefined {
+  return (
+    files.find(candidate => candidate.id === ref.file) ??
+    (ref.source === "news"
+      ? files.find(candidate => candidate.name === name)
+      : undefined)
+  );
+}
+
 /** Les fichiers de l'endroit d'où vient la pièce jointe, avec les adresses de cette session. */
 async function filesAt(
   handle: SessionHandle,
   origin: Origin
 ): Promise<readonly PronoteAttachment[]> {
   if (origin.source === "news") {
-    const item = (await news(handle)).items.find(
-      candidate => candidate.id === origin.news
-    );
-    if (!item) {
-      return [];
-    }
+    const item = await findNews(handle, origin.news);
     return item.is === "information"
       ? item.attachments
       : item.questions.flatMap(question => question.attachments);
@@ -195,10 +237,7 @@ export const downloadAttachment =
     session.run(async handle => {
       const ref = parseRef(attachment.ref);
       const file =
-        ref &&
-        (await filesAt(handle, ref)).find(
-          candidate => candidate.id === ref.file
-        );
+        ref && pickFile(await filesAt(handle, ref), ref, attachment.name);
       if (!file) {
         throw new ServiceUnavailable("Pièce jointe introuvable chez PRONOTE");
       }
@@ -242,9 +281,10 @@ export function toHomework(assignment: Assignment, week: number): Homework {
 export function toNews(item: NewsInformation | NewsSurvey): News {
   // pawnote cherche la rubrique dans la liste reçue : elle peut manquer.
   const category: NewsCategory | undefined = item.category;
-  const attachment = toAttachment({ source: "news", news: item.id });
+  const id = newsKey(item);
+  const attachment = toAttachment({ source: "news", news: id });
   const common = {
-    id: item.id,
+    id,
     title: item.title,
     category: category?.name,
     author: item.author,
@@ -421,25 +461,22 @@ export function capabilities(
         };
       }),
   };
-  // PRONOTE veut l'actualité telle qu'il l'a envoyée : on la redemande.
-  const findNews = async (handle: SessionHandle, id: string) =>
-    (await news(handle)).items.find(candidate => candidate.id === id);
   const newsMethods: CapabilityMethods["NEWS"] = {
     getNews: () =>
       session.run(async handle => (await news(handle)).items.map(toNews)),
     setNewsAsRead: id =>
-      session.run(async handle => {
-        const item = await findNews(handle, id);
-        if (item) {
-          await newsRead(handle, item, true);
-        }
-      }),
+      session.run(async handle =>
+        newsRead(handle, await findNews(handle, id), true)
+      ),
     setNewsAsAcknowledged: id =>
       session.run(async handle => {
         const item = await findNews(handle, id);
-        if (item?.is === "information") {
-          await newsInformationAcknowledge(handle, item);
+        if (item.is !== "information") {
+          throw new ServiceUnavailable(
+            "Un sondage n'a pas d'accusé de réception"
+          );
         }
+        await newsInformationAcknowledge(handle, item);
       }),
   };
   const attendanceMethods: CapabilityMethods["ATTENDANCE"] = {
