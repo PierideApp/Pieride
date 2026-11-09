@@ -4,7 +4,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 
 import { db } from "@/database";
 import { homework, services, subjects } from "@/database/schema";
-import { htmlToText } from "@/lib/html";
+import { contentToText } from "@/lib/html";
 import { subjectLook } from "@/lib/subjects";
 import type { Homework } from "@/services/shared/models";
 
@@ -52,7 +52,7 @@ export async function loadHomework(
     id: item.id,
     serviceId: item.serviceId,
     subject: item.subject,
-    content: htmlToText(item.content),
+    content: contentToText(item.content),
     givenAt: item.givenAt ?? undefined,
     dueAt: item.dueAt,
     done: item.done,

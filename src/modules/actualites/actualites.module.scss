@@ -189,8 +189,47 @@
 .acknowledgement {
   width: min(480px, 100%);
   margin-top: var(--space-5);
+.readerBody img {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  height: auto;
+  margin: var(--space-3) 0;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.readerBody table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.attachments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
 
   button {
     margin-top: var(--space-3);
   }
+}
+
+.fileIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.noContent {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--color-text-3);
 }
