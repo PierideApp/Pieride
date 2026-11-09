@@ -5,7 +5,6 @@
 import {
   AccountKind,
   cleanURL,
-  createSessionHandle,
   DoubleAuthMode,
   finishLoginManually,
   type GeolocatedInstance,
@@ -29,6 +28,7 @@ import { ServiceUnavailable } from "@/services/shared/errors";
 import type { Account } from "@/services/shared/models";
 
 import {
+  createHandle,
   DEMO_CREDENTIALS,
   DEMO_URL,
   parseSecret,
@@ -256,7 +256,7 @@ export async function loginDemo(): Promise<{
   login: PronoteLogin;
 }> {
   await allowInstance(DEMO_URL);
-  const session = createSessionHandle(pronoteFetcher);
+  const session = createHandle();
 
   const refresh = await loginCredentials(session, {
     url: DEMO_URL,
@@ -285,7 +285,7 @@ export async function loginWithEnt(
   | { kind: "pin"; finish: (pin: string) => Promise<PronoteLogin> }
 > {
   await allowInstance(url);
-  const session = createSessionHandle(pronoteFetcher);
+  const session = createHandle();
   let challenge: SecurityError;
   try {
     const refresh = await loginToken(session, {

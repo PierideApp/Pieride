@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ServiceUnavailable } from "@/services/shared/errors";
 
+import { devRequest } from "./devlog";
 import { fetcher, pronoteFetcher, redactUrl } from "./http";
 
 // http.ts remplace globalThis.fetch dès son import : l'environnement doit exister avant.
@@ -13,6 +14,7 @@ const nativeFetch = vi.hoisted(() => {
   return nativeFetch;
 });
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: vi.fn() }));
+vi.mock("./devlog", () => ({ devRequest: vi.fn() }));
 const plugin = vi.mocked(pluginFetch);
 
 afterEach(() => {
@@ -137,6 +139,24 @@ describe("fetcher", () => {
       )
     );
     await expect(fetcher({ url })).rejects.toThrow(ServiceUnavailable);
+  });
+
+  it("passe chaque requête, son état et sa durée au journal de dev", async () => {
+    vi.mocked(devRequest).mockClear();
+    await pronoteFetcher({ url, method: "POST", content: "{}" });
+    plugin.mockRejectedValue("Request cancelled");
+    await expect(fetcher({ url })).rejects.toThrow(ServiceUnavailable);
+    expect(vi.mocked(devRequest).mock.calls).toEqual([
+      [
+        expect.objectContaining({
+          url,
+          method: "POST",
+          content: "{}",
+          status: 200,
+        }),
+      ],
+      [expect.objectContaining({ url, method: "GET", status: undefined })],
+    ]);
   });
 
   it("rend le contenu, le statut et Set-Cookie", async () => {

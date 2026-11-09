@@ -24,6 +24,7 @@ import {
   UnreachableError,
 } from "@blockshub/pawnote-lts";
 
+import { devExchange, devResult } from "@/lib/devlog";
 import { pronoteFetcher } from "@/lib/http";
 import type {
   AuthFailure,
@@ -48,6 +49,18 @@ export const SESSION_TTL = 5 * 60_000;
 
 /** Une connexion coupée par une panne passagère est retentée une fois, après ce délai. */
 export const RETRY_DELAY = 2000;
+
+/**
+ * Une session pawnote neuve. Sous `pnpm tauri dev`, chaque échange déchiffré va à la console
+ * (`onExchange`, ajouté par notre patch de pawnote ; lib/devlog.ts).
+ */
+export function createHandle(): SessionHandle {
+  const handle = createSessionHandle(pronoteFetcher);
+  if (import.meta.env.DEV) {
+    handle.onExchange = devExchange;
+  }
+  return handle;
+}
 
 /** Ce que le trousseau garde d'un compte PRONOTE. */
 export interface PronoteSecret {
@@ -219,7 +232,12 @@ export class PronoteSession {
     this.auth.assertUsable();
     const handle = await this.handle();
     try {
-      return await request(handle);
+      const result = await request(handle);
+      // Seulement sous `pnpm tauri dev` (lib/devlog.ts), juste après les requêtes dans la console.
+      if (import.meta.env.DEV) {
+        devResult("pronote", result);
+      }
+      return result;
     } catch (error) {
       if (
         error instanceof SuspendedIPError ||
@@ -272,7 +290,7 @@ export class PronoteSession {
   }
 
   private async loginDemo(): Promise<SessionHandle> {
-    const handle = createSessionHandle(pronoteFetcher);
+    const handle = createHandle();
     const next = await loginCredentials(handle, {
       url: DEMO_URL,
       kind: AccountKind.STUDENT,
@@ -286,7 +304,7 @@ export class PronoteSession {
   private async loginWithToken(tracker: AuthTracker): Promise<SessionHandle> {
     const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
       this.secret;
-    const handle = createSessionHandle(pronoteFetcher);
+    const handle = createHandle();
     const saving: Promise<void>[] = [];
     const received = (next: RefreshInformation) => {
       saving.push(this.keep(next).then(tracker.credentialReceived));

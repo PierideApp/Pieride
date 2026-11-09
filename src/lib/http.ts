@@ -6,6 +6,7 @@ import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 
 import { ServiceUnavailable } from "@/services/shared/errors";
 
+import { devRequest } from "./devlog";
 import { logRequest } from "./log";
 
 /** Origine seule : le chemin et la query string peuvent porter un identifiant ou un jeton. */
@@ -112,6 +113,8 @@ function createFetcher(userAgent?: string): Fetcher {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT);
     const { signal } = controller;
+    const started = performance.now();
+    let result: Awaited<ReturnType<Fetcher>> | undefined;
     try {
       const response = await externalFetch(url, {
         method,
@@ -122,11 +125,12 @@ function createFetcher(userAgent?: string): Fetcher {
       });
       // Le journal (Paramètres > Développeur) n'a que le domaine, l'état et la durée
       // (`externalFetch`) : corps et en-têtes portent jetons, cookies et identifiants.
-      return {
+      result = {
         status: response.status,
         content: await response.text(),
         headers: response.headers,
       };
+      return result;
     } catch (error) {
       if (error instanceof ServiceUnavailable) {
         throw error;
@@ -137,6 +141,16 @@ function createFetcher(userAgent?: string): Fetcher {
       );
     } finally {
       clearTimeout(timer);
+      // Seulement sous `pnpm tauri dev` (lib/devlog.ts), avant que pawnote lise la réponse.
+      if (import.meta.env.DEV) {
+        devRequest({
+          url,
+          method,
+          content,
+          status: result?.status,
+          duration: performance.now() - started,
+        });
+      }
     }
   };
 }

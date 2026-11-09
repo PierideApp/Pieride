@@ -11,6 +11,7 @@ import {
 } from "@blockshub/pawnote-lts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { devResult } from "@/lib/devlog";
 import { type AuthRecord, ServiceAuth } from "@/services/shared/auth";
 import {
   AuthenticationError,
@@ -31,6 +32,7 @@ import {
 } from "./session";
 
 vi.mock("@/lib/http", () => ({ pronoteFetcher: vi.fn() }));
+vi.mock("@/lib/devlog", () => ({ devExchange: vi.fn(), devResult: vi.fn() }));
 vi.mock("@blockshub/pawnote-lts", async original => ({
   ...(await original<typeof import("@blockshub/pawnote-lts")>()),
   createSessionHandle: vi.fn(() => ({
@@ -196,6 +198,7 @@ describe("PronoteSession", () => {
       .mockResolvedValueOnce("notes");
     await expect(pronote.run(request)).resolves.toBe("notes");
     expect(login).toHaveBeenCalledTimes(2);
+    expect(devResult).toHaveBeenCalledWith("pronote", "notes");
   });
 
   it("n'envoie plus de requête après une suspension de l'adresse IP", async () => {
