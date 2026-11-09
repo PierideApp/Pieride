@@ -84,6 +84,7 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
       return;
     }
     set({ manualAt: now, refusedAt: null });
+    accountManager.allowAuthRetries();
     void get().sync(accountId, MANUAL_SYNC_INTERVAL);
   },
   sync: async (accountId, interval) => {

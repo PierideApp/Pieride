@@ -16,6 +16,7 @@ import {
 } from "@blockshub/pawnote-lts";
 import { describe, expect, it, vi } from "vitest";
 
+import { ServiceAuth } from "../shared/auth";
 import { ServiceUnavailable } from "../shared/errors";
 import type { Course } from "../shared/models";
 import {
@@ -407,7 +408,12 @@ describe("capabilities", () => {
       deviceUUID: "appareil",
       kind: AccountKind.STUDENT,
     },
-    async () => undefined
+    async () => undefined,
+    new ServiceAuth(
+      "pronote",
+      { step: null, failure: null },
+      async () => undefined
+    )
   );
 
   it("ne déclare que les onglets ouverts à l'élève", () => {

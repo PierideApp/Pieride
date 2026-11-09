@@ -700,6 +700,7 @@
       "calendar": "Calendars",
       "current": "Shown account",
       "needsLogin": "Sign in again",
+      "credentialLost": "Connection cut while renewing, sign in again",
       "relink": "Sign in again",
       "actions": "Actions",
       "show": "Show this account",

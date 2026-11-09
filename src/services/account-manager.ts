@@ -24,6 +24,7 @@ import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
 import { addDays, weekStart } from "@/lib/week";
 
+import { ServiceAuth } from "./shared/auth";
 import {
   AuthenticationError,
   SecurityChallenge,
@@ -99,6 +100,8 @@ async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
 
 export class AccountManager {
   private readonly plugins = new Map<string, Promise<SchoolServicePlugin>>();
+  /** La connexion de chaque service pendant ce lancement : elle survit aux plugins refaits. */
+  private readonly auth = new Map<string, ServiceAuth>();
   /** Semaines chargées par `loadWeek` pendant la session, par service et par lundi. */
   private readonly weeks = new Map<string, Promise<boolean>>();
   /** Les adresses rouvertes par `start` : une connexion les attend. */
@@ -201,10 +204,21 @@ export class AccountManager {
   async relinkService(serviceId: string, secret: string): Promise<void> {
     await setSecret(serviceId, secret);
     this.plugins.delete(serviceId);
+    this.auth.delete(serviceId);
     await this.db
       .update(services)
-      .set({ needsLogin: false })
+      .set({ needsLogin: false, authStep: null, authFailure: null })
       .where(eq(services.id, serviceId));
+  }
+
+  /**
+   * `Ctrl R` : l'utilisateur redemande tout de suite. Lève l'attente après un échec et le refus
+   * d'un jeton, pas une suspension de l'adresse IP.
+   */
+  allowAuthRetries(): void {
+    for (const auth of this.auth.values()) {
+      auth.allowRetry();
+    }
   }
 
   /**
@@ -221,6 +235,7 @@ export class AccountManager {
     );
     for (const { id } of linked) {
       this.plugins.delete(id);
+      this.auth.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
     await Promise.all(linked.map(({ id }) => this.forgetFiles(id)));
@@ -297,6 +312,7 @@ export class AccountManager {
       await deleteSecret(serviceId);
     }
     this.plugins.delete(serviceId);
+    this.auth.delete(serviceId);
     await this.db.delete(services).where(eq(services.id, serviceId));
     await this.forgetFiles(serviceId);
   }
@@ -615,8 +631,28 @@ export class AccountManager {
         instanceUrl: service.instanceUrl ?? undefined,
       },
       secret,
-      newSecret => setSecret(service.id, newSecret)
+      newSecret => setSecret(service.id, newSecret),
+      this.authOf(service)
     );
+  }
+
+  /** Créée au premier usage du lancement, avec l'étape et l'échec laissés en base. */
+  private authOf(service: ServiceRow): ServiceAuth {
+    let auth = this.auth.get(service.id);
+    if (!auth) {
+      auth = new ServiceAuth(
+        service.kind,
+        { step: service.authStep, failure: service.authFailure },
+        async ({ step, failure }) => {
+          await this.db
+            .update(services)
+            .set({ authStep: step, authFailure: failure })
+            .where(eq(services.id, service.id));
+        }
+      );
+      this.auth.set(service.id, auth);
+    }
+    return auth;
   }
 
   /** Les écritures à faire, ou `null` si le service ne fournit pas cette capability. */

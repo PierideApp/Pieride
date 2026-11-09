@@ -8,13 +8,14 @@ import { parseSecret, PronoteSession } from "./session";
 export const connectPronote: ConnectService = async (
   _service,
   secret,
-  saveSecret
+  saveSecret,
+  auth
 ) => {
   const parsed = parseSecret(secret);
   if (!parsed) {
     throw new AuthenticationError("Secret PRONOTE illisible");
   }
-  const session = new PronoteSession(parsed, saveSecret);
+  const session = new PronoteSession(parsed, saveSecret, auth);
   // Vérifie le jeton tout de suite : un refus marque le service « à reconnecter ».
   const handle = await session.handle();
   return {

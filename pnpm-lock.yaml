@@ -162,13 +162,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@blockshub/pawnote-lts@1.6.4': 331511e03e6c9ccd7d7b4f99bba56ae25656d58f3cd9c22e5b18d7735aa82cb7
+
 importers:
 
   .:
     dependencies:
       '@blockshub/pawnote-lts':
         specifier: 1.6.4
-        version: 1.6.4
+        version: 1.6.4(patch_hash=331511e03e6c9ccd7d7b4f99bba56ae25656d58f3cd9c22e5b18d7735aa82cb7)
       '@getpapillon/papicons':
         specifier: ^0.2.3
         version: 0.2.3(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.1)(supports-color@8.1.1))(react@19.3.1)
@@ -2913,7 +2916,7 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@blockshub/pawnote-lts@1.6.4':
+  '@blockshub/pawnote-lts@1.6.4(patch_hash=331511e03e6c9ccd7d7b4f99bba56ae25656d58f3cd9c22e5b18d7735aa82cb7)':
     dependencies:
       '@literate.ink/utilities': 1.0.0-10641118381.1
       html-entities: 2.6.0
