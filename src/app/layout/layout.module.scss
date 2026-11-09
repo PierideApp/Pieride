@@ -10,14 +10,19 @@
   }
 }
 
-// Caché à l'écran, toujours lu par les lecteurs d'écran.
-@mixin visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+// Le passage au rail et le retour glissent, sauf si le système demande moins d'animations.
+@mixin rail-motion($properties...) {
+  @media (prefers-reduced-motion: no-preference) {
+    transition-property: $properties;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+  }
+}
+
+// Dans le rail, la marge qui centre un élément de cette largeur. Calée à gauche plutôt que
+// centrée (`justify-content`), l'icône ne bouge presque pas pendant que la barre se replie.
+@function rail-inset($size) {
+  @return calc((var(--sidebar-rail) - 2 * var(--space-2) - #{$size}) / 2);
 }
 
 .shell {
@@ -318,6 +323,8 @@
     padding-top: 44px;
   }
 
+  @include rail-motion(width, padding);
+
   @include rail {
     width: var(--sidebar-rail);
     padding-inline: var(--space-2);
@@ -338,9 +345,11 @@
     border-radius: var(--radius-s);
   }
 
+  @include rail-motion(padding);
+
+  // L'icône de 32 px.
   @include rail {
-    justify-content: center;
-    padding-inline: 0;
+    padding-inline: rail-inset(32px);
   }
 }
 
@@ -362,10 +371,12 @@
     cursor: pointer;
   }
 
+  @include rail-motion(padding, background-color);
+
+  // L'avatar de 36 px.
   @include rail {
-    justify-content: center;
-    padding-inline: 0;
-    background: none;
+    padding-inline: rail-inset(36px);
+    background-color: transparent;
   }
 }
 
@@ -444,10 +455,12 @@
     color: var(--on-brand);
   }
 
+  @include rail-motion(padding, background-color);
+
+  // L'icône de 16 px.
   @include rail {
-    justify-content: center;
-    padding-inline: 0;
-    background: none;
+    padding-inline: rail-inset(16px);
+    background-color: transparent;
   }
 }
 
@@ -494,9 +507,11 @@
     }
   }
 
+  @include rail-motion(padding);
+
+  // L'icône de 20 px.
   @include rail {
-    justify-content: center;
-    padding-inline: 0;
+    padding-inline: rail-inset(20px);
   }
 }
 
@@ -536,13 +551,25 @@
   }
 }
 
+// Dans le rail, le titre du groupe se referme : les deux groupes de liens se rejoignent.
 .group {
   margin: var(--space-4) var(--space-3) var(--space-1);
   font-size: 11px;
   font-weight: 700;
+  // La hauteur `normal` de SN Pro, mais chiffrée pour s'animer jusqu'à 0.
+  line-height: 1.16;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  white-space: nowrap;
   opacity: 0.7;
+
+  @include rail-motion(margin, line-height, opacity);
+
+  @include rail {
+    margin-block: 0;
+    line-height: 0;
+    opacity: 0;
+  }
 }
 
 .footer {
@@ -568,13 +595,21 @@
   height: 20px;
 }
 
-// Dans le rail, les libellés restent lus par les lecteurs d'écran.
+// Sur une ligne, même pendant que la barre se déplie.
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Dans le rail, les libellés s'effacent mais restent lus par les lecteurs d'écran.
 .label,
 .accountText,
-.chevron,
-.group {
+.chevron {
+  @include rail-motion(opacity);
+
   @include rail {
-    @include visually-hidden;
+    opacity: 0;
   }
 }
 

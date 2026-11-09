@@ -28,6 +28,26 @@
         </div>
         <h1>piéride</h1>
       </div>
+      <div id="splash-screen-loader" class="splash-screen-loader">
+        <img class="loader-circle" src="/src/assets/svg/loader-circle.svg" />
+        <p id="loader-text" class="loader-text"></p>
+      </div>
+      <div id="splash-screen-error" class="splash-screen-error">
+        <div class="splash-screen-error-info">
+          <img src="/src/assets/svg/circle-alert.svg" />
+          <p id="splash-screen-error-text" class="loader-text error"></p>
+        </div>
+        <div class="splash-screen-error-info">
+          <button
+            id="splash-screen-error-retry-button"
+            class="splash-screen-error-button"
+          ></button>
+          <button
+            id="splash-screen-error-close-button"
+            class="splash-screen-error-button"
+          ></button>
+        </div>
+      </div>
     </div>
     <div id="root" style="display: none"></div>
     <script type="module" src="/src/main.tsx"></script>
@@ -36,14 +56,62 @@
         restoreStateCurrent,
         StateFlags,
       } from "@tauri-apps/plugin-window-state";
+      import { getCurrentWindow } from "@tauri-apps/api/window";
 
       const navigation = performance.getEntriesByType("navigation")[0];
       const isReload = navigation?.type === "reload";
       // Les deux dernières lignes permettent de savoir si lors de l'exécution du script,
       // la page a été rechargée.
+
+      const appWindow = getCurrentWindow();
+      const splash = document.getElementById("splash-screen");
+      const loader = document.getElementById("splash-screen-loader");
+      const loaderText = document.getElementById("loader-text");
+      const errorDisplay = document.getElementById("splash-screen-error");
+      const errorText = document.getElementById("splash-screen-error-text");
+      const closeAppButton = document.getElementById(
+        "splash-screen-error-close-button"
+      );
+      const retryButton = document.getElementById(
+        "splash-screen-error-retry-button"
+      );
+
+      let animationFinished = false; // Permet de savoir si l'animation du splash screen est terminée.
+      let appIsReady = false; // Permet de savoir si l'application est prête à être affichée.
+      let appError = false; // Permet de savoir si l'application a rencontré une erreur.
+
+      window.appIsReady = () => {
+        appIsReady = true;
+        if (animationFinished) {
+          hideSplash();
+        }
+      };
+
+      window.appError = error => {
+        appError = true;
+        errorText.textContent = error;
+        if (animationFinished) {
+          loader.style.opacity = "0";
+          loader.style.animation = "none";
+          errorDisplay.style.opacity = "1";
+        }
+      };
+
       const launchedMinimized =
         await window.__TAURI_INTERNALS__.invoke("is_minimized");
       // Permet de savoir si on veut lancer l'appli sans ouvrir la fenêtre, donc minimisée.
+      const currentLanguage = localStorage.getItem("language") || "fr";
+      const translations = await import(
+        `./src/locales/${currentLanguage}.json`
+      );
+
+      if (!localStorage.getItem("language")) {
+        localStorage.setItem("language", "fr"); // Définit la langue par défaut à français si aucune langue n'est définie.
+      }
+
+      loaderText.textContent = translations.app.loading;
+      closeAppButton.textContent = translations.app.close;
+      retryButton.textContent = translations.app.retry;
 
       function show_app() {
         window.__TAURI_INTERNALS__.invoke("show_app", {});
@@ -68,12 +136,20 @@
       function startAnimations() {
         document.querySelector("#splash-screen").classList.add("ready");
         setTimeout(() => {
-          hideSplash();
+          animationFinished = true;
+          if (appIsReady) {
+            hideSplash();
+          } else if (appError) {
+            errorDisplay.style.animation =
+              "loading-appear 500ms ease-in-out forwards";
+          } else {
+            loader.style.animation =
+              "loading-appear 500ms ease-in-out forwards";
+          }
         }, 3600);
       }
 
       function hideSplash() {
-        const splash = document.getElementById("splash-screen");
         splash.style.animation = "fadeOut 650ms ease-in-out forwards";
         setTimeout(() => {
           splash.style.display = "none";
@@ -86,6 +162,14 @@
         app.style.animation = "fadeIn 650ms ease-in-out forwards";
         app.style.display = null;
       }
+
+      closeAppButton.addEventListener("click", async () => {
+        appWindow.close();
+      });
+
+      retryButton.addEventListener("click", async () => {
+        location.reload();
+      });
     </script>
   </body>
 </html>

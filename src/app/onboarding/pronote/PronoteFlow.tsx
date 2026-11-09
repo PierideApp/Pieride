@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 import type { InstanceInfo, School } from "@/services/pronote/login";
+import { DEMO_URL } from "@/services/pronote/session";
 
 import { BackButton } from "../BackButton";
 import { CityStep } from "./CityStep";
 import { ConnectStep, type Relink } from "./ConnectStep";
-import { DemoStep } from "./DemoStep";
 import { MethodStep } from "./MethodStep";
 import { UrlStep } from "./UrlStep";
 
@@ -15,8 +15,10 @@ type Step =
   | { id: "method" }
   | { id: "city" }
   | { id: "url" }
-  | { id: "demo" }
   | { id: "connect"; school: School | InstanceInfo };
+
+/** Le compte de démonstration passe par l'étape de connexion, qui affiche DemoStep. */
+const DEMO = { url: DEMO_URL, name: "PRONOTE" };
 
 export function PronoteFlow({
   relink,
@@ -41,16 +43,21 @@ export function PronoteFlow({
       {/* L'étape de connexion a le sien : il disparaît pendant la synchro. */}
       {step.id !== "connect" && <BackButton onClick={back} />}
       {step.id === "method" && (
-        <MethodStep onNext={method => go({ id: method })} />
+        <MethodStep
+          onNext={method =>
+            go(
+              method === "demo"
+                ? { id: "connect", school: DEMO }
+                : { id: method }
+            )
+          }
+        />
       )}
       {step.id === "city" && (
         <CityStep onNext={school => go({ id: "connect", school })} />
       )}
       {step.id === "url" && (
         <UrlStep onNext={school => go({ id: "connect", school })} />
-      )}
-      {step.id === "demo" && (
-        <DemoStep onNext={school => go({ id: "connect", school })} />
       )}
       {step.id === "connect" && (
         <ConnectStep
