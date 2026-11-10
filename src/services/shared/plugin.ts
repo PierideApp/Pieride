@@ -34,7 +34,12 @@ export interface CapabilityMethods {
     getGradesForPeriod(period: Period): Promise<PeriodGrades>;
   };
   NEWS: {
-    getNews(): Promise<News[]>;
+    /**
+     * Les actualités, avec leur contenu. `known` : celles déjà en base, par id. Un service qui
+     * n'envoie le contenu qu'à part (PRONOTE récent, une requête par actualité) reprend celui
+     * qu'il y trouve au lieu de le redemander.
+     */
+    getNews(known: ReadonlyMap<string, News>): Promise<News[]>;
     setNewsAsRead(id: string): Promise<void>;
     /** Envoie l'accusé de réception demandé, et marque l'actualité comme lue. */
     setNewsAsAcknowledged(id: string): Promise<void>;

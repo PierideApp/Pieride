@@ -163,7 +163,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@blockshub/pawnote-lts@1.6.4': 864c74eeac95ddb5c4dbdcc817e8e43277214f1d23a15b2609015e4db61cd6c2
+  '@blockshub/pawnote-lts@1.6.4': d152916fef4920163bf8ad4b7eab29bfe0be59c06f06990a690101c7df351d3d
 
 importers:
 
@@ -171,7 +171,7 @@ importers:
     dependencies:
       '@blockshub/pawnote-lts':
         specifier: 1.6.4
-        version: 1.6.4(patch_hash=864c74eeac95ddb5c4dbdcc817e8e43277214f1d23a15b2609015e4db61cd6c2)
+        version: 1.6.4(patch_hash=d152916fef4920163bf8ad4b7eab29bfe0be59c06f06990a690101c7df351d3d)
       '@getpapillon/papicons':
         specifier: ^0.2.3
         version: 0.2.3(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.1)(supports-color@8.1.1))(react@19.3.1)
@@ -2916,7 +2916,7 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@blockshub/pawnote-lts@1.6.4(patch_hash=864c74eeac95ddb5c4dbdcc817e8e43277214f1d23a15b2609015e4db61cd6c2)':
+  '@blockshub/pawnote-lts@1.6.4(patch_hash=d152916fef4920163bf8ad4b7eab29bfe0be59c06f06990a690101c7df351d3d)':
     dependencies:
       '@literate.ink/utilities': 1.0.0-10641118381.1
       html-entities: 2.6.0

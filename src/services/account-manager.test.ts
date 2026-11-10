@@ -30,7 +30,7 @@ import {
   ServiceUnavailable,
   UnsupportedService,
 } from "./shared/errors";
-import type { Attachment, Course } from "./shared/models";
+import type { Attachment, Course, News } from "./shared/models";
 import type { CapabilityMethods, ConnectService } from "./shared/plugin";
 
 const secrets = vi.hoisted(() => new Map<string, string>());
@@ -434,6 +434,39 @@ describe("AccountManager", () => {
     expect(
       (await db.select().from(attendance)).map(item => item.kind).sort()
     ).toEqual(["absence", "delay"]);
+  });
+
+  it("passe au service les actualités déjà en base, pour garder leur contenu", async () => {
+    const { manager } = await setup();
+    const item: News = {
+      id: "n1",
+      kind: "information",
+      author: "Direction",
+      date: at(20, 8),
+      content: "<p>Bonjour</p>",
+      read: false,
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: [],
+    };
+    const getNews = vi.fn<CapabilityMethods["NEWS"]["getNews"]>(async () => [
+      item,
+    ]);
+    connect.mockImplementation(async () => ({
+      kind: "pronote",
+      capabilities: {
+        NEWS: {
+          getNews,
+          setNewsAsRead: async () => undefined,
+          setNewsAsAcknowledged: async () => undefined,
+        },
+      },
+    }));
+    await manager.refresh("camille", "NEWS", NOW);
+    await manager.refresh("camille", "NEWS", LATER);
+
+    expect(getNews.mock.calls[0]?.[0]).toEqual(new Map());
+    expect(getNews.mock.calls[1]?.[0]).toEqual(new Map([["n1", item]]));
   });
 
   it("ignore un service qui ne fournit pas la capability", async () => {

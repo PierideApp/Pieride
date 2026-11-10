@@ -36,6 +36,7 @@ import type {
   Attachment,
   Attendance,
   LinkedService,
+  News,
   ServiceKind,
 } from "./shared/models";
 import {
@@ -826,7 +827,21 @@ export class AccountManager {
     serviceId: string,
     methods: CapabilityMethods["NEWS"]
   ): Promise<Write[]> {
-    const list = uniqueById(await methods.getNews());
+    const rows = await this.db
+      .select()
+      .from(news)
+      .where(eq(news.serviceId, serviceId));
+    const known = new Map(
+      rows.map(({ serviceId: _serviceId, ...row }): [string, News] => [
+        row.id,
+        {
+          ...row,
+          title: row.title ?? undefined,
+          category: row.category ?? undefined,
+        },
+      ])
+    );
+    const list = uniqueById(await methods.getNews(known));
     return [
       this.db.delete(news).where(eq(news.serviceId, serviceId)),
       ...(list.length > 0

@@ -1,6 +1,7 @@
 // Données PRONOTE vers les modèles communs : emploi du temps, devoirs et notes d'après
 // services/pronote/timetable.ts, homework.ts et grades.ts de Papillon (GPLv3) ; cahier de
-// textes, actualités et carnet (absences, retards) d'après les types de pawnote.
+// textes, actualités et carnet (absences, retards) d'après les types de pawnote ; contenu des
+// actualités des versions récentes de PRONOTE d'après pronotepy (MIT, `Information`).
 import {
   type Assignment,
   assignmentsFromWeek,
@@ -13,6 +14,7 @@ import {
   type GradeValue,
   news,
   type NewsCategory,
+  newsDetails,
   type NewsInformation,
   newsInformationAcknowledge,
   type NewsItem,
@@ -193,6 +195,51 @@ const findNews = async (handle: SessionHandle, key: string) =>
   pickNews((await news(handle)).items, key);
 
 /**
+ * Vrai quand PRONOTE n'a pas envoyé le contenu avec la liste (texte, pièces jointes, accusé
+ * demandé) : les versions récentes le donnent à part, une requête par actualité.
+ */
+export const withoutContent = (item: NewsInformation | NewsSurvey) =>
+  item.is === "information"
+    ? item.question === undefined
+    : item.questions.length === 0;
+
+/** L'actualité avec son contenu, demandé à PRONOTE s'il manque (`newsDetails`, notre patch). */
+const detailed = async <T extends NewsInformation | NewsSurvey>(
+  handle: SessionHandle,
+  item: T
+): Promise<T> => (withoutContent(item) ? newsDetails(handle, item) : item);
+
+/**
+ * Les actualités avec leur contenu. Celui d'une actualité déjà en base (`known`, par clé) est
+ * repris : seules les nouvelles coûtent une requête de plus. Le reste (lue, rubrique) vient de
+ * la liste, toujours à jour.
+ */
+export async function newsWithContent(
+  handle: SessionHandle,
+  known: ReadonlyMap<string, News>
+): Promise<News[]> {
+  const list: News[] = [];
+  // L'une après l'autre : PRONOTE numérote ses requêtes.
+  for (const item of (await news(handle)).items) {
+    const cached = known.get(newsKey(item));
+    if (cached && withoutContent(item)) {
+      const { content, attachments, needsAcknowledgement, acknowledged } =
+        cached;
+      list.push({
+        ...toNews(item),
+        content,
+        attachments,
+        needsAcknowledgement,
+        acknowledged,
+      });
+    } else {
+      list.push(toNews(await detailed(handle, item)));
+    }
+  }
+  return list;
+}
+
+/**
  * Le fichier d'une pièce jointe parmi ceux de cette session : par son id, ou dans une
  * actualité par son nom, l'id pouvant changer comme celui de l'actualité. Pas par le nom
  * dans une semaine de devoirs : deux matières y ont souvent un même « exercices.pdf ».
@@ -216,7 +263,7 @@ async function filesAt(
   origin: Origin
 ): Promise<readonly PronoteAttachment[]> {
   if (origin.source === "news") {
-    const item = await findNews(handle, origin.news);
+    const item = await detailed(handle, await findNews(handle, origin.news));
     return item.is === "information"
       ? item.attachments
       : item.questions.flatMap(question => question.attachments);
@@ -462,15 +509,14 @@ export function capabilities(
       }),
   };
   const newsMethods: CapabilityMethods["NEWS"] = {
-    getNews: () =>
-      session.run(async handle => (await news(handle)).items.map(toNews)),
+    getNews: known => session.run(handle => newsWithContent(handle, known)),
     setNewsAsRead: id =>
       session.run(async handle =>
         newsRead(handle, await findNews(handle, id), true)
       ),
     setNewsAsAcknowledged: id =>
       session.run(async handle => {
-        const item = await findNews(handle, id);
+        const item = await detailed(handle, await findNews(handle, id));
         if (item.is !== "information") {
           throw new ServiceUnavailable(
             "Un sondage n'a pas d'accusé de réception"
