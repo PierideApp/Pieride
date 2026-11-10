@@ -48,7 +48,7 @@ describe("données fictives", () => {
   it("couvre chaque cas que PRONOTE peut renvoyer", async () => {
     const week = (await TIMETABLE?.getWeeklyTimetable(weekStart(NOW))) ?? [];
     const homework = (await HOMEWORK?.getHomeworks(weekStart(NOW))) ?? [];
-    const news = (await NEWS?.getNews()) ?? [];
+    const news = (await NEWS?.getNews(new Map())) ?? [];
     const kinds = (attachments: { kind: string }[]) =>
       new Set(attachments.map(attachment => attachment.kind));
 
@@ -84,11 +84,11 @@ describe("données fictives", () => {
   });
 
   it("garde lue ou accusée une actualité pour la session", async () => {
-    const pending = (await NEWS?.getNews())?.find(
+    const pending = (await NEWS?.getNews(new Map()))?.find(
       item => item.needsAcknowledgement && !item.acknowledged
     );
     await NEWS?.setNewsAsAcknowledged(pending?.id ?? "");
-    const again = (await NEWS?.getNews())?.find(
+    const again = (await NEWS?.getNews(new Map()))?.find(
       item => item.id === pending?.id
     );
     expect(again).toMatchObject({ read: true, acknowledged: true });

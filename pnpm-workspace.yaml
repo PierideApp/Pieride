@@ -1,3 +1,5 @@
 allowBuilds:
   '@parcel/watcher': false
   esbuild: false
+patchedDependencies:
+  '@blockshub/pawnote-lts@1.6.4': patches/@blockshub__pawnote-lts@1.6.4.patch

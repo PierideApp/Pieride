@@ -30,8 +30,8 @@ import {
   ServiceUnavailable,
   UnsupportedService,
 } from "./shared/errors";
-import type { Attachment, Course } from "./shared/models";
-import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
+import type { Attachment, Course, News } from "./shared/models";
+import type { CapabilityMethods, ConnectService } from "./shared/plugin";
 
 const secrets = vi.hoisted(() => new Map<string, string>());
 vi.mock("@/lib/keyring", () => ({
@@ -59,7 +59,7 @@ function course(id: string, from: Date): Course {
 
 let timetable: CapabilityMethods["TIMETABLE"]["getWeeklyTimetable"];
 let gradesPeriods: CapabilityMethods["GRADES"]["getGradesPeriods"];
-const connect = vi.fn(async (): Promise<SchoolServicePlugin> => ({
+const connect = vi.fn<ConnectService>(async () => ({
   kind: "pronote",
   capabilities: {
     TIMETABLE: { getWeeklyTimetable: weekStart => timetable(weekStart) },
@@ -115,7 +115,7 @@ async function setup() {
 
 beforeEach(() => {
   secrets.clear();
-  connect.mockClear();
+  connect.mockReset();
   vi.mocked(allowInstance).mockClear();
   timetable = async () => [
     course("lundi", at(26, 8)),
@@ -189,6 +189,36 @@ describe("AccountManager", () => {
     const [state] = await db.select().from(syncState);
     expect(state?.lastError).toBe("AuthenticationError");
     expect(connect).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne renvoie un jeton refusé qu'après Ctrl R ou la reconnexion", async () => {
+    const { db, manager } = await setup();
+    const sent = vi.fn(async () => {
+      throw new AuthenticationError("refusé");
+    });
+    connect.mockImplementation(async (_service, _secret, _save, auth) =>
+      auth.login({ rotatesCredential: true }, sent)
+    );
+    // Une synchro demande cinq données, la suivante autant : un seul envoi.
+    await manager.refreshAll("camille", NOW);
+    await manager.refreshAll("camille", LATER);
+    expect(sent).toHaveBeenCalledOnce();
+    const [service] = await db.select().from(services);
+    expect(service).toMatchObject({
+      needsLogin: true,
+      authStep: "failed",
+      authFailure: "credential_rejected",
+    });
+
+    manager.allowAuthRetries();
+    await manager.refreshAll("camille", LATER);
+    expect(sent).toHaveBeenCalledTimes(2);
+
+    await manager.relinkService("pronote-1", "nouveau-jeton");
+    const [relinked] = await db.select().from(services);
+    expect(relinked).toMatchObject({ authStep: null, authFailure: null });
+    await manager.refresh("camille", "TIMETABLE", LATER);
+    expect(sent).toHaveBeenCalledTimes(3);
   });
 
   it("ne redemande pas une donnée synchronisée il y a moins de 30 minutes", async () => {
@@ -404,6 +434,39 @@ describe("AccountManager", () => {
     expect(
       (await db.select().from(attendance)).map(item => item.kind).sort()
     ).toEqual(["absence", "delay"]);
+  });
+
+  it("passe au service les actualités déjà en base, pour garder leur contenu", async () => {
+    const { manager } = await setup();
+    const item: News = {
+      id: "n1",
+      kind: "information",
+      author: "Direction",
+      date: at(20, 8),
+      content: "<p>Bonjour</p>",
+      read: false,
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: [],
+    };
+    const getNews = vi.fn<CapabilityMethods["NEWS"]["getNews"]>(async () => [
+      item,
+    ]);
+    connect.mockImplementation(async () => ({
+      kind: "pronote",
+      capabilities: {
+        NEWS: {
+          getNews,
+          setNewsAsRead: async () => undefined,
+          setNewsAsAcknowledged: async () => undefined,
+        },
+      },
+    }));
+    await manager.refresh("camille", "NEWS", NOW);
+    await manager.refresh("camille", "NEWS", LATER);
+
+    expect(getNews.mock.calls[0]?.[0]).toEqual(new Map());
+    expect(getNews.mock.calls[1]?.[0]).toEqual(new Map([["n1", item]]));
   });
 
   it("ignore un service qui ne fournit pas la capability", async () => {

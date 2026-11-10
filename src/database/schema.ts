@@ -11,6 +11,7 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
+import type { AuthFailure, AuthStep } from "@/services/shared/auth";
 import type {
   Attachment,
   Attendance,
@@ -54,6 +55,10 @@ export const services = sqliteTable("services", {
   needsLogin: integer("needs_login", { mode: "boolean" })
     .notNull()
     .default(false),
+  /** Où en est la connexion, écrit à chaque étape : une app coupée le relit au lancement. */
+  authStep: text("auth_step").$type<AuthStep>(),
+  /** Pourquoi la dernière connexion a échoué (`credential_lost`…), jamais le message. */
+  authFailure: text("auth_failure").$type<AuthFailure>(),
   createdAt: createdAt(),
 });
 

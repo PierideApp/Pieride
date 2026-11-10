@@ -700,6 +700,7 @@
       "calendar": "Calendriers",
       "current": "Compte affiché",
       "needsLogin": "Reconnexion nécessaire",
+      "credentialLost": "Connexion coupée pendant son renouvellement, reconnecte-toi",
       "relink": "Se reconnecter",
       "actions": "Actions",
       "show": "Afficher ce compte",

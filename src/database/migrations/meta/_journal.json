@@ -43,6 +43,13 @@
       "when": 1794017708378,
       "tag": "0005_actualites",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794257046274,
+      "tag": "0006_connexion",
+      "breakpoints": true
     }
   ]
 }

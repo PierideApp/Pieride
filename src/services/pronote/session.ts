@@ -1,7 +1,8 @@
 // Session PRONOTE avec pawnote (@blockshub/pawnote-lts, GPLv3), comme Papillon
 // (services/pronote/refresh.ts et errors.ts, GPLv3) : https://github.com/PapillonApp/Papillon
 // Le mot de passe n'est jamais gardé. PRONOTE donne un jeton à usage unique, remplacé à chaque
-// connexion : le trousseau garde le dernier, avec ce qui va avec (`PronoteSecret`).
+// connexion : le trousseau garde le dernier, avec ce qui va avec (`PronoteSecret`). Le patch de
+// pawnote repris de Papillon (patches/) donne ce jeton avant la dernière requête de la connexion.
 import {
   AccessDeniedError,
   AccountDisabledError,
@@ -14,6 +15,7 @@ import {
   loginToken,
   PageUnavailableError,
   RateLimitedError,
+  type RefreshInformation,
   SecurityError,
   ServerSideError,
   SessionExpiredError,
@@ -22,7 +24,13 @@ import {
   UnreachableError,
 } from "@blockshub/pawnote-lts";
 
+import { devExchange, devResult } from "@/lib/devlog";
 import { pronoteFetcher } from "@/lib/http";
+import type {
+  AuthFailure,
+  AuthTracker,
+  ServiceAuth,
+} from "@/services/shared/auth";
 import {
   AuthenticationError,
   SecurityChallenge,
@@ -38,6 +46,21 @@ export const DEMO_CREDENTIALS = {
 
 /** Au-delà, la session est refaite avant une requête : PRONOTE oublie les sessions inactives. */
 export const SESSION_TTL = 5 * 60_000;
+
+/** Une connexion coupée par une panne passagère est retentée une fois, après ce délai. */
+export const RETRY_DELAY = 2000;
+
+/**
+ * Une session pawnote neuve. Sous `pnpm tauri dev`, chaque échange déchiffré va à la console
+ * (`onExchange`, ajouté par notre patch de pawnote ; lib/devlog.ts).
+ */
+export function createHandle(): SessionHandle {
+  const handle = createSessionHandle(pronoteFetcher);
+  if (import.meta.env.DEV) {
+    handle.onExchange = devExchange;
+  }
+  return handle;
+}
 
 /** Ce que le trousseau garde d'un compte PRONOTE. */
 export interface PronoteSecret {
@@ -130,13 +153,45 @@ export function toServiceError(error: unknown): unknown {
   return error;
 }
 
+/**
+ * La raison d'un échec de connexion (Papillon : services/pronote/errors.ts). Fermeture,
+ * maintenance ou session oubliée sont laissées aux règles communes : le jeton reste bon.
+ */
+export function classifyPronoteError(error: unknown): AuthFailure | undefined {
+  if (error instanceof SecurityError) {
+    return "security_challenge";
+  }
+  // Papillon laisse `RateLimitedError` à l'attente ordinaire, mais c'est aussi un blocage de
+  // l'adresse IP : réessayer avant quelques minutes le prolongerait.
+  if (error instanceof SuspendedIPError || error instanceof RateLimitedError) {
+    return "suspended";
+  }
+  if (
+    error instanceof AccessDeniedError ||
+    error instanceof AccountDisabledError
+  ) {
+    return "account_disabled";
+  }
+  if (error instanceof BadCredentialsError) {
+    return "credential_rejected";
+  }
+  return undefined;
+}
+
+/** Les pannes passagères, qu'on peut retenter sans risque pour le jeton. */
+const isSafeToRetry = (error: unknown) =>
+  error instanceof UnreachableError ||
+  error instanceof BusyPageError ||
+  error instanceof PageUnavailableError;
+
 export class PronoteSession {
   private current: { handle: SessionHandle; openedAt: number } | null = null;
   private pending: Promise<SessionHandle> | null = null;
 
   constructor(
     private secret: PronoteSecret,
-    private readonly saveSecret: (secret: string) => Promise<void>
+    private readonly saveSecret: (secret: string) => Promise<void>,
+    private readonly auth: ServiceAuth
   ) {}
 
   /** La session ouverte, refaite après `SESSION_TTL`. */
@@ -151,10 +206,13 @@ export class PronoteSession {
     return this.pending;
   }
 
-  /** Lance une requête ; si PRONOTE a oublié la session, la refait et rejoue une fois. */
+  /**
+   * Lance une requête ; si PRONOTE a oublié la session, la refait et rejoue une fois (il a
+   * refusé la requête, rien n'a été écrit). Aucune ne part tant que l'adresse IP est suspendue.
+   */
   async run<T>(request: (handle: SessionHandle) => Promise<T>): Promise<T> {
     try {
-      return await request(await this.handle());
+      return await this.request(request);
     } catch (error) {
       if (!(error instanceof SessionExpiredError)) {
         throw toServiceError(error);
@@ -162,68 +220,118 @@ export class PronoteSession {
     }
     this.current = null;
     try {
-      return await request(await this.handle());
+      return await this.request(request);
     } catch (error) {
       throw toServiceError(error);
     }
   }
 
-  private async loginDemo(): Promise<SessionHandle> {
-    const handle = createSessionHandle(pronoteFetcher);
+  private async request<T>(
+    request: (handle: SessionHandle) => Promise<T>
+  ): Promise<T> {
+    this.auth.assertUsable();
+    const handle = await this.handle();
     try {
-      const next = await loginCredentials(handle, {
-        url: DEMO_URL,
-        kind: AccountKind.STUDENT,
-        ...DEMO_CREDENTIALS,
-        deviceUUID: "0",
-      });
-      this.secret = {
-        ...this.secret,
-        url: next.url,
-        username: next.username,
-        token: next.token,
-        kind: next.kind,
-        navigatorIdentifier: next.navigatorIdentifier,
-      };
+      const result = await request(handle);
+      // Seulement sous `pnpm tauri dev` (lib/devlog.ts), juste après les requêtes dans la console.
+      if (import.meta.env.DEV) {
+        devResult("pronote", result);
+      }
+      return result;
     } catch (error) {
-      throw toServiceError(error);
+      if (
+        error instanceof SuspendedIPError ||
+        error instanceof RateLimitedError
+      ) {
+        this.auth.reportSuspended();
+      }
+      throw error;
     }
-    await this.saveSecret(JSON.stringify(this.secret));
-    this.current = { handle, openedAt: Date.now() };
-    return handle;
   }
 
   private async login(): Promise<SessionHandle> {
-    const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
-      this.secret;
-    if (url === DEMO_URL) {
-      return this.loginDemo();
-    }
-    const handle = createSessionHandle(pronoteFetcher);
+    const demo = this.secret.url === DEMO_URL;
     try {
-      const next = await loginToken(handle, {
-        url,
-        kind,
-        username,
-        token,
-        deviceUUID,
-        navigatorIdentifier,
-      });
-      this.secret = {
-        ...this.secret,
-        url: next.url,
-        username: next.username,
-        token: next.token,
-        kind: next.kind,
-        navigatorIdentifier: next.navigatorIdentifier,
-      };
+      const handle = await this.auth.login(
+        { rotatesCredential: !demo, classify: classifyPronoteError },
+        async tracker => {
+          for (let attempt = 1; ; attempt++) {
+            try {
+              return await (demo
+                ? this.loginDemo()
+                : this.loginWithToken(tracker));
+            } catch (error) {
+              if (attempt === 2 || !isSafeToRetry(error)) {
+                throw error;
+              }
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
+          }
+        }
+      );
+      this.current = { handle, openedAt: Date.now() };
+      return handle;
     } catch (error) {
       throw toServiceError(error);
     }
-    // ponytail: si la connexion échoue après que PRONOTE a donné le nouveau jeton, il est
-    // perdu et il faut se reconnecter. Papillon le récupère plus tôt avec un patch de pawnote.
-    await this.saveSecret(JSON.stringify(this.secret));
-    this.current = { handle, openedAt: Date.now() };
+  }
+
+  /** Garde le jeton donné par PRONOTE, en mémoire puis dans le trousseau. */
+  private keep(next: RefreshInformation): Promise<void> {
+    this.secret = {
+      ...this.secret,
+      url: next.url,
+      username: next.username,
+      token: next.token,
+      kind: next.kind,
+      navigatorIdentifier: next.navigatorIdentifier,
+    };
+    return this.saveSecret(JSON.stringify(this.secret));
+  }
+
+  private async loginDemo(): Promise<SessionHandle> {
+    const handle = createHandle();
+    const next = await loginCredentials(handle, {
+      url: DEMO_URL,
+      kind: AccountKind.STUDENT,
+      ...DEMO_CREDENTIALS,
+      deviceUUID: "0",
+    });
+    await this.keep(next);
+    return handle;
+  }
+
+  private async loginWithToken(tracker: AuthTracker): Promise<SessionHandle> {
+    const { url, kind, username, token, deviceUUID, navigatorIdentifier } =
+      this.secret;
+    const handle = createHandle();
+    const saving: Promise<void>[] = [];
+    const received = (next: RefreshInformation) => {
+      saving.push(this.keep(next).then(tracker.credentialReceived));
+    };
+    try {
+      const next = await loginToken(
+        handle,
+        { url, kind, username, token, deviceUUID, navigatorIdentifier },
+        {
+          onCredentialSent: tracker.credentialSent,
+          onAuthenticationSent: tracker.awaitingNewCredential,
+          // Enregistré avant `ParametresUtilisateur` : si cette requête échoue, la connexion
+          // suivante a quand même un jeton valable.
+          onTokenIssued: information => {
+            if (information.token) {
+              received(information);
+            }
+          },
+        }
+      );
+      if (next.token !== this.secret.token) {
+        received(next);
+      }
+    } finally {
+      // Même en échec : le jeton reçu en route doit être écrit avant d'aller plus loin.
+      await Promise.all(saving);
+    }
     return handle;
   }
 }

@@ -1,6 +1,7 @@
 // Le contrat d'un service. D'après `SchoolServicePlugin` et `Capabilities` de Papillon
 // (services/shared/types.ts, GPLv3) : https://github.com/PapillonApp/Papillon
 // Différence voulue : une capability n'existe que si ses méthodes sont fournies.
+import type { ServiceAuth } from "./auth";
 import type {
   Attachment,
   Attendance,
@@ -33,7 +34,12 @@ export interface CapabilityMethods {
     getGradesForPeriod(period: Period): Promise<PeriodGrades>;
   };
   NEWS: {
-    getNews(): Promise<News[]>;
+    /**
+     * Les actualités, avec leur contenu. `known` : celles déjà en base, par id. Un service qui
+     * n'envoie le contenu qu'à part (PRONOTE récent, une requête par actualité) reprend celui
+     * qu'il y trouve au lieu de le redemander.
+     */
+    getNews(known: ReadonlyMap<string, News>): Promise<News[]>;
     setNewsAsRead(id: string): Promise<void>;
     /** Envoie l'accusé de réception demandé, et marque l'actualité comme lue. */
     setNewsAsAcknowledged(id: string): Promise<void>;
@@ -67,12 +73,14 @@ export interface SchoolServicePlugin {
 
 /**
  * Connecte un service lié avec son secret (lu dans le trousseau) et renvoie le plugin prêt.
- * `saveSecret` enregistre le nouveau jeton quand le service le renouvelle.
+ * `saveSecret` enregistre le nouveau jeton quand le service le renouvelle ; chaque connexion
+ * passe par `auth`, qui retient la suivante après un échec.
  */
 export type ConnectService = (
   service: LinkedService,
   secret: string,
-  saveSecret: (secret: string) => Promise<void>
+  saveSecret: (secret: string) => Promise<void>,
+  auth: ServiceAuth
 ) => Promise<SchoolServicePlugin>;
 
 /**

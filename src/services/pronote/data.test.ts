@@ -5,8 +5,11 @@ import {
   AssignmentDifficulty,
   AssignmentReturnKind,
   AttachmentKind,
+  createSessionHandle,
   type Grade,
   GradeKind,
+  news,
+  newsDetails,
   type NewsInformation,
   type NewsQuestion,
   NewsQuestionKind,
@@ -16,10 +19,12 @@ import {
 } from "@blockshub/pawnote-lts";
 import { describe, expect, it, vi } from "vitest";
 
+import { ServiceAuth } from "../shared/auth";
 import { ServiceUnavailable } from "../shared/errors";
 import type { Course } from "../shared/models";
 import {
   capabilities,
+  newsWithContent,
   pickFile,
   pickNews,
   toCourse,
@@ -30,6 +35,11 @@ import {
 import { PronoteSession } from "./session";
 
 vi.mock("@/lib/http", () => ({}));
+vi.mock("@blockshub/pawnote-lts", async original => ({
+  ...(await original<typeof import("@blockshub/pawnote-lts")>()),
+  news: vi.fn(),
+  newsDetails: vi.fn(),
+}));
 
 const MATHS = { id: "s1", name: "MATHEMATIQUES", inGroups: false };
 const START = new Date(2026, 9, 26, 8);
@@ -316,6 +326,66 @@ describe("toNews", () => {
       expect(() => pickNews([other], KEY)).toThrow(ServiceUnavailable);
     });
   });
+
+  describe("newsWithContent", () => {
+    // Le format des versions récentes de PRONOTE : la liste arrive sans le contenu.
+    const summary: NewsInformation = {
+      ...information,
+      question: undefined,
+      content: "",
+      attachments: [],
+      needToAcknowledge: false,
+    };
+    const other: NewsInformation = { ...summary, id: "n9", title: "Réunion" };
+    const handle = createSessionHandle(vi.fn());
+
+    it("ne demande le contenu que des actualités pas encore en base", async () => {
+      vi.mocked(news).mockResolvedValue({
+        categories: [],
+        items: [summary, { ...other, read: true }],
+      });
+      vi.mocked(newsDetails).mockImplementation(async (_, item) => ({
+        ...item,
+        question: question({ content: "<p>Salle B12</p>" }),
+        content: "<p>Salle B12</p>",
+      }));
+      const list = await newsWithContent(
+        handle,
+        new Map([[KEY, toNews(information)]])
+      );
+
+      expect(newsDetails).toHaveBeenCalledOnce();
+      expect(newsDetails).toHaveBeenCalledWith(
+        handle,
+        expect.objectContaining({ title: "Réunion" })
+      );
+      // Le contenu vient de la base, le reste de la liste.
+      expect(list[0]).toMatchObject({
+        id: KEY,
+        content: "<p>Départ à 8h</p>",
+        needsAcknowledgement: true,
+        attachments: [{ name: "autorisation.pdf" }],
+        read: false,
+      });
+      expect(list[1]).toMatchObject({
+        title: "Réunion",
+        content: "<p>Salle B12</p>",
+        read: true,
+      });
+    });
+
+    it("ne demande rien quand PRONOTE envoie le contenu avec la liste", async () => {
+      vi.mocked(newsDetails).mockClear();
+      vi.mocked(news).mockResolvedValue({
+        categories: [],
+        items: [information],
+      });
+      expect(await newsWithContent(handle, new Map())).toMatchObject([
+        { content: "<p>Départ à 8h</p>" },
+      ]);
+      expect(newsDetails).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("pickFile", () => {
@@ -407,7 +477,12 @@ describe("capabilities", () => {
       deviceUUID: "appareil",
       kind: AccountKind.STUDENT,
     },
-    async () => undefined
+    async () => undefined,
+    new ServiceAuth(
+      "pronote",
+      { step: null, failure: null },
+      async () => undefined
+    )
   );
 
   it("ne déclare que les onglets ouverts à l'élève", () => {
