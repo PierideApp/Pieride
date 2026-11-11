@@ -85,11 +85,15 @@ jobs:
           - name: Linux x64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            bundles: deb,rpm,appimage
+            # RPM refuse le « - » d'une préversion (0.1.0-beta.1) : remettre rpm pour une version stable
+            # bundles: deb,rpm,appimage
+            bundles: deb,appimage
           - name: Linux arm64
             os: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
-            bundles: deb,rpm,appimage
+            # RPM refuse le « - » d'une préversion (0.1.0-beta.1) : remettre rpm pour une version stable
+            # bundles: deb,rpm,appimage
+            bundles: deb,appimage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
