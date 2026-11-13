@@ -6,6 +6,7 @@ import {
   RateLimitedError,
   SecurityError,
   SessionExpiredError,
+  type SessionHandle,
   SuspendedIPError,
   UnreachableError,
 } from "@blockshub/pawnote-lts";
@@ -36,6 +37,7 @@ vi.mock("@/lib/devlog", () => ({ devExchange: vi.fn(), devResult: vi.fn() }));
 vi.mock("@blockshub/pawnote-lts", async original => ({
   ...(await original<typeof import("@blockshub/pawnote-lts")>()),
   createSessionHandle: vi.fn(() => ({
+    information: { order: 0 },
     user: { authorizations: { tabs: [] } },
   })),
   loginToken: vi.fn(),
@@ -199,6 +201,40 @@ describe("PronoteSession", () => {
     await expect(pronote.run(request)).resolves.toBe("notes");
     expect(login).toHaveBeenCalledTimes(2);
     expect(devResult).toHaveBeenCalledWith("pronote", "notes");
+  });
+
+  it("se reconnecte après une requête restée sans réponse", async () => {
+    const pronote = session();
+    // Comme pawnote : le numéro avance à l'envoi, puis le fetcher échoue avant la réponse.
+    const lost = vi.fn(async (handle: SessionHandle) => {
+      handle.information.order++;
+      throw new ServiceUnavailable("Pas de réponse du serveur");
+    });
+    await expect(pronote.run(lost)).rejects.toThrow(ServiceUnavailable);
+    await expect(pronote.run(async () => "notes")).resolves.toBe("notes");
+    expect(login).toHaveBeenCalledTimes(2);
+  });
+
+  it("se reconnecte aussi quand la requête aboutit malgré un échange perdu", async () => {
+    const pronote = session();
+    // Les actualités se passent d'un contenu resté sans réponse.
+    await pronote.run(async (handle: SessionHandle) => {
+      handle.information.order++;
+      return "actualités";
+    });
+    await pronote.run(async () => "carnet");
+    expect(login).toHaveBeenCalledTimes(2);
+  });
+
+  it("garde la session quand PRONOTE a répondu, même par une erreur", async () => {
+    const pronote = session();
+    const answered = vi.fn(async (handle: SessionHandle) => {
+      handle.information.order += 2;
+      throw new ServiceUnavailable("Actualité introuvable chez PRONOTE");
+    });
+    await expect(pronote.run(answered)).rejects.toThrow(ServiceUnavailable);
+    await pronote.run(async () => "notes");
+    expect(login).toHaveBeenCalledOnce();
   });
 
   it("n'envoie plus de requête après une suspension de l'adresse IP", async () => {

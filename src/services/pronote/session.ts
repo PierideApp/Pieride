@@ -178,6 +178,14 @@ export function classifyPronoteError(error: unknown): AuthFailure | undefined {
   return undefined;
 }
 
+/**
+ * Vrai si une requête de cette session est partie sans réponse (délai dépassé, connexion
+ * coupée). pawnote numérote chaque échange : +1 à l'envoi, +1 à la réponse. Le numéro reste
+ * alors impair, PRONOTE ne l'attend plus et refuserait toute la suite de la session.
+ */
+export const lostExchange = (handle: SessionHandle) =>
+  handle.information.order % 2 === 1;
+
 /** Les pannes passagères, qu'on peut retenter sans risque pour le jeton. */
 const isSafeToRetry = (error: unknown) =>
   error instanceof UnreachableError ||
@@ -246,6 +254,11 @@ export class PronoteSession {
         this.auth.reportSuspended();
       }
       throw error;
+    } finally {
+      // Même quand la requête aboutit : les actualités se passent d'un contenu perdu en route.
+      if (this.current?.handle === handle && lostExchange(handle)) {
+        this.current = null;
+      }
     }
   }
 
