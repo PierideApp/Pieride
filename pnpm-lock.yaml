@@ -163,8 +163,8 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@blockshub/pawnote-lts@1.6.4': a93fa9ef1f9727c5749ab3066c7e9ecfccfd4a00d1704d91972e4c956513bb07
   '@blockshub/blocksdirecte@0.0.9-alpha': 12bd2cf75dcc427857138322717be8e61bb5e328c0be492e8f0036e4764f2206
+  '@blockshub/pawnote-lts@1.6.4': d152916fef4920163bf8ad4b7eab29bfe0be59c06f06990a690101c7df351d3d
 
 importers:
 
@@ -2925,7 +2925,7 @@ snapshots:
 
   '@blockshub/blocksdirecte@0.0.9-alpha(patch_hash=12bd2cf75dcc427857138322717be8e61bb5e328c0be492e8f0036e4764f2206)': {}
 
-  '@blockshub/pawnote-lts@1.6.4(patch_hash=a93fa9ef1f9727c5749ab3066c7e9ecfccfd4a00d1704d91972e4c956513bb07)':
+  '@blockshub/pawnote-lts@1.6.4(patch_hash=d152916fef4920163bf8ad4b7eab29bfe0be59c06f06990a690101c7df351d3d)':
     dependencies:
       '@literate.ink/utilities': 1.0.0-10641118381.1
       html-entities: 2.6.0
