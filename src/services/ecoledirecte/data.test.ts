@@ -194,7 +194,7 @@ describe("ÉcoleDirecte NEWS", () => {
     } as unknown as EcoledirecteSession;
     const news = ecoledirecteCapabilities(session).NEWS;
 
-    await expect(news!.getNews()).resolves.toMatchObject([
+    await expect(news!.getNews(new Map())).resolves.toMatchObject([
       {
         id: "post-42",
         content: '<p>Affiche</p><img src="data:image/png;base64,iVBORw0KGgo=">',
