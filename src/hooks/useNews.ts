@@ -27,9 +27,11 @@ export async function loadNews(accountId: string): Promise<NewsView[]> {
   return rows.map(({ item, service }) => ({
     ...item,
     title: item.title ?? undefined,
+    category: item.category ?? undefined,
     // Décode aussi les anciennes lignes enregistrées avant le correctif Base64.
     content: newsContentToText(item.content),
     htmlContent: newsContentToHtml(item.content),
+
     service,
   }));
 }

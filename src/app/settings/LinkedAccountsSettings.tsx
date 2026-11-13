@@ -54,7 +54,11 @@ function ServiceList({
             title={SERVICE_NAMES[service.kind]}
             text={
               service.needsLogin
-                ? t("settings.linked.needsLogin")
+                ? t(
+                    service.credentialLost
+                      ? "settings.linked.credentialLost"
+                      : "settings.linked.needsLogin"
+                  )
                 : `${owner.firstName} ${owner.lastName}`
             }
           >

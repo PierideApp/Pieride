@@ -5,18 +5,41 @@ import {
   AssignmentDifficulty,
   AssignmentReturnKind,
   AttachmentKind,
+  createSessionHandle,
   type Grade,
   GradeKind,
+  news,
+  newsDetails,
+  type NewsInformation,
+  type NewsQuestion,
+  NewsQuestionKind,
+  type NewsSurvey,
   TabLocation,
   type TimetableClassLesson,
 } from "@blockshub/pawnote-lts";
 import { describe, expect, it, vi } from "vitest";
 
+import { ServiceAuth } from "../shared/auth";
+import { ServiceUnavailable } from "../shared/errors";
 import type { Course } from "../shared/models";
-import { capabilities, toCourse, toGrade, toHomework } from "./data";
+import {
+  capabilities,
+  newsWithContent,
+  pickFile,
+  pickNews,
+  toCourse,
+  toGrade,
+  toHomework,
+  toNews,
+} from "./data";
 import { PronoteSession } from "./session";
 
 vi.mock("@/lib/http", () => ({}));
+vi.mock("@blockshub/pawnote-lts", async original => ({
+  ...(await original<typeof import("@blockshub/pawnote-lts")>()),
+  news: vi.fn(),
+  newsDetails: vi.fn(),
+}));
 
 const MATHS = { id: "s1", name: "MATHEMATIQUES", inGroups: false };
 const START = new Date(2026, 9, 26, 8);
@@ -167,7 +190,7 @@ describe("toHomework", () => {
       themes: [],
       return: { kind: AssignmentReturnKind.None, canUpload: false },
     };
-    expect(toHomework(assignment)).toEqual({
+    expect(toHomework(assignment, 9)).toEqual({
       id: "h1",
       subject: "MATHEMATIQUES",
       content: "<p>Exercices 12 à 15</p>",
@@ -179,9 +202,225 @@ describe("toHomework", () => {
           kind: "file",
           name: "sujet.pdf",
           url: "https://exemple.fr/f/sujet.pdf",
+          // Où redemander une adresse valable : les devoirs de la semaine 9.
+          ref: JSON.stringify({ source: "homework", week: 9, file: "f1" }),
         },
       ],
     });
+  });
+});
+
+describe("toNews", () => {
+  const CREATED = new Date(2026, 9, 13, 16, 42);
+  const item = {
+    id: "n1",
+    title: "Sortie au musée",
+    category: { id: "c1", name: "Histoire-géographie", default: false },
+    creationDate: CREATED,
+    startDate: new Date(2026, 9, 14),
+    endDate: new Date(2026, 10, 14),
+    author: "Mme Leroy",
+    public: null,
+    read: false,
+  };
+  const question = (changes: Partial<NewsQuestion>): NewsQuestion => ({
+    id: "q1",
+    position: 1,
+    kind: NewsQuestionKind.InformationText,
+    fullTitle: "",
+    title: "",
+    shouldRespectMaximumChoices: false,
+    maximumChoices: 0,
+    maximumLength: 0,
+    attachments: [],
+    content: "",
+    answerID: "r1",
+    shouldAnswer: false,
+    choices: [],
+    answered: false,
+    ...changes,
+  });
+  const PDF = {
+    kind: AttachmentKind.File,
+    name: "autorisation.pdf",
+    url: "https://exemple.fr/f/autorisation.pdf?Session=1234",
+    id: "f1",
+  };
+
+  const KEY = `${CREATED.getTime()}|Mme Leroy|Sortie au musée`;
+  const information: NewsInformation = {
+    ...item,
+    is: "information",
+    question: question({ content: "<p>Départ à 8h</p>", shouldAnswer: true }),
+    content: "<p>Départ à 8h</p>",
+    attachments: [PDF],
+    acknowledged: false,
+    acknowledgedDate: undefined,
+    needToAcknowledge: true,
+  };
+
+  it("reprend une information, sa rubrique, sa date de création et l'accusé demandé", () => {
+    expect(toNews(information)).toEqual({
+      id: KEY,
+      kind: "information",
+      title: "Sortie au musée",
+      category: "Histoire-géographie",
+      author: "Mme Leroy",
+      date: CREATED,
+      content: "<p>Départ à 8h</p>",
+      read: false,
+      needsAcknowledgement: true,
+      acknowledged: false,
+      attachments: [
+        {
+          kind: "file",
+          name: "autorisation.pdf",
+          url: "https://exemple.fr/f/autorisation.pdf",
+          ref: JSON.stringify({ source: "news", news: KEY, file: "f1" }),
+        },
+      ],
+    });
+  });
+
+  it("garde le même id d'une session à l'autre, pas d'une actualité à l'autre", () => {
+    // Une autre session : PRONOTE renvoie la même actualité avec un autre id.
+    expect(toNews({ ...information, id: "n2" }).id).toBe(KEY);
+    expect(toNews({ ...information, title: "Sortie au cinéma" }).id).not.toBe(
+      KEY
+    );
+    expect(toNews({ ...information, author: "M. Martin" }).id).not.toBe(KEY);
+    expect(
+      toNews({ ...information, creationDate: new Date(2026, 9, 20) }).id
+    ).not.toBe(KEY);
+  });
+
+  it("garde un sondage : le texte et les pièces jointes de ses questions", () => {
+    const survey: NewsSurvey = {
+      ...item,
+      is: "survey",
+      isAnonymous: false,
+      questions: [
+        question({ content: "<p>Viendras-tu ?</p>", attachments: [PDF] }),
+        question({ id: "q2", content: "<p>Avec qui ?</p>" }),
+      ],
+    };
+    expect(toNews(survey)).toMatchObject({
+      kind: "survey",
+      content: "<p>Viendras-tu ?</p><p>Avec qui ?</p>",
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: [{ kind: "file", name: "autorisation.pdf" }],
+    });
+  });
+
+  describe("pickNews", () => {
+    // Une nouvelle session : les mêmes actualités, avec d'autres id.
+    const other = { ...information, id: "n7", title: "Réunion" };
+
+    it("retrouve l'actualité synchronisée dans une nouvelle session", () => {
+      const session = [other, { ...information, id: "n8" }];
+      expect(pickNews(session, KEY).id).toBe("n8");
+    });
+
+    it("refuse une actualité disparue au lieu de ne rien faire", () => {
+      expect(() => pickNews([other], KEY)).toThrow(ServiceUnavailable);
+    });
+  });
+
+  describe("newsWithContent", () => {
+    // Le format des versions récentes de PRONOTE : la liste arrive sans le contenu.
+    const summary: NewsInformation = {
+      ...information,
+      question: undefined,
+      content: "",
+      attachments: [],
+      needToAcknowledge: false,
+    };
+    const other: NewsInformation = { ...summary, id: "n9", title: "Réunion" };
+    const handle = createSessionHandle(vi.fn());
+
+    it("ne demande le contenu que des actualités pas encore en base", async () => {
+      vi.mocked(news).mockResolvedValue({
+        categories: [],
+        items: [summary, { ...other, read: true }],
+      });
+      vi.mocked(newsDetails).mockImplementation(async (_, item) => ({
+        ...item,
+        question: question({ content: "<p>Salle B12</p>" }),
+        content: "<p>Salle B12</p>",
+      }));
+      const list = await newsWithContent(
+        handle,
+        new Map([[KEY, toNews(information)]])
+      );
+
+      expect(newsDetails).toHaveBeenCalledOnce();
+      expect(newsDetails).toHaveBeenCalledWith(
+        handle,
+        expect.objectContaining({ title: "Réunion" })
+      );
+      // Le contenu vient de la base, le reste de la liste.
+      expect(list[0]).toMatchObject({
+        id: KEY,
+        content: "<p>Départ à 8h</p>",
+        needsAcknowledgement: true,
+        attachments: [{ name: "autorisation.pdf" }],
+        read: false,
+      });
+      expect(list[1]).toMatchObject({
+        title: "Réunion",
+        content: "<p>Salle B12</p>",
+        read: true,
+      });
+    });
+
+    it("ne demande rien quand PRONOTE envoie le contenu avec la liste", async () => {
+      vi.mocked(newsDetails).mockClear();
+      vi.mocked(news).mockResolvedValue({
+        categories: [],
+        items: [information],
+      });
+      expect(await newsWithContent(handle, new Map())).toMatchObject([
+        { content: "<p>Départ à 8h</p>" },
+      ]);
+      expect(newsDetails).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe("pickFile", () => {
+  const file = (id: string, name: string) => ({
+    kind: AttachmentKind.File,
+    name,
+    url: `https://exemple.fr/f/${name}`,
+    id,
+  });
+  const files = [file("f8", "menu.pdf"), file("f9", "autorisation.pdf")];
+
+  it("prend le fichier par son id", () => {
+    expect(
+      pickFile(files, { source: "news", news: "k", file: "f8" }, "autre.pdf")
+    ).toBe(files[0]);
+  });
+
+  it("retombe sur le nom dans une actualité dont l'id a changé", () => {
+    expect(
+      pickFile(
+        files,
+        { source: "news", news: "k", file: "f1" },
+        "autorisation.pdf"
+      )
+    ).toBe(files[1]);
+  });
+
+  it("ne devine pas par le nom dans une semaine de devoirs", () => {
+    expect(
+      pickFile(
+        files,
+        { source: "homework", week: 9, file: "f1" },
+        "autorisation.pdf"
+      )
+    ).toBeUndefined();
   });
 });
 
@@ -238,7 +477,12 @@ describe("capabilities", () => {
       deviceUUID: "appareil",
       kind: AccountKind.STUDENT,
     },
-    async () => undefined
+    async () => undefined,
+    new ServiceAuth(
+      "pronote",
+      { step: null, failure: null },
+      async () => undefined
+    )
   );
 
   it("ne déclare que les onglets ouverts à l'élève", () => {

@@ -32,6 +32,8 @@ describe("migrate", () => {
       ["0002_moyennes"],
       ["0003_vie_scolaire"],
       ["0004_contenu_cours"],
+      ["0005_actualites"],
+      ["0006_connexion"],
     ]);
   });
 
@@ -67,7 +69,7 @@ describe("migrate", () => {
       .values({ id: "s1", accountId: "camille", kind: "pronote" });
     // Ce que drizzle-kit écrit pour modifier une colonne de `services`.
     const rebuild = `PRAGMA foreign_keys=OFF;
-      CREATE TABLE __new_services (id text PRIMARY KEY NOT NULL, account_id text NOT NULL REFERENCES accounts(id) ON DELETE cascade, kind text NOT NULL, instance_url text, needs_login integer DEFAULT false NOT NULL, created_at integer DEFAULT (unixepoch() * 1000) NOT NULL);
+      CREATE TABLE __new_services (id text PRIMARY KEY NOT NULL, account_id text NOT NULL REFERENCES accounts(id) ON DELETE cascade, kind text NOT NULL, instance_url text, needs_login integer DEFAULT false NOT NULL, created_at integer DEFAULT (unixepoch() * 1000) NOT NULL, auth_step text, auth_failure text);
       INSERT INTO __new_services SELECT * FROM services;
       DROP TABLE services;
       ALTER TABLE __new_services RENAME TO services;

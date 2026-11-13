@@ -15,6 +15,7 @@ import { accountManager } from "@/services";
 import type { SyncedCapability } from "@/services/account-manager";
 import {
   closeEntLogin,
+  isSameStudent,
   loadPhoto,
   loginDemo,
   loginWithEnt,
@@ -22,12 +23,14 @@ import {
   type PronoteLogin,
   WrongPin,
 } from "@/services/pronote/login";
+import { DEMO_URL } from "@/services/pronote/session";
 import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
 import styles from "../onboarding.module.scss";
-import { errorKey } from "./errors";
+import { DemoStep } from "./DemoStep";
+import { AlreadyLinked, errorKey } from "./errors";
 import pronote from "./pronote.module.scss";
 
 /** Un service à reconnecter (Paramètres > Comptes liés). */
@@ -91,6 +94,15 @@ export function ConnectStep({
     if (relink) {
       await accountManager.relinkService(relink.serviceId, secret);
     } else {
+      if (
+        await accountManager.findLinkedAccount(
+          "pronote",
+          login.secret.url,
+          isSameStudent(login)
+        )
+      ) {
+        throw new AlreadyLinked();
+      }
       const avatar = login.photoUrl && (await loadPhoto(login.photoUrl));
       await accountManager.addAccount({
         id: accountId,
@@ -151,7 +163,10 @@ export function ConnectStep({
     }
   };
 
+  // Au clic seulement : lancée par un effet, elle repartait à chaque fois que l'étape se
+  // fermait, et chaque connexion créait un compte de plus.
   const loginWithDemo = async () => {
+    setError(null);
     setPhase({ id: "syncing", done: 0 });
     try {
       const result = await loginDemo();
@@ -160,15 +175,6 @@ export function ConnectStep({
       fail(failure);
     }
   };
-
-  useEffect(
-    () => () => {
-      if (school.url === "https://demo.index-education.net/pronote") {
-        loginWithDemo();
-      }
-    },
-    []
-  );
 
   const confirmPin = async (finish: (pin: string) => Promise<PronoteLogin>) => {
     setError(null);
@@ -273,6 +279,15 @@ export function ConnectStep({
             </Button>
           </footer>
         </form>
+      </>
+    );
+  }
+
+  if (school.url === DEMO_URL) {
+    return (
+      <>
+        <BackButton onClick={onBack} />
+        <DemoStep onNext={() => void loginWithDemo()} message={message} />
       </>
     );
   }

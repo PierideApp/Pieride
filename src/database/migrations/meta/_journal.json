@@ -36,6 +36,20 @@
       "when": 1793373234539,
       "tag": "0004_contenu_cours",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794017708378,
+      "tag": "0005_actualites",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794257046274,
+      "tag": "0006_connexion",
+      "breakpoints": true
     }
   ]
 }

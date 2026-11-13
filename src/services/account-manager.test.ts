@@ -15,6 +15,7 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
+import { forgetFiles, openFile } from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { addDays } from "@/lib/week";
@@ -24,9 +25,13 @@ import {
   MANUAL_SYNC_INTERVAL,
   SYNC_INTERVAL,
 } from "./account-manager";
-import { AuthenticationError, ServiceUnavailable } from "./shared/errors";
-import type { Course } from "./shared/models";
-import type { CapabilityMethods, SchoolServicePlugin } from "./shared/plugin";
+import {
+  AuthenticationError,
+  ServiceUnavailable,
+  UnsupportedService,
+} from "./shared/errors";
+import type { Attachment, Course, News } from "./shared/models";
+import type { CapabilityMethods, ConnectService } from "./shared/plugin";
 
 const secrets = vi.hoisted(() => new Map<string, string>());
 vi.mock("@/lib/keyring", () => ({
@@ -37,6 +42,10 @@ vi.mock("@/lib/keyring", () => ({
   deleteSecret: vi.fn(async (id: string) => void secrets.delete(id)),
 }));
 vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
+vi.mock("@/lib/files", () => ({
+  openFile: vi.fn(async () => undefined),
+  forgetFiles: vi.fn(async () => undefined),
+}));
 
 // Lundi 26 octobre 2026, 10 h : la semaine va du 26 au 2 novembre.
 const NOW = new Date(2026, 9, 26, 10);
@@ -50,7 +59,7 @@ function course(id: string, from: Date): Course {
 
 let timetable: CapabilityMethods["TIMETABLE"]["getWeeklyTimetable"];
 let gradesPeriods: CapabilityMethods["GRADES"]["getGradesPeriods"];
-const connect = vi.fn(async (): Promise<SchoolServicePlugin> => ({
+const connect = vi.fn<ConnectService>(async () => ({
   kind: "pronote",
   capabilities: {
     TIMETABLE: { getWeeklyTimetable: weekStart => timetable(weekStart) },
@@ -106,7 +115,7 @@ async function setup() {
 
 beforeEach(() => {
   secrets.clear();
-  connect.mockClear();
+  connect.mockReset();
   vi.mocked(allowInstance).mockClear();
   timetable = async () => [
     course("lundi", at(26, 8)),
@@ -180,6 +189,36 @@ describe("AccountManager", () => {
     const [state] = await db.select().from(syncState);
     expect(state?.lastError).toBe("AuthenticationError");
     expect(connect).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne renvoie un jeton refusé qu'après Ctrl R ou la reconnexion", async () => {
+    const { db, manager } = await setup();
+    const sent = vi.fn(async () => {
+      throw new AuthenticationError("refusé");
+    });
+    connect.mockImplementation(async (_service, _secret, _save, auth) =>
+      auth.login({ rotatesCredential: true }, sent)
+    );
+    // Une synchro demande cinq données, la suivante autant : un seul envoi.
+    await manager.refreshAll("camille", NOW);
+    await manager.refreshAll("camille", LATER);
+    expect(sent).toHaveBeenCalledOnce();
+    const [service] = await db.select().from(services);
+    expect(service).toMatchObject({
+      needsLogin: true,
+      authStep: "failed",
+      authFailure: "credential_rejected",
+    });
+
+    manager.allowAuthRetries();
+    await manager.refreshAll("camille", LATER);
+    expect(sent).toHaveBeenCalledTimes(2);
+
+    await manager.relinkService("pronote-1", "nouveau-jeton");
+    const [relinked] = await db.select().from(services);
+    expect(relinked).toMatchObject({ authStep: null, authFailure: null });
+    await manager.refresh("camille", "TIMETABLE", LATER);
+    expect(sent).toHaveBeenCalledTimes(3);
   });
 
   it("ne redemande pas une donnée synchronisée il y a moins de 30 minutes", async () => {
@@ -283,6 +322,26 @@ describe("AccountManager", () => {
     expect(secrets.get("pronote-1")).toBe("nouveau-jeton");
   });
 
+  it("retrouve le compte d'un service déjà lié : même adresse, même secret", async () => {
+    const { manager } = await setup();
+    const url = "https://0000000a.index-education.net/pronote/";
+    const same = (secret: string) => secret === "jeton";
+
+    expect(await manager.findLinkedAccount("pronote", url, same)).toBe(
+      "camille"
+    );
+    expect(
+      await manager.findLinkedAccount("pronote", url, () => false)
+    ).toBeUndefined();
+    expect(
+      await manager.findLinkedAccount(
+        "pronote",
+        "https://0000000b.index-education.net/pronote/",
+        same
+      )
+    ).toBeUndefined();
+  });
+
   it("coche un devoir chez le service, puis dans la base", async () => {
     const { db, manager } = await setup();
     const setCompletion = vi.fn(async (id: string, done: boolean) => {
@@ -342,13 +401,17 @@ describe("AccountManager", () => {
           getNews: async () => [
             {
               id: "n1",
+              kind: "information",
               author: "Direction",
               date: at(20, 8),
               content: "<p>Bonjour</p>",
               read: false,
+              needsAcknowledgement: false,
+              acknowledged: false,
               attachments: [],
             },
           ],
+          setNewsAsRead: async () => undefined,
           setNewsAsAcknowledged: async () => undefined,
         },
         ATTENDANCE: {
@@ -371,6 +434,39 @@ describe("AccountManager", () => {
     expect(
       (await db.select().from(attendance)).map(item => item.kind).sort()
     ).toEqual(["absence", "delay"]);
+  });
+
+  it("passe au service les actualités déjà en base, pour garder leur contenu", async () => {
+    const { manager } = await setup();
+    const item: News = {
+      id: "n1",
+      kind: "information",
+      author: "Direction",
+      date: at(20, 8),
+      content: "<p>Bonjour</p>",
+      read: false,
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments: [],
+    };
+    const getNews = vi.fn<CapabilityMethods["NEWS"]["getNews"]>(async () => [
+      item,
+    ]);
+    connect.mockImplementation(async () => ({
+      kind: "pronote",
+      capabilities: {
+        NEWS: {
+          getNews,
+          setNewsAsRead: async () => undefined,
+          setNewsAsAcknowledged: async () => undefined,
+        },
+      },
+    }));
+    await manager.refresh("camille", "NEWS", NOW);
+    await manager.refresh("camille", "NEWS", LATER);
+
+    expect(getNews.mock.calls[0]?.[0]).toEqual(new Map());
+    expect(getNews.mock.calls[1]?.[0]).toEqual(new Map([["n1", item]]));
   });
 
   it("ignore un service qui ne fournit pas la capability", async () => {
@@ -416,6 +512,44 @@ describe("AccountManager", () => {
     expect(secrets.size).toBe(0);
     expect(await db.select().from(services)).toEqual([]);
     expect(await db.select().from(courses)).toEqual([]);
+    // Les pièces jointes déjà ouvertes aussi.
+    expect(forgetFiles).toHaveBeenCalledWith("pronote-1");
+  });
+
+  it("télécharge une pièce jointe chez le service, puis l'ouvre", async () => {
+    const { manager } = await setup();
+    const bytes = new Uint8Array([37, 80, 68, 70]);
+    const downloadAttachment = vi.fn(async () => bytes);
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+      downloadAttachment,
+    }));
+    const attachment: Attachment = {
+      kind: "file",
+      name: "sujet.pdf",
+      url: "https://exemple.fr/f/sujet.pdf",
+      ref: "r1",
+    };
+
+    await manager.openAttachment("pronote-1", attachment);
+    expect(downloadAttachment).toHaveBeenCalledWith(attachment);
+    expect(openFile).toHaveBeenCalledWith("pronote-1", "sujet.pdf", bytes);
+  });
+
+  it("refuse d'ouvrir la pièce jointe d'un service qui ne la donne pas", async () => {
+    const { manager } = await setup();
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+    }));
+    await expect(
+      manager.openAttachment("pronote-1", {
+        kind: "file",
+        name: "sujet.pdf",
+        url: "https://exemple.fr/f/sujet.pdf",
+      })
+    ).rejects.toBeInstanceOf(UnsupportedService);
   });
 
   it("ne garde pas de service si le trousseau refuse le secret", async () => {

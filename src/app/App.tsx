@@ -1,5 +1,6 @@
 import "@/styles/theme.scss";
 
+import { useLayoutEffect } from "react";
 import { HashRouter } from "react-router";
 
 import { Layout } from "@/app/layout/Layout";
@@ -10,6 +11,10 @@ import { useTheme } from "@/hooks/useTheme";
 export default function App() {
   useTheme();
   const accounts = useAccounts();
+
+  useLayoutEffect(() => {
+    window.appIsReady();
+  }, []);
 
   // Quelques millisecondes : sans ça, le cadre s'afficherait un instant avant le premier lancement.
   if (accounts.status === "loading") {

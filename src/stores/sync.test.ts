@@ -4,8 +4,13 @@ import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 
 import { useSyncStore } from "./sync";
 
-const { refreshAll } = vi.hoisted(() => ({ refreshAll: vi.fn() }));
-vi.mock("@/services", () => ({ accountManager: { refreshAll } }));
+const { refreshAll, allowAuthRetries } = vi.hoisted(() => ({
+  refreshAll: vi.fn(),
+  allowAuthRetries: vi.fn(),
+}));
+vi.mock("@/services", () => ({
+  accountManager: { refreshAll, allowAuthRetries },
+}));
 
 const settled = () =>
   vi.waitFor(() => expect(useSyncStore.getState().syncing).toBe(false));
@@ -19,6 +24,8 @@ describe("syncNow", () => {
     syncNow("camille", MANUAL_SYNC_INTERVAL - 1);
     expect(useSyncStore.getState().refusedAt).toBe(MANUAL_SYNC_INTERVAL - 1);
     expect(refreshAll).toHaveBeenCalledOnce();
+    // Un `Ctrl R` accepté lève l'attente des connexions, un refusé non.
+    expect(allowAuthRetries).toHaveBeenCalledOnce();
     syncNow("camille", MANUAL_SYNC_INTERVAL);
     await settled();
     expect(refreshAll).toHaveBeenCalledTimes(2);

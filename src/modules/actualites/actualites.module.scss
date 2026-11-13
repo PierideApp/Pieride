@@ -168,6 +168,11 @@
   line-height: 34px;
 }
 
+// « Ce sondage se remplit sur PRONOTE », entre le titre et le texte.
+.survey {
+  margin-bottom: 20px;
+}
+
 .readerBody p {
   margin: 0 0 var(--space-3);
   font-size: 15px;
@@ -175,7 +180,7 @@
 
   [data-large] & {
     font-size: 17px;
-    line-height: 28px;
+line-height: 28px;
   }
 }
 
@@ -201,36 +206,15 @@
   margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
+}
 
-  li {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    width: min(340px, 100%);
-    min-height: 64px;
-    padding: 0 14px;
-    border: 1px solid var(--color-border);
-    border-radius: 14px;
-    background: var(--color-bg);
-  }
+// Accusé de réception, après le texte et les pièces jointes : on lit d'abord.
+.acknowledgement {
+  width: min(480px, 100%);
+  margin-top: var(--space-5);
 
-  span:last-child {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  strong {
-    overflow: hidden;
-    font-size: 13.5px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  small {
-    font-size: 12px;
-    color: var(--color-text-3);
+  button {
+    margin-top: var(--space-3);
   }
 }
 

@@ -1,6 +1,5 @@
 // Notes de version : un fichier Markdown par version dans `.github/changelog/`,
-// lu au build. Une nouvelle version = un nouveau fichier, sans code à toucher. Le dossier
-// n'existe pas encore : il arrivera avec la première version publiée.
+// lu au build. Une nouvelle version = un nouveau fichier, sans code à toucher.
 // Repris du site de StewardPad (même auteur).
 //
 // Format : `0.2.0.md` en français (la référence), `en/0.2.0.md` pour sa traduction.

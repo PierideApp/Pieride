@@ -18,11 +18,13 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
+import { forgetFiles, openFile } from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
 import { addDays, weekStart } from "@/lib/week";
 
+import { ServiceAuth } from "./shared/auth";
 import {
   AuthenticationError,
   SecurityChallenge,
@@ -31,8 +33,10 @@ import {
 } from "./shared/errors";
 import type {
   Account,
+  Attachment,
   Attendance,
   LinkedService,
+  News,
   ServiceKind,
 } from "./shared/models";
 import {
@@ -97,6 +101,8 @@ async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
 
 export class AccountManager {
   private readonly plugins = new Map<string, Promise<SchoolServicePlugin>>();
+  /** La connexion de chaque service pendant ce lancement : elle survit aux plugins refaits. */
+  private readonly auth = new Map<string, ServiceAuth>();
   /** Semaines chargées par `loadWeek` pendant la session, par service et par lundi. */
   private readonly weeks = new Map<string, Promise<boolean>>();
   /** Les adresses rouvertes par `start` : une connexion les attend. */
@@ -122,6 +128,30 @@ export class AccountManager {
         )
       );
     await this.started;
+  }
+
+  /**
+   * Le compte où ce service est déjà lié (même service, même adresse, et un secret que
+   * `same` reconnaît), pour ne pas ajouter deux fois le même élève.
+   */
+  async findLinkedAccount(
+    kind: ServiceKind,
+    instanceUrl: string,
+    same: (secret: string) => boolean
+  ): Promise<string | undefined> {
+    const linked = await this.db
+      .select({ id: services.id, accountId: services.accountId })
+      .from(services)
+      .where(
+        and(eq(services.kind, kind), eq(services.instanceUrl, instanceUrl))
+      );
+    for (const { id, accountId } of linked) {
+      const secret = await getSecret(id);
+      if (secret !== null && same(secret)) {
+        return accountId;
+      }
+    }
+    return undefined;
   }
 
   async addAccount(account: Account): Promise<void> {
@@ -175,10 +205,21 @@ export class AccountManager {
   async relinkService(serviceId: string, secret: string): Promise<void> {
     await setSecret(serviceId, secret);
     this.plugins.delete(serviceId);
+    this.auth.delete(serviceId);
     await this.db
       .update(services)
-      .set({ needsLogin: false })
+      .set({ needsLogin: false, authStep: null, authFailure: null })
       .where(eq(services.id, serviceId));
+  }
+
+  /**
+   * `Ctrl R` : l'utilisateur redemande tout de suite. Lève l'attente après un échec et le refus
+   * d'un jeton, pas une suspension de l'adresse IP.
+   */
+  allowAuthRetries(): void {
+    for (const auth of this.auth.values()) {
+      auth.allowRetry();
+    }
   }
 
   /**
@@ -195,9 +236,20 @@ export class AccountManager {
     );
     for (const { id } of linked) {
       this.plugins.delete(id);
+      this.auth.delete(id);
     }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
+    await Promise.all(linked.map(({ id }) => this.forgetFiles(id)));
     return failed;
+  }
+
+  /** Les fichiers ouverts d'un service : un échec n'empêche rien, le lancement les efface. */
+  private async forgetFiles(serviceId: string): Promise<void> {
+    try {
+      await forgetFiles(serviceId);
+    } catch (error) {
+      log("warn", "fichiers", `Pièces jointes non effacées : ${String(error)}`);
+    }
   }
 
   /**
@@ -261,7 +313,9 @@ export class AccountManager {
       await deleteSecret(serviceId);
     }
     this.plugins.delete(serviceId);
+    this.auth.delete(serviceId);
     await this.db.delete(services).where(eq(services.id, serviceId));
+    await this.forgetFiles(serviceId);
   }
 
   async refreshAll(
@@ -403,20 +457,64 @@ export class AccountManager {
       .where(and(eq(homework.serviceId, serviceId), eq(homework.id, id)));
   }
 
-  /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
-  async markNewsRead(serviceId: string, id: string): Promise<void> {
+  private async newsMethods(
+    serviceId: string
+  ): Promise<CapabilityMethods["NEWS"] | undefined> {
     const [service] = await this.db
       .select()
       .from(services)
       .where(eq(services.id, serviceId));
-    const methods = service && (await this.plugin(service)).capabilities.NEWS;
+    return service && (await this.plugin(service)).capabilities.NEWS;
+  }
+
+  /**
+   * Télécharge une pièce jointe avec une adresse à jour (celle du service expire), puis
+   * l'ouvre avec l'app du système. Hors ligne ou en panne, l'erreur remonte à l'écran.
+   */
+  async openAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<void> {
+    const [service] = await this.db
+      .select()
+      .from(services)
+      .where(eq(services.id, serviceId));
+    const plugin = service && (await this.plugin(service));
+    if (!plugin?.downloadAttachment) {
+      throw new UnsupportedService(
+        "Ce service ne donne pas ses pièces jointes"
+      );
+    }
+    const bytes = await plugin.downloadAttachment(attachment);
+    await openFile(serviceId, attachment.name, bytes);
+  }
+
+  /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
+  async markNewsRead(serviceId: string, id: string): Promise<void> {
+    const methods = await this.newsMethods(serviceId);
     if (!methods) {
       return;
+    }
+    await methods.setNewsAsRead(id);
+    await this.db
+      .update(news)
+      .set({ read: true })
+      .where(and(eq(news.serviceId, serviceId), eq(news.id, id)));
+  }
+
+  /**
+   * Envoie l'accusé de réception demandé par l'établissement : chez le service d'abord, puis
+   * dans la base. Hors ligne ou en panne, rien ne change et l'erreur remonte à l'écran.
+   */
+  async acknowledgeNews(serviceId: string, id: string): Promise<void> {
+    const methods = await this.newsMethods(serviceId);
+    if (!methods) {
+      throw new UnsupportedService("Ce service ne gère pas les actualités");
     }
     await methods.setNewsAsAcknowledged(id);
     await this.db
       .update(news)
-      .set({ read: true })
+      .set({ read: true, acknowledged: true })
       .where(and(eq(news.serviceId, serviceId), eq(news.id, id)));
   }
 
@@ -550,8 +648,28 @@ export class AccountManager {
         instanceUrl: service.instanceUrl ?? undefined,
       },
       secret,
-      newSecret => setSecret(service.id, newSecret)
+      newSecret => setSecret(service.id, newSecret),
+      this.authOf(service)
     );
+  }
+
+  /** Créée au premier usage du lancement, avec l'étape et l'échec laissés en base. */
+  private authOf(service: ServiceRow): ServiceAuth {
+    let auth = this.auth.get(service.id);
+    if (!auth) {
+      auth = new ServiceAuth(
+        service.kind,
+        { step: service.authStep, failure: service.authFailure },
+        async ({ step, failure }) => {
+          await this.db
+            .update(services)
+            .set({ authStep: step, authFailure: failure })
+            .where(eq(services.id, service.id));
+        }
+      );
+      this.auth.set(service.id, auth);
+    }
+    return auth;
   }
 
   /** Les écritures à faire, ou `null` si le service ne fournit pas cette capability. */
@@ -725,18 +843,21 @@ export class AccountManager {
     serviceId: string,
     methods: CapabilityMethods["NEWS"]
   ): Promise<Write[]> {
-    const previous = await this.db
-      .select({ id: news.id, read: news.read })
+    const rows = await this.db
+      .select()
       .from(news)
       .where(eq(news.serviceId, serviceId));
-    const previousRead = new Map(
-      previous.map(item => [item.id, item.read] as const)
+    const known = new Map(
+      rows.map(({ serviceId: _serviceId, ...row }): [string, News] => [
+        row.id,
+        {
+          ...row,
+          title: row.title ?? undefined,
+          category: row.category ?? undefined,
+        },
+      ])
     );
-    // Les services sans accusé de lecture distant gardent leur état local entre les synchros.
-    const list = uniqueById(await methods.getNews()).map(item => ({
-      ...item,
-      read: item.read || previousRead.get(item.id) === true,
-    }));
+    const list = uniqueById(await methods.getNews(known));
     return [
       this.db.delete(news).where(eq(news.serviceId, serviceId)),
       ...(list.length > 0

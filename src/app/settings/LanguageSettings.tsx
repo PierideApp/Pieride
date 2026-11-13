@@ -34,7 +34,10 @@ export function LanguageSettings() {
             type="radio"
             name="language"
             checked={id === language}
-            onChange={() => setPreference("language", id)}
+            onChange={() => {
+              setPreference("language", id);
+              localStorage.setItem("language", id);
+            }}
           />
         </SettingRow>
       ))}
