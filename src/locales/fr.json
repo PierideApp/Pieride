@@ -576,6 +576,17 @@
       "status": "Statut",
       "duration": "Durée",
       "noResponse": "échec",
+      "failures": {
+        "timeout": "délai dépassé",
+        "connect": "connexion impossible",
+        "redirect": "redirection refusée",
+        "body": "réponse coupée",
+        "network": "erreur réseau",
+        "url_not_allowed": "adresse non ouverte",
+        "invalid_url": "adresse invalide",
+        "invalid_method": "méthode refusée",
+        "invalid_header": "en-tête invalide"
+      },
       "log": "Journal",
       "copy": "Copier",
       "copied": "Copié",

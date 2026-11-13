@@ -576,6 +576,17 @@
       "status": "Status",
       "duration": "Duration",
       "noResponse": "failed",
+      "failures": {
+        "timeout": "timed out",
+        "connect": "connection failed",
+        "redirect": "redirect refused",
+        "body": "response cut off",
+        "network": "network error",
+        "url_not_allowed": "address not allowed",
+        "invalid_url": "invalid address",
+        "invalid_method": "method refused",
+        "invalid_header": "invalid header"
+      },
       "log": "Log",
       "copy": "Copy",
       "copied": "Copied",

@@ -144,7 +144,14 @@ export function DeveloperSettings(props: SettingsSectionProps) {
                         undefined
                       }
                     >
-                      {request.status ?? t("settings.developer.noResponse")}
+                      {request.status ??
+                        // Un code inconnu (erreur de Tauri) retombe sur « échec ».
+                        (request.failure
+                          ? t([
+                              `settings.developer.failures.${request.failure}`,
+                              "settings.developer.noResponse",
+                            ])
+                          : t("settings.developer.noResponse"))}
                     </td>
                     <td>{Math.round(request.duration)} ms</td>
                   </tr>
