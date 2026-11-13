@@ -13,6 +13,7 @@ import type {
   Course,
   Grade,
   Homework,
+  News,
   Period,
   PeriodGrades,
   SubjectAverage,
@@ -680,15 +681,17 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   };
 
   const news: CapabilityMethods["NEWS"] = {
-    getNews: () =>
-      session.run(async client => {
+    getNews: known =>
+      session.run<News[]>(async client => {
         const timeline = await client.timeline.getPublicTimeline();
         const events = await Promise.all(
           timeline.evenements.map(async event => {
             const date = parseDate(event.dateDebut);
+            const id = `event-${event.id}`;
             return date
               ? {
-                  id: `event-${event.id}`,
+                  id,
+                  kind: "information" as const,
                   title: event.libelle,
                   author: "Établissement",
                   date,
@@ -697,7 +700,9 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
                     event.description || ""
                   ),
                   // Le fil public ne fournit pas d'état de lecture : celui-ci est local.
-                  read: false,
+                  read: known.get(id)?.read ?? false,
+                  needsAcknowledgement: false,
+                  acknowledged: false,
                   attachments: [],
                 }
               : null;
@@ -706,9 +711,11 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
         const posts = await Promise.all(
           timeline.postits.map(async post => {
             const date = parseDate(post.dateCreation || post.dateDebut);
+            const id = `post-${post.id}`;
             return date
               ? {
-                  id: `post-${post.id}`,
+                  id,
+                  kind: "information" as const,
                   author:
                     [post.auteur.prenom, post.auteur.nom]
                       .filter(Boolean)
@@ -719,7 +726,9 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
                     post.contenu || ""
                   ),
                   // `type` indique la couleur du post-it, pas un titre ni son état de lecture.
-                  read: false,
+                  read: known.get(id)?.read ?? false,
+                  needsAcknowledgement: false,
+                  acknowledged: false,
                   attachments: [],
                 }
               : null;
@@ -729,6 +738,7 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
           .flatMap(item => (item ? [item] : []))
           .sort((left, right) => right.date.getTime() - left.date.getTime());
       }),
+    setNewsAsRead: async () => undefined,
     setNewsAsAcknowledged: async () => undefined,
   };
 
