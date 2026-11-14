@@ -21,7 +21,11 @@ import { SERVICE_GROUPS, SERVICE_NAMES } from "@/services/shared/plugin";
 import { removeAccount, useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
-import { AddAccountDialog, type AddAccountStart } from "./AddAccountDialog";
+import {
+  AddAccountDialog,
+  type AddAccountStart,
+  relinkOf,
+} from "./AddAccountDialog";
 import type { SettingsSectionProps } from "./Settings";
 import styles from "./settings.module.scss";
 
@@ -55,7 +59,7 @@ function ServiceList({
             text={
               service.needsLogin
                 ? t(
-                    service.credentialLost
+                    service.authFailure === "credential_lost"
                       ? "settings.linked.credentialLost"
                       : "settings.linked.needsLogin"
                   )
@@ -120,18 +124,7 @@ export function LinkedAccountsSettings({
               service => SERVICE_GROUPS[service.kind] === "school"
             );
             const needsLogin = school.some(service => service.needsLogin);
-            // Seul PRONOTE sait se reconnecter pour l'instant.
-            const refused = school.find(
-              service => service.needsLogin && service.kind === "pronote"
-            );
-            const relink: AddAccountStart | null = refused?.instanceUrl
-              ? {
-                  accountId: candidate.id,
-                  serviceId: refused.id,
-                  url: refused.instanceUrl,
-                  name: candidate.schoolName ?? SERVICE_NAMES.pronote,
-                }
-              : null;
+            const relink = relinkOf(candidate);
             return (
               <SettingRow
                 key={candidate.id}

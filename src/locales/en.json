@@ -67,6 +67,26 @@
     "maximize": "Maximize",
     "close": "Close"
   },
+  "reconnect": {
+    "action": "Sign in again",
+    "other": "{{name}} needs to sign in to {{service}} again",
+    "expired": {
+      "title": "Your {{service}} session has expired",
+      "text": "Your data is no longer updated"
+    },
+    "lost": {
+      "title": "The connection to {{service}} was cut",
+      "text": "Your session couldn't be renewed"
+    },
+    "disabled": {
+      "title": "{{service}} denies access to your account",
+      "text": "Contact your school"
+    },
+    "notification": {
+      "title": "Sign in to {{service}} again",
+      "body": "{{name}}'s data is no longer updated. Open Piéride to sign in again."
+    }
+  },
   "tray": {
     "open": "Open Piéride",
     "quit": "Quit",

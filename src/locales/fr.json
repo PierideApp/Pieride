@@ -67,6 +67,26 @@
     "maximize": "Agrandir",
     "close": "Fermer"
   },
+  "reconnect": {
+    "action": "Me reconnecter",
+    "other": "{{name}} doit se reconnecter à {{service}}",
+    "expired": {
+      "title": "Ta session {{service}} a expiré",
+      "text": "Tes données ne se mettent plus à jour"
+    },
+    "lost": {
+      "title": "La connexion à {{service}} a été coupée",
+      "text": "Ta session n'a pas pu être renouvelée"
+    },
+    "disabled": {
+      "title": "{{service}} refuse l'accès à ton compte",
+      "text": "Rapproche-toi de ton établissement"
+    },
+    "notification": {
+      "title": "Reconnexion à {{service}} nécessaire",
+      "body": "Les données de {{name}} ne se mettent plus à jour. Ouvre Piéride pour te reconnecter."
+    }
+  },
   "tray": {
     "open": "Ouvrir Piéride",
     "quit": "Quitter",

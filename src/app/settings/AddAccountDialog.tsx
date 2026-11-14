@@ -9,12 +9,29 @@ import { OfflineAccountStep } from "@/app/onboarding/OfflineAccountStep";
 import { PronoteFlow } from "@/app/onboarding/pronote";
 import type { Relink } from "@/app/onboarding/pronote/ConnectStep";
 import { ServiceStep } from "@/app/onboarding/ServiceStep";
+import type { AccountSummary } from "@/hooks/useAccounts";
 import { onOwnClose, useModalDialog } from "@/hooks/useModalDialog";
+import { SERVICE_NAMES } from "@/services/shared/plugin";
 
 import styles from "./settings.module.scss";
 
 /** Ce qu'ouvre la fenêtre : un service, un compte hors ligne, ou la reconnexion d'un service. */
 export type AddAccountStart = "service" | "offline" | Relink;
+
+/** La reconnexion du service PRONOTE refusé d'un compte, s'il en a un : seul PRONOTE sait la faire. */
+export function relinkOf(account: AccountSummary): Relink | null {
+  const refused = account.services.find(
+    service => service.needsLogin && service.kind === "pronote"
+  );
+  return refused?.instanceUrl
+    ? {
+        accountId: account.id,
+        serviceId: refused.id,
+        url: refused.instanceUrl,
+        name: account.schoolName ?? SERVICE_NAMES.pronote,
+      }
+    : null;
+}
 
 /** `start` : l'étape d'ouverture, `null` quand la fenêtre est fermée. */
 export function AddAccountDialog({

@@ -32,7 +32,9 @@ import { CommandPalette } from "./CommandPalette";
 import { DetailPanel } from "./DetailPanel";
 import styles from "./layout.module.scss";
 import { NotFound } from "./NotFound";
+import { ReconnectBanner } from "./ReconnectBanner";
 import { Sidebar } from "./Sidebar";
+import { useReconnectNotice } from "./useReconnectNotice";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 import { WindowControls } from "./WindowControls";
 
@@ -43,6 +45,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const closeDetail = useDetailStore(state => state.close);
   const { pathname } = useLocation();
   useAutoUpdate();
+  useReconnectNotice(accounts);
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
   const settingsAt = useSettingsDialog(state => state.openAt);
@@ -161,6 +164,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
             ))}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ReconnectBanner accounts={list} currentId={currentAccountId} />
         </div>
         <DetailPanel />
       </main>
