@@ -82,6 +82,8 @@ $RECYCLE.BIN/
 .Trash-*
 
 # Outils d'IA
+.agent/
+.agents/
 .claude/
 CLAUDE.md
 CLAUDE.local.md
