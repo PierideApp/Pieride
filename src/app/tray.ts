@@ -7,6 +7,7 @@ import { TrayIcon } from "@tauri-apps/api/tray";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import i18n from "@/lib/i18n";
+import { closeLogins } from "@/services/shared/auth";
 import { useSettingsStore } from "@/stores/settings";
 
 const TRAY_ID = "main";
@@ -22,6 +23,15 @@ let tray:
 
 /** Le dernier coup d'œil demandé, appliqué dès que l'icône existe. */
 let wanted: readonly [string, string] | null = null;
+
+/**
+ * Avant de quitter : la fenêtre disparaît tout de suite, l'app attend qu'une connexion en cours
+ * ait rangé le nouveau jeton (`closeLogins`), sinon il faudrait se reconnecter.
+ */
+async function beforeQuit() {
+  await getCurrentWindow().hide();
+  await closeLogins();
+}
 
 async function showWindow() {
   const window = getCurrentWindow();
@@ -45,7 +55,7 @@ export async function createTray(): Promise<void> {
     id: "quit",
     text: i18n.t("tray.quit"),
     // Une seule fenêtre : la détruire quitte l'app, même si « fermer » la cache.
-    action: () => void getCurrentWindow().destroy(),
+    action: () => void beforeQuit().then(() => getCurrentWindow().destroy()),
   });
   i18n.on("languageChanged", () => {
     void open.setText(i18n.t("tray.open"));
@@ -79,12 +89,15 @@ export async function createTray(): Promise<void> {
   };
 
   // Fermer la fenêtre la cache dans la barre des tâches, si l'utilisateur l'a choisi. Seulement
-  // quand l'icône existe : sinon, plus rien ne permettrait de la rouvrir.
-  await getCurrentWindow().onCloseRequested(event => {
+  // quand l'icône existe : sinon, plus rien ne permettrait de la rouvrir. Sinon, Tauri la
+  // détruit (et quitte) une fois ce gestionnaire terminé.
+  await getCurrentWindow().onCloseRequested(async event => {
     if (useSettingsStore.getState().closeToTray) {
       event.preventDefault();
-      void getCurrentWindow().hide();
+      await getCurrentWindow().hide();
+      return;
     }
+    await beforeQuit();
   });
   await setTrayGlance(wanted);
 }
