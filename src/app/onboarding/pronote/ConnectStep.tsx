@@ -132,7 +132,7 @@ export function ConnectStep({
     reload();
     // Actualités, carnet… : une synchro complète, qui ne redemande pas les étapes ci-dessus
     // (moins de 30 minutes). Sans elle, ils attendraient un clic sur « Synchroniser ».
-    void sync(accountId);
+    void sync([accountId]);
     onDone?.();
   };
 

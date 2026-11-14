@@ -52,7 +52,7 @@ function MockData({ account }: SettingsSectionProps) {
         accountId: account.id,
         kind: "mock",
       });
-      await sync(account.id);
+      await sync([account.id]);
     });
   const remove = () =>
     run(async () => {
