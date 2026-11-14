@@ -1,6 +1,6 @@
 // Premier lancement (UX §6), tant qu'il n'y a aucun compte. Fenêtre sans barre latérale :
 // à gauche la marque et la progression, à droite l'étape en cours (maquettes 01-premier-lancement).
-// On crée un compte PRONOTE ou un compte hors ligne ; les autres services arrivent en M4.
+// On crée un compte scolaire via PRONOTE ou ÉcoleDirecte, ou un compte hors ligne.
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,7 @@ import { WindowControls } from "@/app/layout/WindowControls";
 import mark from "@/assets/brand/mark.svg";
 
 import { BackButton } from "./BackButton";
+import { EcoledirecteFlow } from "./ecoledirecte/EcoleDirecteFlow";
 import { OfflineAccountStep } from "./OfflineAccountStep";
 import styles from "./onboarding.module.scss";
 import { ProfileStep } from "./ProfileStep";
@@ -15,7 +16,8 @@ import { PronoteFlow } from "./pronote";
 import { ServiceStep } from "./ServiceStep";
 import { Welcome } from "./Welcome";
 
-type Step = "welcome" | "profile" | "service" | "offline" | "pronote";
+type Step =
+  "welcome" | "profile" | "service" | "offline" | "pronote" | "ecoledirecte";
 
 /** Le numéro de chaque étape dans « Étape 1 sur 3 » : la connexion, quelle qu'elle soit, est la troisième. */
 const POSITION: Record<Exclude<Step, "welcome">, number> = {
@@ -23,6 +25,7 @@ const POSITION: Record<Exclude<Step, "welcome">, number> = {
   service: 2,
   offline: 3,
   pronote: 3,
+  ecoledirecte: 3,
 };
 const TOTAL = 3;
 
@@ -61,7 +64,9 @@ export function Onboarding() {
 
       <main className={styles.panel}>
         <WindowControls />
-        {step !== "pronote" && <BackButton onClick={back} />}
+        {step !== "pronote" && step !== "ecoledirecte" && (
+          <BackButton onClick={back} />
+        )}
         {step === "profile" && (
           <ProfileStep
             onNext={() => go("service")}
@@ -71,12 +76,14 @@ export function Onboarding() {
         {step === "service" && (
           <ServiceStep
             onPronote={() => go("pronote")}
+            onEcoledirecte={() => go("ecoledirecte")}
             onOffline={() => go("offline")}
           />
         )}
         {step === "offline" && <OfflineAccountStep onCancel={back} />}
         {/* Une fois connecté, le compte existe : l'app quitte le premier lancement. */}
         {step === "pronote" && <PronoteFlow onExit={back} />}
+        {step === "ecoledirecte" && <EcoledirecteFlow onExit={back} />}
       </main>
     </div>
   );

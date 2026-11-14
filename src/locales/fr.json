@@ -423,6 +423,7 @@
     },
     "untitled": "Sans titre",
     "hasAttachments": "Pièces jointes",
+    "noContent": "Pas de détail supplémentaire pour cette annonce.",
     "noMatch": "Aucune actualité ne correspond.",
     "publishedAt": "{{date}} à {{time}}",
     "survey": "Ce sondage se remplit sur {{service}}.",
@@ -991,6 +992,27 @@
         "LoginBlocked": "PRONOTE te demande de changer ton mot de passe ou de choisir ta double authentification. Fais-le d'abord sur le site de PRONOTE, puis reviens ici.",
         "WrongPin": "Ce code PIN n'est pas le bon.",
         "AlreadyLinked": "Ce compte est déjà dans Piéride. Choisis-le en haut de la barre latérale."
+      }
+    },
+    "ecoledirecte": {
+      "eyebrow": "Connexion à ÉcoleDirecte",
+      "loginTitle": "Connecte-toi à ÉcoleDirecte",
+      "loginText": "Utilise les identifiants de ton compte ÉcoleDirecte.",
+      "username": "Identifiant",
+      "password": "Mot de passe",
+      "privacyTitle": "Tes identifiants restent privés",
+      "privacyText": "Ton mot de passe sert uniquement à ouvrir la session. Piéride garde le jeton de connexion dans le trousseau sécurisé de ton ordinateur.",
+      "challengeTitle": "Vérifie ton compte",
+      "challengeText": "ÉcoleDirecte demande une réponse à ta question de sécurité.",
+      "connect": "Se connecter",
+      "confirm": "Confirmer",
+      "syncTitle": "Connexion en cours…",
+      "syncText": "Récupération de tes cours, notes et devoirs.",
+      "errors": {
+        "AuthenticationError": "ÉcoleDirecte a refusé ces identifiants. Vérifie-les puis réessaie.",
+        "ServiceUnavailable": "ÉcoleDirecte ne répond pas pour l'instant. Réessaie dans un instant.",
+        "SecurityChallenge": "La vérification de sécurité a expiré. Recommence la connexion.",
+        "InvalidSecurityAnswer": "Cette réponse ne correspond pas. Réessaie."
       }
     }
   },

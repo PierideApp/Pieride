@@ -45,6 +45,7 @@
 - [Papillon](https://github.com/PapillonApp/Papillon) : Piéride s'en inspire, avec l'accord de son équipe.
 - [Papicons](https://github.com/PapillonApp/Papicons) : les icônes de l'application.
 - [Pawnote](https://www.npmjs.com/package/@blockshub/pawnote-lts) : la connexion à PRONOTE.
+- [BlocksDirecte](https://github.com/BlocksHub/BlocksDirecte) : la connexion à ÉcoleDirecte.
 - Les polices [SN Pro](https://github.com/supernotes/sn-pro) et [Unbounded](https://github.com/googlefonts/unbounded), sous licence [OFL](https://openfontlicense.org).
 
 <p align="center">

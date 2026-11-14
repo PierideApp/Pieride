@@ -27,6 +27,9 @@ function hostOf(input: RequestInfo | URL): string {
   }
 }
 
+const isEcoledirecteHost = (hostname: string) =>
+  hostname === "ecoledirecte.com" || hostname.endsWith(".ecoledirecte.com");
+
 // Les URL internes de Tauri (ipc:, asset:, http://ipc.localhost) et l'origine de l'app
 // restent sur le fetch natif : l'IPC de Tauri appelle lui-même fetch, sinon boucle infinie.
 const isExternal = (url: URL) =>
@@ -63,7 +66,10 @@ async function externalFetch(
     });
     return response;
   } catch (error) {
-    logRequest({ ...request, duration: performance.now() - started });
+    logRequest({
+      ...request,
+      duration: performance.now() - started,
+    });
     // Annulée par l'appelant : la même erreur que le fetch natif (AbortError, TimeoutError).
     const signal =
       init?.signal ?? (input instanceof Request ? input.signal : null);
@@ -88,9 +94,35 @@ globalThis.fetch = async (input, init) => {
     input instanceof Request ? input.url : input,
     location.href
   );
-  return isExternal(url)
-    ? await externalFetch(input, init)
-    : await nativeFetch(input, init);
+  if (!isExternal(url)) {
+    return nativeFetch(input, init);
+  }
+  const method =
+    init?.method ?? (input instanceof Request ? input.method : "GET");
+  const started = performance.now();
+  try {
+    const response = await externalFetch(input, init);
+    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
+      devRequest({
+        url,
+        method,
+        status: response.status,
+        duration: performance.now() - started,
+        service: "ecoledirecte",
+      });
+    }
+    return response;
+  } catch (error) {
+    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
+      devRequest({
+        url,
+        method,
+        duration: performance.now() - started,
+        service: "ecoledirecte",
+      });
+    }
+    throw error;
+  }
 };
 
 // Type `Fetcher` de @literate.ink/utilities (MIT), attendu par pawnote, blocksrd et ezly.
@@ -103,7 +135,7 @@ export type Fetcher = (request: {
   redirect?: "follow" | "manual";
 }) => Promise<{ status: number; content: string; headers: Headers }>;
 
-function createFetcher(userAgent?: string): Fetcher {
+function createFetcher(userAgent?: string, service?: "pronote"): Fetcher {
   return async ({ url, method = "GET", content, headers, redirect }) => {
     const finalHeaders = new Headers(headers);
     if (userAgent) {
@@ -149,6 +181,7 @@ function createFetcher(userAgent?: string): Fetcher {
           content,
           status: result?.status,
           duration: performance.now() - started,
+          service: service ?? "other",
         });
       }
     }
@@ -159,7 +192,8 @@ export const fetcher = createFetcher();
 
 // PRONOTE ne répond à la connexion mobile qu'avec le User-Agent de son application.
 export const pronoteFetcher = createFetcher(
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 PRONOTE Mobile APP Version/2.0.11"
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 PRONOTE Mobile APP Version/2.0.11",
+  "pronote"
 );
 
 /**

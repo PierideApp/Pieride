@@ -12,10 +12,10 @@ La coquille de l'application.
   - `CommandPalette.tsx` : palette de commandes (`Ctrl/⌘ K`) : aller à un module, ouvrir une tâche, une note, un cours ou une actualité déjà en base (`paletteSearch.ts`), une section des Paramètres, synchroniser, changer de compte.
   - `DetailPanel.tsx` : panneau détail à droite, ouvert par une page via `stores/detail.ts`.
   - `layout.module.scss` : les styles de tout le cadre.
-- `onboarding/` : le premier lancement (maquettes `01-premier-lancement`). `Onboarding.tsx` mène les étapes : `Welcome`, `ProfileStep` (qui es-tu ?), `ServiceStep`, `OfflineAccountStep`. Seul le compte hors ligne se crée pour l'instant.
+- `onboarding/` : le premier lancement (maquettes `01-premier-lancement`). `Onboarding.tsx` mène les étapes : `Welcome`, `ProfileStep` (qui es-tu ?), `ServiceStep`, `OfflineAccountStep`, `PronoteFlow` et `EcoledirecteFlow`. PRONOTE, ÉcoleDirecte et le compte hors ligne sont disponibles.
 - `settings/` : les Paramètres en plein écran (`Ctrl/⌘ ,`), catégories à gauche, `Échap` pour fermer.
   - `Settings.tsx` : la superposition et la liste des catégories. Une catégorie sans page affiche « Bientôt ici ».
-  - `AppearanceSettings.tsx` (thème), `SidebarSettings.tsx` (modules affichés pour le compte en cours), `LanguageSettings.tsx`, `DeveloperSettings.tsx` (données fictives, en dev seulement).
+  - `AppearanceSettings.tsx` (thème), `SidebarSettings.tsx` (modules affichés pour le compte en cours), `LinkedAccountsSettings.tsx` (ajout et reconnexion des comptes), `LanguageSettings.tsx`, `DeveloperSettings.tsx` (données fictives, en dev seulement).
   - `settings.module.scss` : leurs styles.
 
 La barre latérale et les routes sont construites à partir des modules visibles du compte en cours (voir [`../modules`](../modules)).

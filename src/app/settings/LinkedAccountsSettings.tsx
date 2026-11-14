@@ -1,7 +1,7 @@
 // Comptes liés (maquette 02-comptes-lies) : les comptes scolaires, puis les services de
 // cantine et les calendriers liés à chacun. On change de compte, on en supprime un (données
 // et secrets compris), on délie un service, on ajoute un compte.
-// Un compte PRONOTE refusé se reconnecte ici. « Ajouter un calendrier » arrive avec iCal (M4).
+// Un compte scolaire refusé se reconnecte ici. « Ajouter un calendrier » arrive avec iCal (M4).
 import { AlertTriangle, Plus, User } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -120,18 +120,27 @@ export function LinkedAccountsSettings({
               service => SERVICE_GROUPS[service.kind] === "school"
             );
             const needsLogin = school.some(service => service.needsLogin);
-            // Seul PRONOTE sait se reconnecter pour l'instant.
             const refused = school.find(
-              service => service.needsLogin && service.kind === "pronote"
+              service =>
+                service.needsLogin &&
+                (service.kind === "pronote" || service.kind === "ecoledirecte")
             );
-            const relink: AddAccountStart | null = refused?.instanceUrl
-              ? {
-                  accountId: candidate.id,
-                  serviceId: refused.id,
-                  url: refused.instanceUrl,
-                  name: candidate.schoolName ?? SERVICE_NAMES.pronote,
-                }
-              : null;
+            const relink: AddAccountStart | null =
+              refused?.kind === "pronote" && refused.instanceUrl
+                ? {
+                    kind: "pronote",
+                    accountId: candidate.id,
+                    serviceId: refused.id,
+                    url: refused.instanceUrl,
+                    name: candidate.schoolName ?? SERVICE_NAMES.pronote,
+                  }
+                : refused?.kind === "ecoledirecte"
+                  ? {
+                      kind: "ecoledirecte",
+                      accountId: candidate.id,
+                      serviceId: refused.id,
+                    }
+                  : null;
             return (
               <SettingRow
                 key={candidate.id}

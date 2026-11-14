@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/database";
 import { news, services } from "@/database/schema";
-import { htmlToText } from "@/lib/html";
+import { htmlToText, newsContentToHtml } from "@/lib/html";
 import type { News, ServiceKind } from "@/services/shared/models";
 
 import { Source, useQuery } from "./useQuery";
@@ -13,6 +13,8 @@ import { Source, useQuery } from "./useQuery";
 export interface NewsView extends News {
   serviceId: string;
   service: ServiceKind;
+  /** HTML source décodée, rendue par l'écran après filtrage strict des balises et URLs. */
+  htmlContent: string;
 }
 
 export async function loadNews(accountId: string): Promise<NewsView[]> {
@@ -22,13 +24,17 @@ export async function loadNews(accountId: string): Promise<NewsView[]> {
     .innerJoin(services, eq(services.id, news.serviceId))
     .where(eq(services.accountId, accountId))
     .orderBy(desc(news.date));
-  return rows.map(({ item, service }) => ({
-    ...item,
-    title: item.title ?? undefined,
-    category: item.category ?? undefined,
-    content: htmlToText(item.content),
-    service,
-  }));
+  return rows.map(({ item, service }) => {
+    const htmlContent = newsContentToHtml(item.content);
+    return {
+      ...item,
+      title: item.title ?? undefined,
+      category: item.category ?? undefined,
+      content: htmlToText(htmlContent),
+      htmlContent,
+      service,
+    };
+  });
 }
 
 const source = new Source<NewsView[]>("news");
