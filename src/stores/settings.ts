@@ -171,7 +171,7 @@ interface SettingsState extends Preferences {
  * `homeLayout`, avec les tailles par défaut. Version 2 : la carte d'une ligne devient la taille
  * `mini` ; `compact` est désormais un petit bloc.
  */
-function migrateSettings(persisted: unknown, version: number): unknown {
+function migrateLayout(persisted: unknown, version: number): unknown {
   if (typeof persisted !== "object" || persisted === null) {
     return persisted;
   }
@@ -210,6 +210,17 @@ function migrateSettings(persisted: unknown, version: number): unknown {
   };
 }
 
+/**
+ * Version 3 : fermer la fenêtre garde Piéride dans la barre des tâches, où il continue de
+ * renouveler le jeton des services. Le `false` d'avant était presque toujours la valeur par défaut.
+ */
+function migrateSettings(persisted: unknown, version: number): unknown {
+  const migrated = migrateLayout(persisted, version);
+  return version < 3 && typeof migrated === "object" && migrated !== null
+    ? { ...migrated, closeToTray: true }
+    : migrated;
+}
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     set => ({
@@ -229,7 +240,7 @@ export const useSettingsStore = create<SettingsState>()(
       sidebarAutoCollapse: true,
       sidebarBadges: true,
       startMinimized: true,
-      closeToTray: false,
+      closeToTray: true,
       trayGlance: true,
       autoUpdate: true,
       autoInstall: true,
@@ -273,7 +284,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "pieride-settings",
-      version: 2,
+      version: 3,
       migrate: migrateSettings,
     }
   )
