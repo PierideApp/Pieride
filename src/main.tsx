@@ -6,12 +6,11 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "@/app/App";
-import i18n from "@/lib/i18n";
-
-import { startScreen } from "@/app/layout/StartScreen";
 import { ErrorBoundary } from "@/app/layout/ErrorBoundary";
+import { startScreen } from "@/app/layout/StartScreen";
 import { createTray } from "@/app/tray";
 import { migrateDatabase } from "@/database";
+import i18n from "@/lib/i18n";
 import { report } from "@/lib/log";
 import { isMac } from "@/lib/platform";
 import { accountManager } from "@/services";
