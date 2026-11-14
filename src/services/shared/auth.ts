@@ -256,11 +256,16 @@ export class ServiceAuth {
   }
 
   /**
-   * L'utilisateur redemande tout de suite (`Ctrl R`) : l'attente et le refus sont levés, pas une
-   * suspension, que le service impose et que réessayer prolongerait.
+   * L'utilisateur redemande tout de suite (`Ctrl R`) : l'attente est levée, pas une suspension,
+   * que le service impose et que réessayer prolongerait, ni un refus, que seule la reconnexion
+   * lève (renvoyer le même jeton compte comme une erreur d'authentification de plus).
    */
   allowRetry(): void {
-    if (this.hold?.failure !== "suspended") {
+    if (
+      this.hold &&
+      this.hold.failure !== "suspended" &&
+      !RELINK.includes(this.hold.failure)
+    ) {
       this.hold = null;
     }
   }

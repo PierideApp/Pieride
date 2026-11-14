@@ -99,6 +99,17 @@ describe("ServiceAuth", () => {
     expect(saved.at(-1)?.failure).toBe("credential_rejected");
   });
 
+  it("ne renvoie pas un jeton refusé après Ctrl R", async () => {
+    const service = auth();
+    const run = vi.fn(fails(new AuthenticationError("refusé")));
+    await expect(service.login(ROTATES, run)).rejects.toThrow();
+    service.allowRetry();
+    await expect(service.login(ROTATES, run)).rejects.toThrow(
+      "Reconnexion nécessaire"
+    );
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it("n'envoie plus rien pendant une suspension, même après Ctrl R", async () => {
     const service = auth();
     const run = vi

@@ -213,8 +213,8 @@ export class AccountManager {
   }
 
   /**
-   * `Ctrl R` : l'utilisateur redemande tout de suite. Lève l'attente après un échec et le refus
-   * d'un jeton, pas une suspension de l'adresse IP.
+   * `Ctrl R` : l'utilisateur redemande tout de suite. Lève l'attente après un échec, pas une
+   * suspension de l'adresse IP ni le refus d'un jeton (seule la reconnexion le lève).
    */
   allowAuthRetries(): void {
     for (const auth of this.auth.values()) {
@@ -338,6 +338,7 @@ export class AccountManager {
    * Synchronise une capability pour chaque service du compte qui la fournit, s'il n'a pas
    * réussi depuis `interval` (`SYNC_INTERVAL`, ou `MANUAL_SYNC_INTERVAL` pour `Ctrl R`).
    * Un service en panne garde ses données en base ; l'erreur est notée dans `sync_state`.
+   * Un service à reconnecter est laissé de côté jusqu'à la reconnexion (`connect`).
    * Ne rejette que si la base elle-même refuse d'écrire.
    */
   async refresh(
@@ -356,7 +357,9 @@ export class AccountManager {
           eq(syncState.capability, capability)
         )
       )
-      .where(eq(services.accountId, accountId));
+      .where(
+        and(eq(services.accountId, accountId), eq(services.needsLogin, false))
+      );
     // `abs` : une horloge reculée ne bloque pas la synchro jusqu'à ce qu'elle rattrape.
     const due = linked.filter(
       ({ lastSync }) =>
@@ -611,6 +614,13 @@ export class AccountManager {
   }
 
   private async connect(service: ServiceRow): Promise<SchoolServicePlugin> {
+    // Un jeton refusé ne redevient jamais valable (PRONOTE n'accepte que le dernier émis) : le
+    // renvoyer, même à un autre lancement, ne ferait qu'ajouter une erreur d'authentification au
+    // compteur du service, qui finit par bloquer la reconnexion elle-même. Papillon, lui, le
+    // renvoie à chaque lancement.
+    if (service.needsLogin) {
+      throw new AuthenticationError("Reconnexion nécessaire");
+    }
     await this.started;
     const connect = this.connectors[service.kind];
     if (!connect) {
