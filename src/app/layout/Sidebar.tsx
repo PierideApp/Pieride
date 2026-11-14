@@ -2,13 +2,7 @@
 // Paramètres.
 // Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss), sauf si
 // l'utilisateur l'a refusé dans les Paramètres.
-import {
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  Gears,
-  Search,
-} from "@getpapillon/papicons";
+import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
@@ -148,11 +142,6 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
         <span className={styles.syncSpinner}>
           <Spinner />
         </span>
-      ) : failed ? (
-        <AlertTriangle
-          size={20}
-          className={`${styles.syncIcon} ${styles.syncFailed}`}
-        />
       ) : (
         <Check size={20} className={styles.syncIcon} />
       )}

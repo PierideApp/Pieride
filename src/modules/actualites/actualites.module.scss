@@ -199,15 +199,6 @@
   border-collapse: collapse;
 }
 
-.attachments {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
 // Accusé de réception, après le texte et les pièces jointes : on lit d'abord.
 .acknowledgement {
   width: min(480px, 100%);
@@ -216,17 +207,6 @@
   button {
     margin-top: var(--space-3);
   }
-}
-
-.fileIcon {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  color: var(--color-error);
-  background: var(--color-error-bg);
 }
 
 .noContent {

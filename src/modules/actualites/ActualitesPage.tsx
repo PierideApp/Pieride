@@ -48,41 +48,7 @@ const titleOf = (item: NewsView, untitled: string) =>
     ?.trim() ||
   untitled;
 
-type NewsNode =
-  | { type: "text"; value: string }
-  | { type: "image"; src: string; alt: string }
-  | { type: "element"; tag: SafeNewsTag; children: NewsNode[] };
-
-type SafeNewsTag =
-  | "p"
-  | "div"
-  | "span"
-  | "br"
-  | "strong"
-  | "b"
-  | "em"
-  | "i"
-  | "u"
-  | "s"
-  | "ul"
-  | "ol"
-  | "li"
-  | "blockquote"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "h6"
-  | "table"
-  | "thead"
-  | "tbody"
-  | "tfoot"
-  | "tr"
-  | "td"
-  | "th";
-
-const SAFE_NEWS_TAGS = new Set<SafeNewsTag>([
+const SAFE_NEWS_TAGS = new Set([
   "p",
   "div",
   "span",
@@ -139,62 +105,45 @@ function safeImageSource(source: string): string | undefined {
   return undefined;
 }
 
-function newsNodes(parent: ParentNode): NewsNode[] {
-  return Array.from(parent.childNodes).flatMap(node => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const value = node.textContent ?? "";
-      return value ? [{ type: "text" as const, value }] : [];
-    }
-    if (!(node instanceof Element)) {
-      return [];
-    }
-    const tag = node.tagName.toLowerCase();
-    if (DROP_NEWS_TAGS.has(tag)) {
-      return [];
-    }
-    if (tag === "img") {
-      const src = safeImageSource(node.getAttribute("src") ?? "");
-      return src
-        ? [
-            {
-              type: "image" as const,
-              src,
-              alt: node.getAttribute("alt") ?? "",
-            },
-          ]
-        : [];
-    }
-    const children = newsNodes(node);
-    return SAFE_NEWS_TAGS.has(tag as SafeNewsTag)
-      ? [{ type: "element" as const, tag: tag as SafeNewsTag, children }]
-      : children;
-  });
+// Le HTML de l'ENT est non fiable : seules les balises de mise en forme et images sûres passent.
+function renderNewsNode(node: ChildNode, key: number): ReactNode[] {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ? [node.textContent] : [];
+  }
+  if (!(node instanceof Element)) {
+    return [];
+  }
+  const tag = node.tagName.toLowerCase();
+  if (DROP_NEWS_TAGS.has(tag)) {
+    return [];
+  }
+  if (tag === "img") {
+    const src = safeImageSource(node.getAttribute("src") ?? "");
+    return src
+      ? [
+          <img
+            key={key}
+            src={src}
+            alt={node.getAttribute("alt") ?? ""}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+          />,
+        ]
+      : [];
+  }
+  if (tag === "br") {
+    return [<br key={key} />];
+  }
+  const children = Array.from(node.childNodes).flatMap(renderNewsNode);
+  return SAFE_NEWS_TAGS.has(tag)
+    ? [createElement(tag, { key }, ...children)]
+    : children;
 }
 
-function renderNewsNode(node: NewsNode, key: number): ReactNode {
-  if (node.type === "text") {
-    return node.value;
-  }
-  if (node.type === "image") {
-    return (
-      <img
-        key={key}
-        src={node.src}
-        alt={node.alt}
-        loading="lazy"
-        decoding="async"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-  if (node.tag === "br") {
-    return <br key={key} />;
-  }
-  return createElement(
-    node.tag,
-    { key },
-    ...node.children.map((child, index) => renderNewsNode(child, index))
-  );
+function newsContentNodes(html: string): ReactNode[] {
+  const { body } = new DOMParser().parseFromString(html, "text/html");
+  return Array.from(body.childNodes).flatMap(renderNewsNode);
 }
 
 export function ActualitesPage({ module }: ModulePageProps) {
@@ -222,16 +171,9 @@ export function ActualitesPage({ module }: ModulePageProps) {
   );
   const current =
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
-  const bodyNodes = (() => {
-    if (!current?.htmlContent) {
-      return [];
-    }
-    const { body } = new DOMParser().parseFromString(
-      current.htmlContent,
-      "text/html"
-    );
-    return newsNodes(body);
-  })();
+  const bodyNodes = current?.htmlContent
+    ? newsContentNodes(current.htmlContent)
+    : [];
   const attachments = useOpenAttachment(current?.serviceId);
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`
@@ -414,11 +356,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
             <div className={styles.readerBody}>
               {bodyNodes.length > 0 ? (
                 bodyNodes.map((node, index) =>
-                  node.type === "text" ? (
-                    <p key={index}>{node.value}</p>
-                  ) : (
-                    renderNewsNode(node, index)
-                  )
+                  typeof node === "string" ? <p key={index}>{node}</p> : node
                 )
               ) : (
                 <p className={styles.noContent}>{t("actualites.noContent")}</p>

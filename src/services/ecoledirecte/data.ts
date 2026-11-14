@@ -9,8 +9,10 @@ import { addDays } from "@/lib/week";
 
 import { ServiceUnavailable } from "../shared/errors";
 import type {
+  Attachment,
   Attendance,
   Course,
+  CourseContent,
   Grade,
   Homework,
   News,
@@ -20,6 +22,14 @@ import type {
 } from "../shared/models";
 import type { CapabilityMethods } from "../shared/plugin";
 import { EcoledirecteSession } from "./session";
+
+type HomeworkDay = Awaited<
+  ReturnType<Client["homework"]["getHomeworksForDate"]>
+>;
+type HomeworkSubject = HomeworkDay["matieres"][number];
+type HomeworkItem = NonNullable<HomeworkSubject["aFaire"]>;
+type CloudFile = HomeworkItem["documents"][number];
+type Lesson = NonNullable<HomeworkSubject["contenuDeSeance"]>;
 
 type MarkScalar = string | number | null;
 
@@ -85,6 +95,7 @@ const MONTHS: Readonly<Record<string, number>> = {
 };
 
 const MAX_NEWS_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 
 function inlineImageMime(bytes: Uint8Array): string | null {
   const ascii = (start: number, end: number) =>
@@ -134,6 +145,21 @@ async function imageStreamToDataUrl(
   if (!stream) {
     return null;
   }
+  const bytes = await streamToBytes(stream, MAX_NEWS_IMAGE_BYTES);
+  if (!bytes) {
+    return null;
+  }
+  const mime = inlineImageMime(bytes);
+  return mime ? `data:${mime};base64,${bytesToBase64(bytes)}` : null;
+}
+
+async function streamToBytes(
+  stream: ReadableStream<Uint8Array> | null,
+  limit: number
+): Promise<Uint8Array | null> {
+  if (!stream) {
+    return null;
+  }
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -144,9 +170,11 @@ async function imageStreamToDataUrl(
         break;
       }
       total += value.byteLength;
-      if (total > MAX_NEWS_IMAGE_BYTES) {
+      if (total > limit) {
         await reader.cancel();
-        return null;
+        throw new ServiceUnavailable(
+          "Pièce jointe ÉcoleDirecte trop volumineuse"
+        );
       }
       chunks.push(value);
     }
@@ -159,8 +187,73 @@ async function imageStreamToDataUrl(
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  const mime = inlineImageMime(bytes);
-  return mime ? `data:${mime};base64,${bytesToBase64(bytes)}` : null;
+  return bytes;
+}
+
+function toAttachment(file: CloudFile): Attachment {
+  const query = new URLSearchParams({
+    verbe: "get",
+    fichierId: String(file.id),
+    leTypeDeFichier: file.type,
+  });
+  return {
+    kind: "file",
+    name: file.libelle || "Document",
+    url: `https://api.ecoledirecte.com/v3/telechargement.awp?${query}`,
+  };
+}
+
+function toManualLinks(links: HomeworkItem["liensManuel"]): Attachment[] {
+  return links.map(link => ({
+    kind: "link",
+    name: link.libelle,
+    url: link.url,
+  }));
+}
+
+function lessonContent(lesson: Lesson): CourseContent {
+  return {
+    description: contentToHtml(lesson.contenu),
+    attachments: [
+      ...(lesson.documents ?? []).map(toAttachment),
+      ...toManualLinks(lesson.liensManuel ?? []),
+    ],
+  };
+}
+
+/** Télécharge le fichier avec le client authentifié d'ÉcoleDirecte. */
+export function downloadEcoledirecteAttachment(
+  session: EcoledirecteSession,
+  attachment: Attachment
+): Promise<Uint8Array> {
+  let url: URL;
+  try {
+    url = new URL(attachment.url);
+  } catch {
+    throw new ServiceUnavailable("Pièce jointe ÉcoleDirecte invalide");
+  }
+  const fileId = Number(url.searchParams.get("fichierId"));
+  const fileType = url.searchParams.get("leTypeDeFichier");
+  if (
+    attachment.kind !== "file" ||
+    url.protocol !== "https:" ||
+    url.hostname !== "api.ecoledirecte.com" ||
+    url.pathname !== "/v3/telechargement.awp" ||
+    !Number.isSafeInteger(fileId) ||
+    fileId < 1 ||
+    !fileType ||
+    !/^[\w-]+$/.test(fileType)
+  ) {
+    throw new ServiceUnavailable("Pièce jointe ÉcoleDirecte invalide");
+  }
+  return session.run(async client => {
+    const stream = await client.downloader.getStream(fileId, fileType);
+    const bytes = await streamToBytes(stream, MAX_ATTACHMENT_BYTES);
+    if (!bytes) {
+      throw new ServiceUnavailable("Pièce jointe ÉcoleDirecte introuvable");
+    }
+    return bytes;
+  });
 }
 
 async function inlineProtectedNewsImages(
@@ -451,7 +544,8 @@ function toGrade(grade: MarkPayload, periodId: string): Grade | null {
 function toCourse(
   item: Awaited<
     ReturnType<Client["timetable"]["getTimetableBetweenDates"]>
-  >[number]
+  >[number],
+  lesson?: Lesson
 ): Course | null {
   const from = parseDate(item.start_date);
   const to = parseDate(item.end_date);
@@ -472,18 +566,14 @@ function toCourse(
     ...(item.prof && { teacher: item.prof }),
     ...((item.groupe || item.classe) && { group: item.groupe || item.classe }),
     ...(status && { status }),
+    ...(lesson && { contents: [lessonContent(lesson)] }),
     ...(item.typeCours === TimetableCourseType.PERMANENCY && {
       subject: item.matiere || item.text || "Étude",
     }),
   };
 }
 
-function toHomework(
-  subject: Awaited<
-    ReturnType<Client["homework"]["getHomeworksForDate"]>
-  >["matieres"][number],
-  dueAt: Date
-): Homework | null {
+function toHomework(subject: HomeworkSubject, dueAt: Date): Homework | null {
   const item = subject.aFaire;
   if (!item) {
     return null;
@@ -496,7 +586,12 @@ function toHomework(
     ...(givenAt && { givenAt }),
     dueAt,
     done: item.effectue,
-    attachments: [],
+    attachments: [
+      ...(item.documents ?? []).map(toAttachment),
+      ...(item.ressourceDocuments ?? []).map(toAttachment),
+      ...(item.contenuDeSeance?.documents ?? []).map(toAttachment),
+      ...toManualLinks(item.liensManuel ?? []),
+    ],
   };
 }
 
@@ -600,6 +695,16 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   const available = new Set(
     session.selectedAccount.modules.map(module => module.code)
   );
+  const cachedDays = new Map<string, Promise<HomeworkDay>>();
+  const homeworkForDate = (client: Client, day: Date) => {
+    const key = dateKey(day);
+    let result = cachedDays.get(key);
+    if (!result) {
+      result = client.homework.getHomeworksForDate(key);
+      cachedDays.set(key, result);
+    }
+    return result;
+  };
 
   const timetable: CapabilityMethods["TIMETABLE"] = {
     getWeeklyTimetable: weekStart =>
@@ -608,26 +713,56 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
         start.setHours(0, 0, 0, 0);
         const end = addDays(start, 6);
         end.setHours(23, 59, 59, 999);
-        return (
-          await client.timetable.getTimetableBetweenDates(start, end)
-        ).flatMap(item => toCourse(item) ?? []);
+        const items = await client.timetable.getTimetableBetweenDates(
+          start,
+          end
+        );
+        const days = available.has("CAHIER_DE_TEXTES")
+          ? Array.from({ length: 7 }, (_, index) => addDays(start, index))
+          : [];
+        const lessons = new Map<string, HomeworkDay["matieres"]>();
+        await Promise.all(
+          days.map(async day => {
+            const key = dateKey(day);
+            try {
+              lessons.set(key, (await homeworkForDate(client, day)).matieres);
+            } catch {
+              // Le planning reste utilisable si les détails du cahier de textes échouent.
+              cachedDays.delete(key);
+            }
+          })
+        );
+        return items.flatMap(item => {
+          const date = parseDate(item.start_date);
+          const lesson = lessons
+            .get(date ? dateKey(date) : "")
+            ?.find(
+              subject => subject.codeMatiere === item.codeMatiere
+            )?.contenuDeSeance;
+          return toCourse(item, lesson) ?? [];
+        });
       }),
   };
 
   const homework: CapabilityMethods["HOMEWORK"] = {
     getHomeworks: weekStart =>
       session.run(async client => {
-        const days = await Promise.all(
-          Array.from({ length: 7 }, (_, index) =>
-            addDays(weekStart, index)
-          ).map(async day => ({
-            day,
-            result: await client.homework.getHomeworksForDate(dateKey(day)),
-          }))
+        const days = Array.from({ length: 7 }, (_, index) =>
+          addDays(weekStart, index)
         );
-        return days.flatMap(({ day, result }) =>
-          result.matieres.flatMap(subject => toHomework(subject, day) ?? [])
-        );
+        try {
+          const results = await Promise.all(
+            days.map(async day => ({
+              day,
+              result: await homeworkForDate(client, day),
+            }))
+          );
+          return results.flatMap(({ day, result }) =>
+            result.matieres.flatMap(subject => toHomework(subject, day) ?? [])
+          );
+        } finally {
+          days.forEach(day => cachedDays.delete(dateKey(day)));
+        }
       }),
     setHomeworkCompletion: (id, done) =>
       session.run(async client => {
@@ -645,13 +780,16 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
       }),
   };
 
+  let marksForSync: Promise<MarksPayload> | undefined;
   const grades: CapabilityMethods["GRADES"] = {
-    getGradesPeriods: async () =>
-      (await getMarks(session)).periodes.flatMap(
+    getGradesPeriods: async () => {
+      marksForSync = getMarks(session);
+      return (await marksForSync).periodes.flatMap(
         period => toPeriod(period) ?? []
-      ),
+      );
+    },
     getGradesForPeriod: async period => {
-      const markData = await getMarks(session);
+      const markData = await (marksForSync ??= getMarks(session));
       const record = markData.periodes.find(
         candidate =>
           candidate.codePeriode === period.id ||
@@ -742,27 +880,29 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
     setNewsAsAcknowledged: async () => undefined,
   };
 
+  let schoolLife: ReturnType<Client["schoollife"]["getSchoolLife"]> | undefined;
   const attendance: CapabilityMethods["ATTENDANCE"] = {
-    getAttendancePeriods: async () =>
-      (await getMarks(session)).periodes
+    getAttendancePeriods: async () => {
+      schoolLife = undefined;
+      return (await getMarks(session)).periodes
         .filter(period => {
           const label = normalizeFrench(period.periode ?? "");
           return label && !label.startsWith("releve") && label !== "annee";
         })
-        .flatMap(period => toPeriod(period) ?? []),
+        .flatMap(period => toPeriod(period) ?? []);
+    },
     getAttendanceForPeriod: period =>
-      session.run(async client =>
-        (await client.schoollife.getSchoolLife()).absencesRetards.flatMap(
-          item => {
-            const mapped = toAttendance(item);
-            return mapped &&
-              mapped.from >= period.start &&
-              mapped.from <= period.end
-              ? [mapped]
-              : [];
-          }
-        )
-      ),
+      session.run(async client => {
+        const data = await (schoolLife ??= client.schoollife.getSchoolLife());
+        return data.absencesRetards.flatMap(item => {
+          const mapped = toAttendance(item);
+          return mapped &&
+            mapped.from >= period.start &&
+            mapped.from <= period.end
+            ? [mapped]
+            : [];
+        });
+      }),
   };
 
   return {

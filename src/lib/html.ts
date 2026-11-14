@@ -60,20 +60,8 @@ function isNewsPlaceholder(value: string): boolean {
   return plain.length > 0 && NEWS_PLACEHOLDER.test(plain);
 }
 
-/** Nettoie aussi les marqueurs sans contenu que certains ENT envoient comme actualité. */
-export function newsContentToText(value: string): string {
-  if (isNewsPlaceholder(value)) {
-    return "";
-  }
-  const content = contentToText(value);
-  return isNewsPlaceholder(content) ? "" : content;
-}
-
 /** HTML décodé pour l'affichage des actualités ; un post-it contenant seulement une image est gardé. */
 export function newsContentToHtml(value: string): string {
-  if (isNewsPlaceholder(value)) {
-    return "";
-  }
   const html = contentToHtml(value);
   return isNewsPlaceholder(html) ? "" : html;
 }

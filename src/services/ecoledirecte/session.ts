@@ -249,24 +249,7 @@ export function toEcoledirecteError(error: unknown): Error {
   if (error instanceof ServiceUnavailable) {
     return error;
   }
-  // Le client ignore les codes d'erreur renvoyés dans un HTTP 200. Une réponse
-  // incomplète provoque souvent un TypeError dans son mapping; conserver ce seul
-  // indice aide à identifier la forme de réponse attendue sans journaliser le corps.
-  const diagnostic =
-    error instanceof TypeError || error instanceof RangeError
-      ? [
-          `${error.name}: ${error.message.slice(0, 160)}`,
-          error.stack?.split("\n")[1]?.trim().slice(0, 120),
-        ]
-          .filter(Boolean)
-          .join(" @ ")
-      : error instanceof Error
-        ? error.name
-        : undefined;
-  return new ServiceUnavailable(
-    "ÉcoleDirecte ne répond pas pour l'instant",
-    diagnostic
-  );
+  return new ServiceUnavailable("ÉcoleDirecte ne répond pas pour l'instant");
 }
 
 /** Client réutilisable pour une session; le jeton renouvelable tourne dans le trousseau. */
