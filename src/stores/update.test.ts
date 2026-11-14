@@ -72,6 +72,37 @@ describe("install", () => {
   });
 });
 
+describe("checkAndInstall", () => {
+  const update = { version: "1.2.0", download: vi.fn(), install: vi.fn() };
+
+  beforeEach(() => {
+    update.download.mockReset().mockResolvedValue(undefined);
+    update.install.mockReset().mockResolvedValue(undefined);
+    check.mockResolvedValue(update);
+  });
+
+  it("installe la version trouvée au lancement puis redémarre", async () => {
+    await useUpdateStore.getState().checkAndInstall();
+    expect(update.install).toHaveBeenCalled();
+    expect(invoke).toHaveBeenLastCalledWith("restart_app");
+  });
+
+  it("laisse un paquet Linux à installer à la main", async () => {
+    invoke.mockResolvedValue(false);
+    await useUpdateStore.getState().checkAndInstall();
+    expect(update.download).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalledWith("restart_app");
+    expect(state()).toMatchObject({ status: "available", manual: true });
+  });
+
+  it("ne redémarre pas quand le téléchargement échoue", async () => {
+    update.download.mockRejectedValue(new Error("réseau"));
+    await useUpdateStore.getState().checkAndInstall();
+    expect(invoke).not.toHaveBeenCalledWith("restart_app");
+    expect(state().status).toBe("error");
+  });
+});
+
 describe("connexions en cours", () => {
   it("les laisse finir avant d'installer, puis les rouvre", async () => {
     const order: string[] = [];

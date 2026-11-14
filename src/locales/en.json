@@ -665,7 +665,11 @@
       },
       "autoUpdate": {
         "title": "Check for updates automatically",
-        "text": "On launch, then every 6 hours. Nothing is installed without your approval"
+        "text": "On launch, then every 6 hours"
+      },
+      "autoInstall": {
+        "title": "Install updates on launch",
+        "text": "Piéride updates when it opens, then restarts"
       }
     },
     "features": {

@@ -2,6 +2,7 @@
 // l'ordinateur. Le lancement à l'ouverture de session est inscrit dans le système (plugin
 // autostart, avec `--minimized`) ; le reste est dans le store. Les mises à jour : UpdateRow.
 import {
+  ArrowDown,
   ArrowDownBox,
   Clock,
   Cross,
@@ -38,6 +39,7 @@ function Keys({ keys }: { keys: readonly string[] }) {
 export function StartupSettings({ account }: SettingsSectionProps) {
   const { t } = useTranslation();
   const autostart = useLoaded(isEnabled, "autostart");
+  const autoUpdate = useSettingsStore(state => state.autoUpdate);
   const hidden = useSettingsStore(state =>
     account ? state.hiddenModules[account.id] : undefined
   );
@@ -99,6 +101,11 @@ export function StartupSettings({ account }: SettingsSectionProps) {
         <Card rows>
           <UpdateRow />
           <SwitchRow icon={Sparkles} setting="autoUpdate" />
+          <SwitchRow
+            icon={ArrowDown}
+            setting="autoInstall"
+            disabled={!autoUpdate}
+          />
         </Card>
       </Section>
 

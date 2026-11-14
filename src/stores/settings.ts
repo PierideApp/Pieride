@@ -123,8 +123,10 @@ export interface Preferences {
   closeToTray: boolean;
   /** Cours actuel et suivant dans le menu de l'icône de la barre des tâches. */
   trayGlance: boolean;
-  /** Chercher une mise à jour au lancement puis toutes les 6 heures (jamais installée seule). */
+  /** Chercher une mise à jour au lancement puis toutes les 6 heures. */
   autoUpdate: boolean;
+  /** Installer au lancement la mise à jour trouvée, puis redémarrer (jamais en cours d'usage). */
+  autoInstall: boolean;
   /** Notifications du système, par sujet (M5 : synchro en arrière-plan). */
   notifyGrades: boolean;
   notifyCourses: boolean;
@@ -230,6 +232,7 @@ export const useSettingsStore = create<SettingsState>()(
       closeToTray: false,
       trayGlance: true,
       autoUpdate: true,
+      autoInstall: true,
       notifyGrades: true,
       notifyCourses: true,
       notifyHomework: true,
