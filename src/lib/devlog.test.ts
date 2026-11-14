@@ -131,6 +131,23 @@ describe("devRequest", () => {
     expect(printed()).not.toContain("jeton");
   });
 
+  it("étiquette ÉcoleDirecte et masque l'identifiant d'élève", () => {
+    devRequest({
+      url: new URL(
+        "https://api.ecoledirecte.com/v3/eleves/123456/notes.awp?jeton=secret"
+      ),
+      method: "POST",
+      service: "ecoledirecte",
+      status: 200,
+      duration: 42,
+    });
+    expect(log).toHaveBeenCalledWith(
+      "[ecoledirecte] POST api.ecoledirecte.com/v3/eleves/:id/notes.awp · 200 · 42 ms"
+    );
+    expect(printed()).not.toContain("123456");
+    expect(printed()).not.toContain("secret");
+  });
+
   it("n'affiche rien hors de Tauri : `pnpm dev` seul, tests", () => {
     vi.mocked(isTauri).mockReturnValue(false);
     devRequest({ url: PRONOTE, method: "POST", duration: 1 });

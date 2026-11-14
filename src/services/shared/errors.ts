@@ -9,13 +9,6 @@ export class AuthenticationError extends Error {
 /** Serveur injoignable, en panne ou domaine non autorisé. */
 export class ServiceUnavailable extends Error {
   name = "ServiceUnavailable";
-
-  constructor(
-    message: string,
-    readonly diagnostic?: string
-  ) {
-    super(message);
-  }
 }
 
 /** Aucune connexion n'existe encore pour ce type de service : réessayer n'y changera rien. */

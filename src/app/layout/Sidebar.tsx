@@ -182,11 +182,6 @@ function SyncStatus({
         <span className={styles.syncSpinner}>
           <Spinner />
         </span>
-      ) : failed ? (
-        <AlertTriangle
-          size={20}
-          className={`${styles.syncIcon} ${styles.syncFailed}`}
-        />
       ) : (
         <Icon size={20} className={tone} />
       )}

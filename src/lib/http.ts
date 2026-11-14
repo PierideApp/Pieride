@@ -28,6 +28,9 @@ function hostOf(input: RequestInfo | URL): string {
   }
 }
 
+const isEcoledirecteHost = (hostname: string) =>
+  hostname === "ecoledirecte.com" || hostname.endsWith(".ecoledirecte.com");
+
 // Les URL internes de Tauri (ipc:, asset:, http://ipc.localhost) et l'origine de l'app
 // restent sur le fetch natif : l'IPC de Tauri appelle lui-même fetch, sinon boucle infinie.
 const isExternal = (url: URL) =>
@@ -64,7 +67,10 @@ async function externalFetch(
     });
     return response;
   } catch (error) {
-    logRequest({ ...request, duration: performance.now() - started });
+    logRequest({
+      ...request,
+      duration: performance.now() - started,
+    });
     // Annulée par l'appelant : la même erreur que le fetch natif (AbortError, TimeoutError).
     const signal =
       init?.signal ?? (input instanceof Request ? input.signal : null);
@@ -88,9 +94,35 @@ globalThis.fetch = async (input, init) => {
     input instanceof Request ? input.url : input,
     location.href
   );
-  return isExternal(url)
-    ? await externalFetch(input, init)
-    : await nativeFetch(input, init);
+  if (!isExternal(url)) {
+    return nativeFetch(input, init);
+  }
+  const method =
+    init?.method ?? (input instanceof Request ? input.method : "GET");
+  const started = performance.now();
+  try {
+    const response = await externalFetch(input, init);
+    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
+      devRequest({
+        url,
+        method,
+        status: response.status,
+        duration: performance.now() - started,
+        service: "ecoledirecte",
+      });
+    }
+    return response;
+  } catch (error) {
+    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
+      devRequest({
+        url,
+        method,
+        duration: performance.now() - started,
+        service: "ecoledirecte",
+      });
+    }
+    throw error;
+  }
 };
 
 // Type `Fetcher` de @literate.ink/utilities (MIT), attendu par pawnote, blocksrd et ezly.
