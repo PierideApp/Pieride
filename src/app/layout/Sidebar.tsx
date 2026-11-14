@@ -11,6 +11,7 @@ import icon from "@/assets/brand/icon.svg";
 import { Avatar } from "@/components/Avatar/Avatar";
 import { Spinner } from "@/components/Spinner/Spinner";
 import type { AccountSummary } from "@/hooks/useAccounts";
+import { relativeParts } from "@/hooks/useFormats";
 import { useLastSync } from "@/hooks/useLastSync";
 import type { Loaded } from "@/hooks/useLoaded";
 import { Source, useQuery } from "@/hooks/useQuery";
@@ -85,7 +86,7 @@ function AccountSwitcher({
 const REFUSED_NOTICE = 4000;
 
 /**
- * « Synchronisé il y a 2 minutes ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
+ * « Synchronisé il y a 2 minutes », « il y a 3 heures », « hier ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
  * la relance au plus toutes les 5 minutes (« Réessaie dans 3 minutes » sinon).
  */
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
@@ -129,8 +130,9 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   } else if (failed || lastSync.status === "error") {
     label = t("sync.failed");
   } else if (lastSync.status === "ready" && lastSync.data) {
-    const minutes = Math.round((lastSync.data.getTime() - now) / 60_000);
-    label = t("sync.done", { when: relative.format(minutes, "minute") });
+    label = t("sync.done", {
+      when: relative.format(...relativeParts(lastSync.data.getTime() - now)),
+    });
   }
 
   return (
