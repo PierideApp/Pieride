@@ -10,9 +10,11 @@ import { type Toggle, useSettingsStore } from "@/stores/settings";
 export function SwitchRow({
   icon,
   setting,
+  disabled,
 }: {
   icon: typeof Home;
   setting: Toggle;
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const checked = useSettingsStore(state => state[setting]);
@@ -26,6 +28,7 @@ export function SwitchRow({
     >
       <Switch
         checked={checked}
+        disabled={disabled}
         onChange={value => setPreference(setting, value)}
       />
     </SettingRow>

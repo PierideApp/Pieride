@@ -2,7 +2,7 @@
 
 Les briques techniques partagées :
 
-- **Réseau** : toutes les requêtes passent par `tauri-plugin-http`, à cause du CORS de la WebView. Les bibliothèques qui acceptent un _fetcher_ (pawnote, blocksrd, ezly, esup-multi) en reçoivent un ; pour les autres, `globalThis.fetch` est remplacé au démarrage.
+- **Réseau** : toutes les requêtes passent par `tauri-plugin-http`, à cause du CORS de la WebView. Les bibliothèques qui acceptent un _fetcher_ (pawnote, blocksrd, ezly, esup-multi) en reçoivent un ; pour les autres, `globalThis.fetch` est remplacé au démarrage. Seul `pronoteFetcher` (pawnote) passe par la commande Rust `instance_fetch`, qui garde la connexion ouverte d'une requête à l'autre (le plugin en ouvre une par requête).
 - **Trousseau** : identifiants et jetons dans le trousseau du système, via une commande Rust. Jamais dans la base ni dans un store.
 - **Journal** (`log.ts`) : messages et requêtes réseau en mémoire seulement, masqués par `redact` (ni jeton, ni URL complète). Affiché dans Paramètres > Développeur. `report` signale une erreur attrapée de la base ou du système (console et journal).
 - **Plateforme** (`platform.ts`) : `isMac`, le nom du système et la touche des raccourcis affichée (`⌘` ou `Ctrl`).

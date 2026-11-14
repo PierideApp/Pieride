@@ -67,6 +67,26 @@
     "maximize": "Maximize",
     "close": "Close"
   },
+  "reconnect": {
+    "action": "Sign in again",
+    "other": "{{name}} needs to sign in to {{service}} again",
+    "expired": {
+      "title": "Your {{service}} session has expired",
+      "text": "Your data is no longer updated"
+    },
+    "lost": {
+      "title": "The connection to {{service}} was cut",
+      "text": "Your session couldn't be renewed"
+    },
+    "disabled": {
+      "title": "{{service}} denies access to your account",
+      "text": "Contact your school"
+    },
+    "notification": {
+      "title": "Sign in to {{service}} again",
+      "body": "{{name}}'s data is no longer updated. Open Piéride to sign in again."
+    }
+  },
   "tray": {
     "open": "Open Piéride",
     "quit": "Quit",
@@ -576,6 +596,17 @@
       "status": "Status",
       "duration": "Duration",
       "noResponse": "failed",
+      "failures": {
+        "timeout": "timed out",
+        "connect": "connection failed",
+        "redirect": "redirect refused",
+        "body": "response cut off",
+        "network": "network error",
+        "url_not_allowed": "address not allowed",
+        "invalid_url": "invalid address",
+        "invalid_method": "method refused",
+        "invalid_header": "invalid header"
+      },
       "log": "Log",
       "copy": "Copy",
       "copied": "Copied",
@@ -654,7 +685,11 @@
       },
       "autoUpdate": {
         "title": "Check for updates automatically",
-        "text": "On launch, then every 6 hours. Nothing is installed without your approval"
+        "text": "On launch, then every 6 hours"
+      },
+      "autoInstall": {
+        "title": "Install updates on launch",
+        "text": "Piéride updates when it opens, then restarts"
       }
     },
     "features": {

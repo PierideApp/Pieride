@@ -1,6 +1,7 @@
 // Couche réseau : la WebView applique le CORS, donc toute requête vers un serveur
 // extérieur passe par le plugin http de Tauri, qui ne laisse passer que les domaines
-// autorisés (capabilities/ et `allowInstance`). Importé en premier dans main.tsx.
+// autorisés (capabilities/ et `allowInstance`). Seul pawnote passe par notre commande
+// `instance_fetch` (`pronoteFetcher`). Importé en premier dans main.tsx.
 import { invoke } from "@tauri-apps/api/core";
 import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 
@@ -71,14 +72,13 @@ async function externalFetch(
     if (signal?.aborted) {
       throw signal.reason ?? new DOMException("Requête annulée", "AbortError");
     }
-    // Les erreurs du plugin recopient l'URL complète : on garde la raison, pas l'URL.
-    const reason = String(error).replace(
-      /\b[a-z][a-z0-9+.-]*:\/\/\S+/gi,
-      redactUrl
-    );
-    throw new ServiceUnavailable(`Requête impossible : ${reason}`);
+    throw new ServiceUnavailable(`Requête impossible : ${withoutUrls(error)}`);
   }
 }
+
+/** Les erreurs du plugin recopient l'URL complète : on garde la raison, pas l'URL. */
+const withoutUrls = (error: unknown) =>
+  String(error).replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, redactUrl);
 
 // Pour les bibliothèques qui appellent fetch() directement (blocksdirecte, skolengojs…).
 const nativeFetch = globalThis.fetch.bind(globalThis);
@@ -103,64 +103,117 @@ export type Fetcher = (request: {
   redirect?: "follow" | "manual";
 }) => Promise<{ status: number; content: string; headers: Headers }>;
 
-function createFetcher(userAgent?: string): Fetcher {
-  return async ({ url, method = "GET", content, headers, redirect }) => {
-    const finalHeaders = new Headers(headers);
-    if (userAgent) {
-      finalHeaders.set("User-Agent", userAgent);
+export const fetcher: Fetcher = async ({
+  url,
+  method = "GET",
+  content,
+  headers,
+  redirect,
+}) => {
+  // Pas `AbortSignal.timeout()` : absent du WebKit de Safari 15 (macOS 12 pas à jour).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT);
+  const { signal } = controller;
+  const started = performance.now();
+  let status: number | undefined;
+  try {
+    const response = await externalFetch(url, {
+      method,
+      headers,
+      body: method === "GET" ? undefined : content,
+      redirect,
+      signal,
+    });
+    status = response.status;
+    // Le journal (Paramètres > Développeur) n'a que le domaine, l'état et la durée
+    // (`externalFetch`) : corps et en-têtes portent jetons, cookies et identifiants.
+    return {
+      status,
+      content: await response.text(),
+      headers: response.headers,
+    };
+  } catch (error) {
+    if (error instanceof ServiceUnavailable) {
+      throw error;
     }
-    // Pas `AbortSignal.timeout()` : absent du WebKit de Safari 15 (macOS 12 pas à jour).
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT);
-    const { signal } = controller;
-    const started = performance.now();
-    let result: Awaited<ReturnType<Fetcher>> | undefined;
-    try {
-      const response = await externalFetch(url, {
-        method,
-        headers: finalHeaders,
-        body: method === "GET" ? undefined : content,
-        redirect,
-        signal,
-      });
-      // Le journal (Paramètres > Développeur) n'a que le domaine, l'état et la durée
-      // (`externalFetch`) : corps et en-têtes portent jetons, cookies et identifiants.
-      result = {
-        status: response.status,
-        content: await response.text(),
-        headers: response.headers,
-      };
-      return result;
-    } catch (error) {
-      if (error instanceof ServiceUnavailable) {
-        throw error;
-      }
-      // Délai dépassé, ou réponse coupée pendant la lecture du corps.
-      throw new ServiceUnavailable(
-        signal.aborted ? "Pas de réponse du serveur" : "Réponse interrompue"
-      );
-    } finally {
-      clearTimeout(timer);
-      // Seulement sous `pnpm tauri dev` (lib/devlog.ts), avant que pawnote lise la réponse.
-      if (import.meta.env.DEV) {
-        devRequest({
-          url,
-          method,
-          content,
-          status: result?.status,
-          duration: performance.now() - started,
-        });
-      }
-    }
-  };
+    // Délai dépassé, ou réponse coupée pendant la lecture du corps.
+    throw new ServiceUnavailable(
+      signal.aborted ? "Pas de réponse du serveur" : "Réponse interrompue"
+    );
+  } finally {
+    clearTimeout(timer);
+    devFetch({ url, method, content, status }, started);
+  }
+};
+
+/** Seulement sous `pnpm tauri dev` (lib/devlog.ts), avant que pawnote lise la réponse. */
+function devFetch(
+  request: { url: URL; method: string; content?: string; status?: number },
+  started: number
+) {
+  if (import.meta.env.DEV) {
+    devRequest({ ...request, duration: performance.now() - started });
+  }
 }
 
-export const fetcher = createFetcher();
-
 // PRONOTE ne répond à la connexion mobile qu'avec le User-Agent de son application.
-export const pronoteFetcher = createFetcher(
-  "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 PRONOTE Mobile APP Version/2.0.11"
-);
+const PRONOTE_USER_AGENT =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 PRONOTE Mobile APP Version/2.0.11";
+
+/** Ce que rend la commande `instance_fetch` (src-tauri/src/http.rs). */
+interface InstanceResponse {
+  status: number;
+  headers: [string, string][];
+  content: string;
+}
+
+/**
+ * Pour pawnote. La commande Rust `instance_fetch` garde la connexion ouverte d'une requête à
+ * l'autre, là où le plugin en ouvre une par requête : une première synchro en ouvrait une
+ * soixantaine, et Windows en abandonnait. Mêmes adresses que le plugin (`allowInstance`),
+ * délai de 60 s côté Rust.
+ */
+export const pronoteFetcher: Fetcher = async ({
+  url,
+  method = "GET",
+  content,
+  headers,
+  redirect,
+}) => {
+  const finalHeaders = new Headers(headers);
+  finalHeaders.set("User-Agent", PRONOTE_USER_AGENT);
+  const started = performance.now();
+  let status: number | undefined;
+  let failure: string | undefined;
+  try {
+    const response = await invoke<InstanceResponse>("instance_fetch", {
+      url: url.href,
+      method,
+      headers: [...finalHeaders],
+      body: method === "GET" ? null : (content ?? null),
+      follow: redirect !== "manual",
+    });
+    status = response.status;
+    return {
+      status,
+      content: response.content,
+      headers: new Headers(response.headers),
+    };
+  } catch (error) {
+    // Un code de `instance_fetch` (`timeout`, `connect`…), ou une erreur de Tauri.
+    failure = withoutUrls(error);
+    throw new ServiceUnavailable(`Requête impossible : ${failure}`);
+  } finally {
+    logRequest({
+      method,
+      host: url.host,
+      status,
+      failure,
+      duration: performance.now() - started,
+    });
+    devFetch({ url, method, content, status }, started);
+  }
+};
 
 /**
  * Ouvre au plugin http l'adresse d'un compte (instance PRONOTE, URL iCal…), après validation

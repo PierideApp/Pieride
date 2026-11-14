@@ -1,4 +1,5 @@
 // Le cadre de la fenêtre : fond, panneau de page, barre latérale, boutons de la fenêtre.
+@use "../../styles/mini-card" as *;
 
 // Sous cette largeur, la barre latérale devient un rail d'icônes (UX §4), sauf si
 // l'utilisateur l'a refusé (Paramètres > Barre latérale, `data-expanded`).
@@ -685,5 +686,33 @@
   .shell:has([data-window-banner]) &:hover {
     color: var(--color-on-accent);
     background: var(--color-error);
+  }
+}
+
+// Une carte comme celles de l'accueil (styles/_mini-card.scss), qui survole le haut de la page,
+// au centre : au-dessus du panneau détail (5), sous les boutons de la fenêtre (10).
+.reconnect {
+  @include mini-card;
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  z-index: 6;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  width: min(520px, calc(100% - 2 * var(--space-6)));
+  min-height: 66px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  color: var(--color-warning);
+  box-shadow: 0 6px 24px var(--color-overlay);
+  transform: translateX(-50%);
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  > button {
+    grid-row: 1 / 3;
+    grid-column: 3;
   }
 }

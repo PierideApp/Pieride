@@ -3,20 +3,16 @@
 
 mod attachments;
 mod database;
+mod http;
 mod pronote_login;
 mod secrets;
 
-use std::{collections::HashSet, sync::Mutex};
-
+use http::{AllowedInstances, InstanceClients};
 use tauri::{AppHandle, Manager, State, Url, ipc::CapabilityBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 
 /// Argument du lancement à l'ouverture de session : Piéride démarre dans la barre des tâches.
 const MINIMIZED: &str = "--minimized";
-
-/// Origines ouvertes au plugin http pendant cette session.
-#[derive(Default)]
-struct AllowedInstances(Mutex<HashSet<String>>);
 
 #[tauri::command]
 async fn show_app(app: AppHandle) -> Result<(), String> {
@@ -33,7 +29,8 @@ async fn show_app(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Ouvre au plugin http l'adresse propre à un compte (instance PRONOTE, URL iCal…).
+/// Ouvre au plugin http et à `instance_fetch` l'adresse propre à un compte (instance PRONOTE,
+/// URL iCal…).
 /// Les domaines fixes des services, eux, sont déclarés dans `capabilities/`.
 /// Les erreurs sont des codes, traduits par l'interface (voir `instance_origin`).
 #[tauri::command]
@@ -116,6 +113,7 @@ fn show_main_window(app: &AppHandle) {
 }
 
 fn main() {
+    let allowed = AllowedInstances::default();
     tauri::Builder::default()
         // En premier : ouvrir Piéride une deuxième fois montre la fenêtre déjà lancée.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -135,9 +133,16 @@ fn main() {
             MacosLauncher::LaunchAgent,
             Some(vec![MINIMIZED]),
         ))
-        .manage(AllowedInstances::default())
-        .setup(|app| {
+        .manage(allowed.clone())
+        .setup(move |app| {
             attachments::clear(app.handle());
+            // Sans client, l'app s'ouvre quand même : les requêtes PRONOTE échouent.
+            match InstanceClients::new(allowed) {
+                Ok(clients) => {
+                    app.manage(clients);
+                }
+                Err(error) => eprintln!("client http impossible à créer : {error}"),
+            }
             // Sans base, l'app s'ouvre quand même : le front affiche l'erreur (commandes `db_*` en échec).
             match tauri::async_runtime::block_on(database::open(app.handle())) {
                 Ok(database) => {
@@ -150,6 +155,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             allow_instance,
+            http::instance_fetch,
             pronote_login::pronote_login,
             show_app,
             is_minimized,

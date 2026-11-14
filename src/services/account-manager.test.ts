@@ -182,16 +182,17 @@ describe("AccountManager", () => {
       throw new AuthenticationError("jeton expiré : abc123");
     };
     await manager.refresh("camille", "TIMETABLE", NOW);
-    await manager.refresh("camille", "TIMETABLE", NOW);
+    await manager.refresh("camille", "TIMETABLE", LATER);
 
     const [service] = await db.select().from(services);
     expect(service?.needsLogin).toBe(true);
     const [state] = await db.select().from(syncState);
     expect(state?.lastError).toBe("AuthenticationError");
-    expect(connect).toHaveBeenCalledTimes(2);
+    // Laissé de côté ensuite : plus aucune connexion jusqu'à la reconnexion.
+    expect(connect).toHaveBeenCalledOnce();
   });
 
-  it("ne renvoie un jeton refusé qu'après Ctrl R ou la reconnexion", async () => {
+  it("ne renvoie un jeton refusé qu'après la reconnexion, même après Ctrl R ou une relance", async () => {
     const { db, manager } = await setup();
     const sent = vi.fn(async () => {
       throw new AuthenticationError("refusé");
@@ -212,13 +213,23 @@ describe("AccountManager", () => {
 
     manager.allowAuthRetries();
     await manager.refreshAll("camille", LATER);
-    expect(sent).toHaveBeenCalledTimes(2);
+    // Un autre lancement : le refus vient de la base, pas de la mémoire.
+    const relaunched = new AccountManager(db, {
+      pronote: connect,
+      mock: connect,
+    });
+    await relaunched.refreshAll("camille", LATER);
+    expect(sent).toHaveBeenCalledOnce();
 
-    await manager.relinkService("pronote-1", "nouveau-jeton");
+    await relaunched.relinkService("pronote-1", "nouveau-jeton");
     const [relinked] = await db.select().from(services);
-    expect(relinked).toMatchObject({ authStep: null, authFailure: null });
-    await manager.refresh("camille", "TIMETABLE", LATER);
-    expect(sent).toHaveBeenCalledTimes(3);
+    expect(relinked).toMatchObject({
+      needsLogin: false,
+      authStep: null,
+      authFailure: null,
+    });
+    await relaunched.refresh("camille", "TIMETABLE", LATER);
+    expect(sent).toHaveBeenCalledTimes(2);
   });
 
   it("ne redemande pas une donnée synchronisée il y a moins de 30 minutes", async () => {

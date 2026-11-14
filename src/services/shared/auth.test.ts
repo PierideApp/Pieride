@@ -4,6 +4,9 @@ import {
   type AuthFailure,
   type AuthRecord,
   type AuthTracker,
+  CLOSE_WAIT,
+  closeLogins,
+  reopenLogins,
   ServiceAuth,
   SUSPENSION_COOLDOWN,
 } from "./auth";
@@ -99,6 +102,17 @@ describe("ServiceAuth", () => {
     expect(saved.at(-1)?.failure).toBe("credential_rejected");
   });
 
+  it("ne renvoie pas un jeton refusé après Ctrl R", async () => {
+    const service = auth();
+    const run = vi.fn(fails(new AuthenticationError("refusé")));
+    await expect(service.login(ROTATES, run)).rejects.toThrow();
+    service.allowRetry();
+    await expect(service.login(ROTATES, run)).rejects.toThrow(
+      "Reconnexion nécessaire"
+    );
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it("n'envoie plus rien pendant une suspension, même après Ctrl R", async () => {
     const service = auth();
     const run = vi
@@ -169,5 +183,44 @@ describe("ServiceAuth", () => {
     await expect(service.login(ROTATES, async () => "session")).resolves.toBe(
       "session"
     );
+  });
+});
+
+describe("closeLogins", () => {
+  afterEach(reopenLogins);
+
+  it("attend la connexion en cours, puis refuse les suivantes sans rien envoyer", async () => {
+    let finish: (() => void) | undefined;
+    const login = auth().login(
+      ROTATES,
+      () =>
+        new Promise<void>(resolve => {
+          finish = resolve;
+        })
+    );
+    let closed = false;
+    const closing = closeLogins().then(() => {
+      closed = true;
+    });
+    await vi.advanceTimersByTimeAsync(CLOSE_WAIT - 1);
+    expect(closed).toBe(false);
+    finish?.();
+    await login;
+    await closing;
+    const run = vi.fn(async () => undefined);
+    await expect(auth().login(ROTATES, run)).rejects.toThrow(
+      ServiceUnavailable
+    );
+    expect(run).not.toHaveBeenCalled();
+    reopenLogins();
+    await auth().login(ROTATES, run);
+    expect(run).toHaveBeenCalledOnce();
+  });
+
+  it("n'attend pas plus de CLOSE_WAIT une connexion qui ne répond pas", async () => {
+    void auth().login(ROTATES, () => new Promise<void>(() => undefined));
+    const closing = closeLogins();
+    await vi.advanceTimersByTimeAsync(CLOSE_WAIT);
+    await expect(closing).resolves.toBeUndefined();
   });
 });

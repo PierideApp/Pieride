@@ -67,6 +67,26 @@
     "maximize": "Agrandir",
     "close": "Fermer"
   },
+  "reconnect": {
+    "action": "Me reconnecter",
+    "other": "{{name}} doit se reconnecter à {{service}}",
+    "expired": {
+      "title": "Ta session {{service}} a expiré",
+      "text": "Tes données ne se mettent plus à jour"
+    },
+    "lost": {
+      "title": "La connexion à {{service}} a été coupée",
+      "text": "Ta session n'a pas pu être renouvelée"
+    },
+    "disabled": {
+      "title": "{{service}} refuse l'accès à ton compte",
+      "text": "Rapproche-toi de ton établissement"
+    },
+    "notification": {
+      "title": "Reconnexion à {{service}} nécessaire",
+      "body": "Les données de {{name}} ne se mettent plus à jour. Ouvre Piéride pour te reconnecter."
+    }
+  },
   "tray": {
     "open": "Ouvrir Piéride",
     "quit": "Quitter",
@@ -576,6 +596,17 @@
       "status": "Statut",
       "duration": "Durée",
       "noResponse": "échec",
+      "failures": {
+        "timeout": "délai dépassé",
+        "connect": "connexion impossible",
+        "redirect": "redirection refusée",
+        "body": "réponse coupée",
+        "network": "erreur réseau",
+        "url_not_allowed": "adresse non ouverte",
+        "invalid_url": "adresse invalide",
+        "invalid_method": "méthode refusée",
+        "invalid_header": "en-tête invalide"
+      },
       "log": "Journal",
       "copy": "Copier",
       "copied": "Copié",
@@ -654,7 +685,11 @@
       },
       "autoUpdate": {
         "title": "Rechercher les mises à jour automatiquement",
-        "text": "Au lancement, puis toutes les 6 heures. Rien ne s'installe sans ton accord"
+        "text": "Au lancement, puis toutes les 6 heures"
+      },
+      "autoInstall": {
+        "title": "Installer les mises à jour au lancement",
+        "text": "Piéride se met à jour à l'ouverture, puis redémarre"
       }
     },
     "features": {

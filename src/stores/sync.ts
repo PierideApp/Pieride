@@ -28,8 +28,11 @@ interface SyncState {
   syncing: boolean;
   /** Vrai si la base a refusé d'écrire ; un service en panne est noté dans `sync_state`. */
   failed: boolean;
-  /** Redemande les données plus vieilles que `interval` (30 minutes par défaut). */
-  sync: (accountId: string, interval?: number) => Promise<void>;
+  /**
+   * Redemande les données plus vieilles que `interval` (30 minutes par défaut), compte après
+   * compte : chaque connexion renouvelle le jeton du service, même d'un compte qu'on n'ouvre pas.
+   */
+  sync: (accountIds: readonly string[], interval?: number) => Promise<void>;
   /** Le dernier `Ctrl R` accepté, et le dernier refusé (moins de 5 minutes après). */
   manualAt: number | null;
   refusedAt: number | null;
@@ -85,30 +88,32 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
     }
     set({ manualAt: now, refusedAt: null });
     accountManager.allowAuthRetries();
-    void get().sync(accountId, MANUAL_SYNC_INTERVAL);
+    void get().sync([accountId], MANUAL_SYNC_INTERVAL);
   },
-  sync: async (accountId, interval) => {
+  sync: async (accountIds, interval) => {
     if (get().syncing) {
       return;
     }
     set({ syncing: true });
-    try {
-      await accountManager.refreshAll(accountId, new Date(), interval);
-      set({ failed: false });
-      log("info", "sync", "Synchronisation terminée");
-    } catch (error) {
-      set({ failed: true });
-      // Le type d'erreur seulement : le détail de chaque service est dans `sync_state`.
-      log(
-        "error",
-        "sync",
-        `Synchronisation en échec : ${error instanceof Error ? error.name : "Unknown"}`
-      );
-    } finally {
-      set(state => ({
-        syncing: false,
-        versions: bump(state.versions, TOPICS),
-      }));
+    let failed = false;
+    for (const accountId of accountIds) {
+      try {
+        await accountManager.refreshAll(accountId, new Date(), interval);
+      } catch (error) {
+        failed = true;
+        // Le type d'erreur seulement : le détail de chaque service est dans `sync_state`.
+        log(
+          "error",
+          "sync",
+          `Synchronisation en échec : ${error instanceof Error ? error.name : "Unknown"}`
+        );
+      }
+      // Le premier compte est celui affiché : ses données s'affichent sans attendre les autres.
+      set(state => ({ versions: bump(state.versions, TOPICS) }));
     }
+    if (!failed) {
+      log("info", "sync", "Synchronisation terminée");
+    }
+    set({ syncing: false, failed });
   },
 }));
