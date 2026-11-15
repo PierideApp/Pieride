@@ -46,6 +46,8 @@
     "never": "Pas encore synchronisé",
     "running": "Synchronisation…",
     "failed": "Échec de la synchronisation",
+    "partial": "Synchro partielle : vérifie l'état de ta connexion",
+    "offline": "Pas d'internet",
     "done": "Synchronisé {{when}}",
     "wait": "Réessaie {{when}}",
     "hint": "{{keys}} pour synchroniser (au plus toutes les 5 minutes)"

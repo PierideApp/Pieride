@@ -46,6 +46,8 @@
     "never": "Not synced yet",
     "running": "Syncing…",
     "failed": "Sync failed",
+    "partial": "Partial sync: check your connection",
+    "offline": "No internet",
     "done": "Synced {{when}}",
     "wait": "Try again {{when}}",
     "hint": "{{keys}} to sync (at most every 5 minutes)"

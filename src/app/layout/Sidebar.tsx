@@ -2,7 +2,14 @@
 // Paramètres.
 // Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss), sauf si
 // l'utilisateur l'a refusé dans les Paramètres.
-import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Gears,
+  GlobeCross,
+  Search,
+} from "@getpapillon/papicons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
@@ -12,13 +19,15 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Spinner } from "@/components/Spinner/Spinner";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { relativeParts } from "@/hooks/useFormats";
-import { useLastSync } from "@/hooks/useLastSync";
+import { useLastSync, useSyncCounts } from "@/hooks/useLastSync";
 import type { Loaded } from "@/hooks/useLoaded";
 import { Source, useQuery } from "@/hooks/useQuery";
 import { MOD } from "@/lib/platform";
+import { syncHealth } from "@/lib/syncStatus";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
 import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 import { useAccountStore } from "@/stores/accounts";
+import { useNetworkStore } from "@/stores/network";
 import { useSettingsStore } from "@/stores/settings";
 import { TOPICS, useSyncStore } from "@/stores/sync";
 
@@ -92,6 +101,8 @@ const REFUSED_NOTICE = 4000;
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const { t, i18n } = useTranslation();
   const lastSync = useLastSync(account?.id);
+  const counts = useSyncCounts(account?.id);
+  const online = useNetworkStore(state => state.online);
   const syncing = useSyncStore(state => state.syncing);
   const failed = useSyncStore(state => state.failed);
   const manualAt = useSyncStore(state => state.manualAt);
@@ -115,6 +126,11 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const relative = new Intl.RelativeTimeFormat(i18n.language, {
     numeric: "auto",
   });
+  const health = syncHealth(
+    counts.status === "ready" ? counts.data : undefined,
+    online,
+    failed
+  );
   let label = t("sync.never");
   if (syncing) {
     label = t("sync.running");
@@ -127,7 +143,9 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
       (manualAt + MANUAL_SYNC_INTERVAL - refusedAt) / 60_000
     );
     label = t("sync.wait", { when: relative.format(minutes, "minute") });
-  } else if (failed || lastSync.status === "error") {
+  } else if (health === "offline") {
+    label = t("sync.offline");
+  } else if (health === "failed" || lastSync.status === "error") {
     label = t("sync.failed");
   } else if (lastSync.status === "ready" && lastSync.data) {
     label = t("sync.done", {
@@ -135,20 +153,33 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
     });
   }
 
+  const showPartial = health === "partial" && !syncing;
+
   return (
-    <p
-      className={`${styles.item} ${styles.status}`}
-      title={t("sync.hint", { keys: `${MOD} R` })}
-    >
-      {syncing ? (
-        <span className={styles.syncSpinner}>
-          <Spinner />
-        </span>
-      ) : (
-        <Check size={20} className={styles.syncIcon} />
+    <>
+      {showPartial && (
+        <p className={styles.syncNote} role="status">
+          {t("sync.partial")}
+        </p>
       )}
-      <span className={styles.label}>{label}</span>
-    </p>
+      <p
+        className={`${styles.item} ${styles.status}`}
+        title={t("sync.hint", { keys: `${MOD} R` })}
+      >
+        {syncing ? (
+          <span className={styles.syncSpinner}>
+            <Spinner />
+          </span>
+        ) : health === "offline" ? (
+          <GlobeCross size={20} className={styles.syncIconError} />
+        ) : health === "failed" ? (
+          <AlertTriangle size={20} className={styles.syncIconError} />
+        ) : (
+          <Check size={20} className={styles.syncIcon} />
+        )}
+        <span className={styles.label}>{label}</span>
+      </p>
+    </>
   );
 }
 

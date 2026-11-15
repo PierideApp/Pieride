@@ -610,6 +610,25 @@
   color: var(--color-success);
 }
 
+// Pas d'Internet, ou rien n'a pu être synchronisé.
+.syncIconError {
+  flex-shrink: 0;
+  color: var(--color-error);
+}
+
+// Au-dessus de l'état de la synchro quand elle n'a réussi qu'en partie.
+.syncNote {
+  margin: 0 0 var(--space-1);
+  padding: 0 var(--space-3);
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--color-warning);
+
+  @include rail {
+    display: none;
+  }
+}
+
 // À la place de l'icône pendant la synchro, sur la même place.
 .syncSpinner {
   display: grid;

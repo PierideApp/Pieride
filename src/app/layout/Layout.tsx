@@ -17,6 +17,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { Page } from "@/components/Page/Page";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { useAutoUpdate } from "@/hooks/useAutoUpdate";
+import { useConnectivityMonitor } from "@/hooks/useConnectivityMonitor";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useTrayGlance } from "@/hooks/useTrayGlance";
@@ -25,6 +26,7 @@ import { SYNC_INTERVAL } from "@/services/account-manager";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
+import { useNetworkStore } from "@/stores/network";
 import { useSettingsStore } from "@/stores/settings";
 import { useSettingsDialog } from "@/stores/settingsDialog";
 import { useSyncStore } from "@/stores/sync";
@@ -39,77 +41,10 @@ import { useReconnectNotice } from "./useReconnectNotice";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 import { WindowControls } from "./WindowControls";
 
-// Windows can report a network connection even when the Internet is unavailable. Google's
-// connectivity check returns HTTP 204 only when Internet access works.
-const CONNECTIVITY_CHECK_URL =
-  "https://connectivitycheck.gstatic.com/generate_204";
-const CONNECTIVITY_CHECK_INTERVAL = 30_000;
-const CONNECTIVITY_CHECK_TIMEOUT = 5_000;
-
 function OfflineBanner() {
   const { t } = useTranslation();
-  const [online, setOnline] = useState(() => navigator.onLine);
-
-  useEffect(() => {
-    let active = true;
-    let checking = false;
-    let controller: AbortController | undefined;
-    const checkInternet = async () => {
-      if (checking) {
-        return;
-      }
-      if (!navigator.onLine) {
-        setOnline(false);
-        return;
-      }
-
-      checking = true;
-      controller = new AbortController();
-      const timeout = window.setTimeout(
-        () => controller?.abort(),
-        CONNECTIVITY_CHECK_TIMEOUT
-      );
-      try {
-        const response = await fetch(CONNECTIVITY_CHECK_URL, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        const connected = response.status === 204;
-        if (active) {
-          setOnline(connected);
-        }
-      } catch {
-        if (active) {
-          setOnline(false);
-        }
-      } finally {
-        window.clearTimeout(timeout);
-        checking = false;
-      }
-    };
-    const onOnline = () => void checkInternet();
-    const onOffline = () => {
-      controller?.abort();
-      setOnline(false);
-    };
-
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    window.addEventListener("focus", onOnline);
-    void checkInternet();
-    const interval = window.setInterval(
-      () => void checkInternet(),
-      CONNECTIVITY_CHECK_INTERVAL
-    );
-    return () => {
-      active = false;
-      controller?.abort();
-      window.clearInterval(interval);
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-      window.removeEventListener("focus", onOnline);
-    };
-  }, []);
+  const online = useNetworkStore(state => state.online);
+  useConnectivityMonitor();
 
   if (online) {
     return null;
