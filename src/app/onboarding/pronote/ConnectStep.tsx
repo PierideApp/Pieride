@@ -102,7 +102,7 @@ export function ConnectStep({
       ) {
         throw new AlreadyLinked();
       }
-      const avatar = login.photoUrl && (await loadPhoto(login.photoUrl));
+      const avatar = login.resource && (await loadPhoto(login.resource));
       await accountManager.addAccount({
         id: accountId,
         ...login.profile,

@@ -1,9 +1,11 @@
 // Service PRONOTE, branché à l'AccountManager dans services/index.ts. La connexion d'un
 // nouveau compte est dans `login.ts`, la session et le jeton dans `session.ts`.
+import { resizeImage } from "@/lib/image";
+
 import { AuthenticationError } from "../shared/errors";
 import type { ConnectService } from "../shared/plugin";
 import { capabilities, downloadAttachment } from "./data";
-import { loadPhotoSource, profilePhotoDataUrl } from "./login";
+import { photoOf } from "./login";
 import { parseSecret, PronoteSession } from "./session";
 
 export const connectPronote: ConnectService = async (
@@ -23,16 +25,12 @@ export const connectPronote: ConnectService = async (
     kind: "pronote",
     capabilities: capabilities(session, handle.user.authorizations.tabs),
     downloadAttachment: downloadAttachment(session),
-    getProfilePhoto: async () => {
-      const current = (await session.handle()).userResource;
-      if (current.profilePictureBase64) {
-        return loadPhotoSource(
-          profilePhotoDataUrl(current.profilePictureBase64)
-        );
-      }
-      return current.profilePicture?.url
-        ? loadPhotoSource(current.profilePicture.url)
-        : undefined;
-    },
+    // Rien seulement si PRONOTE ne donne pas de photo ; un échec (404, image illisible) remonte.
+    getProfilePhoto: () =>
+      session.run(async ({ userResource }) => {
+        const photo = await photoOf(userResource);
+        // Réduite sans recadrage, comme un fichier choisi : le cadrage se fait dans les Paramètres.
+        return photo ? resizeImage(photo, 2048) : undefined;
+      }),
   };
 };

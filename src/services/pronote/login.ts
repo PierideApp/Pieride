@@ -18,6 +18,7 @@ import {
   securitySave,
   securitySource,
   type SessionHandle,
+  type UserResource,
 } from "@blockshub/pawnote-lts";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -215,24 +216,8 @@ export function splitName(name: string): {
 export interface PronoteLogin {
   secret: PronoteSecret;
   profile: Omit<Account, "id" | "avatar">;
-  /** URL ou image encodée par PRONOTE ; `FichiersExternes` peut être en 404 sur PRONOTE 2026. */
-  photoUrl?: string;
-}
-
-/** PRONOTE 2026+ fournit la photo dans les fichiers non chiffrés de la réponse. */
-export function profilePhotoDataUrl(base64: string): string {
-  const value = base64.trim();
-  if (/^data:image\//i.test(value)) {
-    return value;
-  }
-  const mime = value.startsWith("iVBORw0KGgo")
-    ? "image/png"
-    : value.startsWith("R0lGOD")
-      ? "image/gif"
-      : value.startsWith("UklGR")
-        ? "image/webp"
-        : "image/jpeg";
-  return `data:${mime};base64,${value}`;
+  /** L'élève côté PRONOTE, pour sa photo (`loadPhoto`) tant que la session est ouverte. */
+  resource?: UserResource;
 }
 
 function loginOf(
@@ -255,9 +240,7 @@ function loginOf(
       schoolName: resource?.establishmentName,
       className: resource?.className,
     },
-    photoUrl: resource?.profilePictureBase64
-      ? profilePhotoDataUrl(resource.profilePictureBase64)
-      : resource?.profilePicture?.url,
+    resource,
   };
 }
 
@@ -361,46 +344,39 @@ export async function loginWithEnt(
 }
 
 /**
- * Le contenu d'une image : une URL `data:` (PRONOTE 2026+) se décode ici, car la CSP de l'app
- * (`connect-src`) bloque `fetch("data:…")` ; une adresse https passe par le fetch de lib/http.ts.
+ * La photo de l'élève, ou rien s'il n'en a pas. Depuis PRONOTE 2026, elle arrive en base64 dans
+ * la réponse (notre patch de pawnote) et son adresse `FichiersExternes` peut être en 404.
+ * Pas de type : `resizeImage` reconnaît le format dans les octets et refuse ce qui n'est pas une image.
  */
-export async function photoBlob(url: string): Promise<Blob | undefined> {
-  if (/^data:/i.test(url)) {
-    const match = /^data:(image\/[a-z0-9.+-]+);base64,(.*)$/is.exec(url.trim());
-    if (!match) {
-      return undefined;
-    }
-    const binary = atob(match[2].replace(/\s+/g, ""));
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index++) {
-      bytes[index] = binary.charCodeAt(index);
-    }
-    return new Blob([bytes], { type: match[1] });
+export async function photoOf(
+  resource: Pick<UserResource, "profilePicture" | "profilePictureBase64">
+): Promise<Blob | undefined> {
+  if (resource.profilePictureBase64) {
+    // Avec ou sans en-tête `data:` ; `atob` ignore les retours à la ligne.
+    const base64 = resource.profilePictureBase64.replace(/^data:[^,]*,/, "");
+    return new Blob([
+      Uint8Array.from(atob(base64), char => char.charCodeAt(0)),
+    ]);
   }
-  const response = await fetch(url);
-  return response.ok &&
-    response.headers.get("content-type")?.startsWith("image/")
-    ? await response.blob()
-    : undefined;
+  if (!resource.profilePicture) {
+    return undefined;
+  }
+  const response = await fetch(resource.profilePicture.url);
+  if (!response.ok) {
+    throw new ServiceUnavailable(
+      `Photo refusée par PRONOTE : ${response.status}`
+    );
+  }
+  return await response.blob();
 }
 
 /** La photo en URL `data:` (lib/image.ts), ou rien si elle ne se charge pas : elle est facultative. */
-export async function loadPhoto(url: string): Promise<string | undefined> {
-  try {
-    const blob = await photoBlob(url);
-    return blob ? await resizeImage(blob, 256, { square: true }) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/** Charge une source image et la réduit sans la recadrer, pour le cadrage dans les paramètres. */
-export async function loadPhotoSource(
-  url: string
+export async function loadPhoto(
+  resource: UserResource
 ): Promise<string | undefined> {
   try {
-    const blob = await photoBlob(url);
-    return blob ? await resizeImage(blob, 2048) : undefined;
+    const photo = await photoOf(resource);
+    return photo ? await resizeImage(photo, 256, { square: true }) : undefined;
   } catch {
     return undefined;
   }
