@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { parseCity, splitName, toSchool } from "./login";
+import {
+  parseCity,
+  photoBlob,
+  profilePhotoDataUrl,
+  splitName,
+  toSchool,
+} from "./login";
 
 vi.mock("@/lib/http", () => ({}));
 vi.mock("@/lib/image", () => ({}));
@@ -68,5 +74,27 @@ describe("toSchool", () => {
 
   it("ignore une adresse illisible", () => {
     expect(toSchool({ ...school, url: "pas une adresse" })).toBeNull();
+  });
+});
+
+describe("photoBlob", () => {
+  it("décode une photo base64 de PRONOTE sans passer par le réseau", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const blob = await photoBlob(profilePhotoDataUrl("/9j/4AAQSkZJRg=="));
+    expect(blob?.type).toBe("image/jpeg");
+    expect([...new Uint8Array((await blob?.arrayBuffer()) ?? [])]).toEqual([
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+    ]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("ignore les retours à la ligne du base64", async () => {
+    const blob = await photoBlob("data:image/png;base64,iVBO\nRw0K\r\nGgo=");
+    expect(blob?.type).toBe("image/png");
+  });
+
+  it("refuse un data: qui n'est pas une image en base64", async () => {
+    expect(await photoBlob("data:text/html;base64,PGI+")).toBeUndefined();
   });
 });

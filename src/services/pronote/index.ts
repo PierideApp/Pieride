@@ -3,6 +3,7 @@
 import { AuthenticationError } from "../shared/errors";
 import type { ConnectService } from "../shared/plugin";
 import { capabilities, downloadAttachment } from "./data";
+import { loadPhotoSource, profilePhotoDataUrl } from "./login";
 import { parseSecret, PronoteSession } from "./session";
 
 export const connectPronote: ConnectService = async (
@@ -22,5 +23,16 @@ export const connectPronote: ConnectService = async (
     kind: "pronote",
     capabilities: capabilities(session, handle.user.authorizations.tabs),
     downloadAttachment: downloadAttachment(session),
+    getProfilePhoto: async () => {
+      const current = (await session.handle()).userResource;
+      if (current.profilePictureBase64) {
+        return loadPhotoSource(
+          profilePhotoDataUrl(current.profilePictureBase64)
+        );
+      }
+      return current.profilePicture?.url
+        ? loadPhotoSource(current.profilePicture.url)
+        : undefined;
+    },
   };
 };

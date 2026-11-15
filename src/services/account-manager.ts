@@ -173,6 +173,23 @@ export class AccountManager {
       .where(eq(accounts.id, accountId));
   }
 
+  /** Récupère la photo du premier service scolaire qui sait la fournir. */
+  async getProfilePhoto(accountId: string): Promise<string | undefined> {
+    const linked = await this.db
+      .select()
+      .from(services)
+      .where(
+        and(eq(services.accountId, accountId), eq(services.kind, "pronote"))
+      );
+    for (const service of linked) {
+      const photo = await (await this.plugin(service)).getProfilePhoto?.();
+      if (photo) {
+        return photo;
+      }
+    }
+    return undefined;
+  }
+
   /**
    * Lie un service : adresse ouverte au réseau, ligne en base, puis secret dans le trousseau.
    * Si le trousseau échoue, la ligne est retirée : pas de service sans secret, ni l'inverse.

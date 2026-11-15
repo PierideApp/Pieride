@@ -1,6 +1,6 @@
 // Mon compte (maquette 01-mon-compte) : le profil tel qu'il apparaît dans Piéride. Prénom,
 // nom et photo se modifient ici ; établissement et classe viennent des services.
-// « Récupérer depuis ton ENT » arrivera avec la connexion PRONOTE.
+// La photo peut venir d'un fichier ou du profil PRONOTE du compte lié.
 import {
   Camera,
   Folder,
@@ -15,11 +15,18 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { Chip } from "@/components/Chip/Chip";
+import { ImageCropper } from "@/components/ImageCropper/ImageCropper";
 import { Notice } from "@/components/Notice/Notice";
 import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { TextField } from "@/components/TextField/TextField";
-import { IMAGE_TYPES, ImageError, resizeImage } from "@/lib/image";
+import {
+  type Crop,
+  cropImage,
+  IMAGE_TYPES,
+  ImageError,
+  resizeImage,
+} from "@/lib/image";
 import { report } from "@/lib/log";
 import { accountManager } from "@/services";
 import { SERVICE_GROUPS, SERVICE_NAMES } from "@/services/shared/plugin";
@@ -27,6 +34,9 @@ import { useSyncStore } from "@/stores/sync";
 
 import type { SettingsSectionProps } from "./Settings";
 import styles from "./settings.module.scss";
+
+const PHOTO_SOURCE_SIZE = 2048;
+const PROFILE_PHOTO_SIZE = 256;
 
 /** Champ enregistré quand on le quitte (ou avec Entrée), s'il a changé et n'est pas vide. */
 function NameField({
@@ -75,6 +85,8 @@ export function AccountSettings({ account }: SettingsSectionProps) {
   const [busy, setBusy] = useState(false);
   /** Clé i18n du dernier échec. */
   const [error, setError] = useState<string | null>(null);
+  /** Photo locale ou PRONOTE, en attente du cadrage carré. */
+  const [cropping, setCropping] = useState<string | null>(null);
 
   if (!account) {
     return <Notice>{t("settings.account.noAccount")}</Notice>;
@@ -90,22 +102,59 @@ export function AccountSettings({ account }: SettingsSectionProps) {
 
   const save = async (
     profile: Parameters<typeof accountManager.updateAccount>[1]
-  ) => {
+  ): Promise<boolean> => {
     setError(null);
     try {
       await accountManager.updateAccount(account.id, profile);
       reload("accounts");
+      return true;
     } catch (failure) {
       // Seul un code d'erreur de la base remonte ici.
       report("settings", failure);
       setError("errors.database");
+      return false;
     }
   };
   const choosePhoto = async (file: File) => {
     setBusy(true);
     setError(null);
     try {
-      await save({ avatar: await resizeImage(file, 256, { square: true }) });
+      setCropping(await resizeImage(file, PHOTO_SOURCE_SIZE));
+    } catch (failure) {
+      setError(
+        failure instanceof ImageError
+          ? `settings.image.${failure.reason}`
+          : "errors.database"
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const fetchPronotePhoto = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const avatar = await accountManager.getProfilePhoto(account.id);
+      if (!avatar) {
+        setError("settings.account.photoMissing");
+        return;
+      }
+      setCropping(avatar);
+    } catch (failure) {
+      report("settings", failure);
+      setError("settings.account.photoFailed");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const keepPhoto = async (source: string, crop: Crop) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const avatar = await cropImage(source, crop, PROFILE_PHOTO_SIZE);
+      if (await save({ avatar })) {
+        setCropping(null);
+      }
     } catch (failure) {
       setError(
         failure instanceof ImageError
@@ -198,28 +247,59 @@ export function AccountSettings({ account }: SettingsSectionProps) {
         </Card>
       </Section>
 
-      <Section title={t("settings.account.photo")}>
-        <Card rows>
-          <SettingRow
-            as="button"
-            icon={Folder}
-            title={t("settings.account.fromFile")}
-            text={t("settings.account.fromFileText")}
-            disabled={busy}
-            onClick={choose}
-          />
-          {account.avatar && (
+      {cropping ? (
+        <Section title={t("settings.account.photo")}>
+          <div className={styles.crop} aria-labelledby="profile-photo-crop">
+            <h3 id="profile-photo-crop">{t("settings.account.cropTitle")}</h3>
+            <p>{t("settings.account.cropText")}</p>
+            <ImageCropper
+              key={cropping}
+              src={cropping}
+              ratio={1}
+              busy={busy}
+              onCancel={() => {
+                if (!busy) {
+                  setCropping(null);
+                }
+              }}
+              onConfirm={crop => void keepPhoto(cropping, crop)}
+            />
+          </div>
+        </Section>
+      ) : (
+        <Section title={t("settings.account.photo")}>
+          <Card rows>
             <SettingRow
               as="button"
-              icon={Trash}
-              tone="danger"
-              title={t("settings.account.removePhoto")}
+              icon={Folder}
+              title={t("settings.account.fromFile")}
+              text={t("settings.account.fromFileText")}
               disabled={busy}
-              onClick={() => void save({ avatar: null })}
+              onClick={choose}
             />
-          )}
-        </Card>
-      </Section>
+            {account.services.some(service => service.kind === "pronote") && (
+              <SettingRow
+                as="button"
+                icon={GraduationHat}
+                title={t("settings.account.fromPronote")}
+                text={t("settings.account.fromPronoteText")}
+                disabled={busy}
+                onClick={() => void fetchPronotePhoto()}
+              />
+            )}
+            {account.avatar && (
+              <SettingRow
+                as="button"
+                icon={Trash}
+                tone="danger"
+                title={t("settings.account.removePhoto")}
+                disabled={busy}
+                onClick={() => void save({ avatar: null })}
+              />
+            )}
+          </Card>
+        </Section>
+      )}
 
       {(account.schoolName || account.className) && (
         <Section
