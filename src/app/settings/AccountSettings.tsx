@@ -249,11 +249,10 @@ export function AccountSettings({ account }: SettingsSectionProps) {
 
       {cropping ? (
         <Section title={t("settings.account.photo")}>
-          <div className={styles.crop} aria-labelledby="profile-photo-crop">
+          <section className={styles.crop} aria-labelledby="profile-photo-crop">
             <h3 id="profile-photo-crop">{t("settings.account.cropTitle")}</h3>
             <p>{t("settings.account.cropText")}</p>
             <ImageCropper
-              key={cropping}
               src={cropping}
               ratio={1}
               busy={busy}
@@ -264,7 +263,7 @@ export function AccountSettings({ account }: SettingsSectionProps) {
               }}
               onConfirm={crop => void keepPhoto(cropping, crop)}
             />
-          </div>
+          </section>
         </Section>
       ) : (
         <Section title={t("settings.account.photo")}>
