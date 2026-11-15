@@ -39,6 +39,9 @@
     "noAccount": "Pas encore de compte",
     "switchAccount": "Changer de compte"
   },
+  "internet": {
+    "bannerOffline": "Pas de connexion Internet. Les dernières données enregistrées restent accessibles."
+  },
   "sync": {
     "never": "Pas encore synchronisé",
     "running": "Synchronisation…",

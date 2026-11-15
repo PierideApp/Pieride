@@ -1,5 +1,6 @@
 // Le cadre de la fenêtre (UX §3) : barre latérale, boutons de la fenêtre, page du module affiché,
 // panneau détail, palette de commandes et Paramètres.
+import { GlobeCross } from "@getpapillon/papicons";
 import {
   useCallback,
   useEffect,
@@ -37,6 +38,89 @@ import { Sidebar } from "./Sidebar";
 import { useReconnectNotice } from "./useReconnectNotice";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 import { WindowControls } from "./WindowControls";
+
+// Windows can report a network connection even when the Internet is unavailable. Google's
+// connectivity check returns HTTP 204 only when Internet access works.
+const CONNECTIVITY_CHECK_URL =
+  "https://connectivitycheck.gstatic.com/generate_204";
+const CONNECTIVITY_CHECK_INTERVAL = 30_000;
+const CONNECTIVITY_CHECK_TIMEOUT = 5_000;
+
+function OfflineBanner() {
+  const { t } = useTranslation();
+  const [online, setOnline] = useState(() => navigator.onLine);
+
+  useEffect(() => {
+    let active = true;
+    let checking = false;
+    let controller: AbortController | undefined;
+    const checkInternet = async () => {
+      if (checking) {
+        return;
+      }
+      if (!navigator.onLine) {
+        setOnline(false);
+        return;
+      }
+
+      checking = true;
+      controller = new AbortController();
+      const timeout = window.setTimeout(
+        () => controller?.abort(),
+        CONNECTIVITY_CHECK_TIMEOUT
+      );
+      try {
+        const response = await fetch(CONNECTIVITY_CHECK_URL, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const connected = response.status === 204;
+        if (active) {
+          setOnline(connected);
+        }
+      } catch {
+        if (active) {
+          setOnline(false);
+        }
+      } finally {
+        window.clearTimeout(timeout);
+        checking = false;
+      }
+    };
+    const onOnline = () => void checkInternet();
+    const onOffline = () => {
+      controller?.abort();
+      setOnline(false);
+    };
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("focus", onOnline);
+    void checkInternet();
+    const interval = window.setInterval(
+      () => void checkInternet(),
+      CONNECTIVITY_CHECK_INTERVAL
+    );
+    return () => {
+      active = false;
+      controller?.abort();
+      window.clearInterval(interval);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("focus", onOnline);
+    };
+  }, []);
+
+  if (online) {
+    return null;
+  }
+  return (
+    <div className={styles.offlineBanner} role="status">
+      <GlobeCross size={18} aria-hidden="true" />
+      <span>{t("internet.bannerOffline")}</span>
+    </div>
+  );
+}
 
 export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { t } = useTranslation();
@@ -138,6 +222,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
       <WindowControls />
       <main className={styles.page} data-detail-open={detailOpen || undefined}>
         <div className={styles.pageContent}>
+          <OfflineBanner />
           <Routes>
             {modules.map(module => (
               <Route

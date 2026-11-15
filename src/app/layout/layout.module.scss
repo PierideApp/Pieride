@@ -58,6 +58,29 @@
   }
 }
 
+.offlineBanner {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-5);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  font-size: 12px;
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+// Les contrôles de fenêtre sont dans le même bandeau en haut à droite : leur réserver la place.
+:global(:root:not([data-platform="mac"])) .offlineBanner {
+  padding-right: 154px;
+}
+
 // Panneau détail : à côté du contenu, par-dessus entre 960 et 1279 px, à sa place en dessous.
 .detail {
   display: flex;

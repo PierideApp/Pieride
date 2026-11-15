@@ -41,6 +41,7 @@
     {
       "identifier": "http:default",
       "allow": [
+        { "url": "https://connectivitycheck.gstatic.com/generate_204" },
         { "url": "https://www.index-education.com/swie/geoloc.php" },
         { "url": "https://data.geopf.fr/geocodage/search" }
       ],
