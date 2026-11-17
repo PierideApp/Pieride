@@ -1,6 +1,6 @@
 [package]
 name = "pieride"
-version = "1.0.0-beta.2"
+version = "0.1.0-beta.2"
 description = "Piéride"
 repository = "https://github.com/PierideApp/Pieride"
 edition = "2024"

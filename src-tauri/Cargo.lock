@@ -3132,7 +3132,7 @@ dependencies = [
 
 [[package]]
 name = "pieride"
-version = "1.0.0-beta.2"
+version = "0.1.0-beta.2"
 dependencies = [
  "keyring",
  "libsqlite3-sys",
