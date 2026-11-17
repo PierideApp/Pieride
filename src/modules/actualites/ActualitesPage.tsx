@@ -215,7 +215,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
           >
             <header className={styles.readerHead}>
               <Avatar account={authorOf(current.author)} size={44} />
-              <span>
+              <span className={styles.author}>
                 <strong>{current.author}</strong>
                 <small>
                   {[

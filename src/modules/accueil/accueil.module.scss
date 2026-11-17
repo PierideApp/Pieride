@@ -1033,7 +1033,8 @@
     }
   }
 
-  span {
+  // Une classe et pas `span` : la règle toucherait aussi les initiales de l'Avatar.
+  .newsText {
     display: flex;
     flex-direction: column;
     min-width: 0;
