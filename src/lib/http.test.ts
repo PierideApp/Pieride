@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -5,6 +6,7 @@ import { ServiceUnavailable } from "@/services/shared/errors";
 
 import { devRequest } from "./devlog";
 import { fetcher, pronoteFetcher, redactUrl } from "./http";
+import { getLog } from "./log";
 
 // http.ts remplace globalThis.fetch dès son import : l'environnement doit exister avant.
 const nativeFetch = vi.hoisted(() => {
@@ -13,9 +15,11 @@ const nativeFetch = vi.hoisted(() => {
   vi.stubGlobal("location", new URL("http://localhost:1420/"));
   return nativeFetch;
 });
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: vi.fn() }));
 vi.mock("./devlog", () => ({ devRequest: vi.fn() }));
 const plugin = vi.mocked(pluginFetch);
+const command = vi.mocked(invoke);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -27,6 +31,12 @@ beforeEach(() => {
   plugin.mockImplementation(
     async () => new Response("plugin", { headers: { "Set-Cookie": "id=1" } })
   );
+  command.mockReset();
+  command.mockResolvedValue({
+    status: 200,
+    headers: [["set-cookie", "id=1"]],
+    content: "instance",
+  });
 });
 
 describe("fetch global", () => {
@@ -112,16 +122,6 @@ describe("fetcher", () => {
     expect(plugin.mock.calls[0][1]?.maxRedirections).toBe(0);
   });
 
-  it("met le User-Agent de PRONOTE et garde les autres en-têtes", async () => {
-    await pronoteFetcher({
-      url,
-      headers: { "User-Agent": "autre", "Content-Type": "text/plain" },
-    });
-    const headers = new Headers(plugin.mock.calls[0][1]?.headers);
-    expect(headers.get("User-Agent")).toContain("PRONOTE Mobile APP");
-    expect(headers.get("Content-Type")).toBe("text/plain");
-  });
-
   it("traduit un délai dépassé en ServiceUnavailable", async () => {
     vi.spyOn(AbortSignal, "timeout").mockReturnValue(
       AbortSignal.abort(new DOMException("", "TimeoutError"))
@@ -163,6 +163,63 @@ describe("fetcher", () => {
     const response = await fetcher({ url });
     expect(response).toMatchObject({ status: 200, content: "plugin" });
     expect(response.headers.get("Set-Cookie")).toBe("id=1");
+  });
+});
+
+describe("pronoteFetcher", () => {
+  const url = new URL(
+    "https://0000000a.index-education.net/pronote/appelfonction/3/42"
+  );
+
+  it("passe par instance_fetch, pas par le plugin", async () => {
+    await pronoteFetcher({ url, method: "POST", content: "{}" });
+    await pronoteFetcher({ url, redirect: "manual" });
+    expect(plugin).not.toHaveBeenCalled();
+    expect(command.mock.calls).toEqual([
+      [
+        "instance_fetch",
+        expect.objectContaining({
+          url: url.href,
+          method: "POST",
+          body: "{}",
+          follow: true,
+        }),
+      ],
+      [
+        "instance_fetch",
+        expect.objectContaining({ method: "GET", body: null, follow: false }),
+      ],
+    ]);
+  });
+
+  it("met le User-Agent de PRONOTE et garde les autres en-têtes", async () => {
+    await pronoteFetcher({
+      url,
+      headers: { "User-Agent": "autre", Cookie: "appliMobile=1" },
+    });
+    expect(command.mock.calls[0][1]).toMatchObject({
+      headers: [
+        ["cookie", "appliMobile=1"],
+        ["user-agent", expect.stringContaining("PRONOTE Mobile APP")],
+      ],
+    });
+  });
+
+  it("rend le contenu, le statut et les en-têtes", async () => {
+    const response = await pronoteFetcher({ url });
+    expect(response).toMatchObject({ status: 200, content: "instance" });
+    expect(response.headers.get("Set-Cookie")).toBe("id=1");
+  });
+
+  it("note au journal la cause d'un échec, sans l'URL", async () => {
+    command.mockRejectedValue("timeout");
+    await expect(pronoteFetcher({ url })).rejects.toThrow(ServiceUnavailable);
+    expect(getLog().requests.at(-1)).toMatchObject({
+      method: "GET",
+      host: url.host,
+      status: undefined,
+      failure: "timeout",
+    });
   });
 });
 

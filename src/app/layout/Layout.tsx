@@ -32,7 +32,9 @@ import { CommandPalette } from "./CommandPalette";
 import { DetailPanel } from "./DetailPanel";
 import styles from "./layout.module.scss";
 import { NotFound } from "./NotFound";
+import { ReconnectBanner } from "./ReconnectBanner";
 import { Sidebar } from "./Sidebar";
+import { useReconnectNotice } from "./useReconnectNotice";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 import { WindowControls } from "./WindowControls";
 
@@ -43,6 +45,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const closeDetail = useDetailStore(state => state.close);
   const { pathname } = useLocation();
   useAutoUpdate();
+  useReconnectNotice(accounts);
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Ouverts sur la page en cours : changer de page (raccourci, palette) les ferme.
   const settingsAt = useSettingsDialog(state => state.openAt);
@@ -69,11 +72,18 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const syncNow = useSyncStore(state => state.syncNow);
   const syncing = useSyncStore(state => state.syncing);
   const currentAccountId = current?.id;
+  // En chaîne, pour que la relecture des comptes après chaque synchro n'en relance pas une.
+  const others = list
+    .filter(account => account.id !== currentAccountId)
+    .map(account => account.id)
+    .join(" ");
+  // Tous les comptes, l'affiché d'abord : PRONOTE ne renouvelle le jeton qu'à la connexion, un
+  // compte qu'on n'ouvre jamais le laisserait expirer.
   const syncCurrent = useCallback(() => {
     if (currentAccountId) {
-      void sync(currentAccountId);
+      void sync([currentAccountId, ...others.split(" ").filter(Boolean)]);
     }
-  }, [currentAccountId, sync]);
+  }, [currentAccountId, others, sync]);
   // Au lancement et au changement de compte. Une donnée de moins de 30 minutes n'est pas
   // redemandée (`SYNC_INTERVAL`).
   useEffect(syncCurrent, [syncCurrent]);
@@ -154,6 +164,7 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
             ))}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ReconnectBanner accounts={list} currentId={currentAccountId} />
         </div>
         <DetailPanel />
       </main>

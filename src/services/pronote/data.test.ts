@@ -14,10 +14,13 @@ import {
   type NewsQuestion,
   NewsQuestionKind,
   type NewsSurvey,
+  SessionExpiredError,
   TabLocation,
   type TimetableClassLesson,
 } from "@blockshub/pawnote-lts";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { getLog } from "@/lib/log";
 
 import { ServiceAuth } from "../shared/auth";
 import { ServiceUnavailable } from "../shared/errors";
@@ -32,9 +35,13 @@ import {
   toHomework,
   toNews,
 } from "./data";
-import { PronoteSession } from "./session";
+import { lostExchange, PronoteSession } from "./session";
 
 vi.mock("@/lib/http", () => ({}));
+vi.mock("./session", async original => ({
+  ...(await original<typeof import("./session")>()),
+  lostExchange: vi.fn(() => false),
+}));
 vi.mock("@blockshub/pawnote-lts", async original => ({
   ...(await original<typeof import("@blockshub/pawnote-lts")>()),
   news: vi.fn(),
@@ -384,6 +391,71 @@ describe("toNews", () => {
         { content: "<p>Départ à 8h</p>" },
       ]);
       expect(newsDetails).not.toHaveBeenCalled();
+    });
+
+    describe("quand un contenu échoue", () => {
+      const third: NewsInformation = { ...summary, id: "n8", title: "Cantine" };
+      const withContent: typeof newsDetails = async (_, item) => ({
+        ...item,
+        question: question({ content: "<p>Salle B12</p>" }),
+        content: "<p>Salle B12</p>",
+      });
+
+      beforeEach(() => {
+        vi.mocked(newsDetails).mockReset();
+        vi.mocked(news).mockResolvedValue({
+          categories: [],
+          items: [other, third],
+        });
+      });
+
+      it("garde l'actualité sans texte et continue avec les autres", async () => {
+        vi.mocked(newsDetails)
+          .mockRejectedValueOnce(new TypeError("e.texte is undefined"))
+          .mockImplementation(withContent);
+        const list = await newsWithContent(handle, new Map());
+
+        expect(newsDetails).toHaveBeenCalledTimes(2);
+        expect(list).toMatchObject([
+          { title: "Réunion", content: "", attachments: [] },
+          { title: "Cantine", content: "<p>Salle B12</p>" },
+        ]);
+        expect(getLog().entries.at(-1)).toMatchObject({
+          level: "warn",
+          message: expect.stringContaining(
+            "1 contenu(s) manquant(s), TypeError"
+          ),
+        });
+      });
+
+      it("n'insiste pas après une requête restée sans réponse", async () => {
+        vi.mocked(newsDetails).mockRejectedValue(
+          new ServiceUnavailable("Requête impossible : timeout")
+        );
+        vi.mocked(lostExchange).mockReturnValueOnce(true);
+        const list = await newsWithContent(handle, new Map());
+
+        expect(newsDetails).toHaveBeenCalledOnce();
+        expect(list).toMatchObject([{ content: "" }, { content: "" }]);
+      });
+
+      it("laisse la session expirée à PronoteSession, qui rejoue tout", async () => {
+        vi.mocked(newsDetails).mockRejectedValue(new SessionExpiredError());
+        await expect(newsWithContent(handle, new Map())).rejects.toThrow(
+          SessionExpiredError
+        );
+      });
+
+      it("redemande le contenu d'une actualité gardée sans texte", async () => {
+        vi.mocked(newsDetails).mockImplementation(withContent);
+        const saved = toNews(other);
+        const [first] = await newsWithContent(
+          handle,
+          new Map([[saved.id, saved]])
+        );
+        expect(newsDetails).toHaveBeenCalledTimes(2);
+        expect(first).toMatchObject({ content: "<p>Salle B12</p>" });
+      });
     });
   });
 });

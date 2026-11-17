@@ -153,6 +153,8 @@ jobs:
         run: |
           : "${DISCORD_WEBHOOK_URL:?Ajoute le secret DISCORD_WEBHOOK_URL au dépôt}"
           payload="$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" | jq '
+            # trim est arrivé avec jq 1.8, le runner est en 1.7
+            def trim: sub("\\A\\s+"; "") | sub("\\s+\\z"; "");
             ((.name | select(. != "")) // .tag_name) as $titre
             | ["\n" + (.body // "" | gsub("\r"; "")) | splits("\n(?=### )") | trim] as $blocs
             | [

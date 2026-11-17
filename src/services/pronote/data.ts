@@ -8,6 +8,7 @@ import {
   assignmentStatus,
   type Attachment as PronoteAttachment,
   AttachmentKind,
+  BusyPageError,
   type Grade as PronoteGrade,
   GradeKind,
   gradesOverview,
@@ -22,15 +23,21 @@ import {
   type NewsSurvey,
   type Notebook,
   notebook,
+  PageUnavailableError,
   parseTimetable,
+  RateLimitedError,
   type ResourceContent,
   resourcesFromWeek,
+  SessionExpiredError,
   type SessionHandle,
+  SuspendedIPError,
   TabLocation,
   type Timetable,
   timetableFromWeek,
   translateToWeekNumber,
 } from "@blockshub/pawnote-lts";
+
+import { log } from "@/lib/log";
 
 import { ServiceUnavailable } from "../shared/errors";
 import type {
@@ -44,7 +51,7 @@ import type {
   Period,
 } from "../shared/models";
 import type { CapabilityMethods } from "../shared/plugin";
-import type { PronoteSession } from "./session";
+import { lostExchange, type PronoteSession } from "./session";
 
 type TimetableItem = Timetable["classes"][number];
 
@@ -210,19 +217,38 @@ const detailed = async <T extends NewsInformation | NewsSurvey>(
 ): Promise<T> => (withoutContent(item) ? newsDetails(handle, item) : item);
 
 /**
+ * Une actualité enregistrée sans texte ni pièce jointe : son contenu avait échoué
+ * (`newsWithContent`), il est redemandé.
+ */
+const hasContent = (item: News) =>
+  item.content !== "" || item.attachments.length > 0;
+
+/** Ce que le journal garde d'un contenu en échec, masqué par `log`. */
+const describe = (error: unknown) =>
+  error instanceof Error
+    ? `${error.name} ${error.message.slice(0, 200)}`
+    : "Unknown";
+
+/**
  * Les actualités avec leur contenu. Celui d'une actualité déjà en base (`known`, par clé) est
  * repris : seules les nouvelles coûtent une requête de plus. Le reste (lue, rubrique) vient de
- * la liste, toujours à jour.
+ * la liste, toujours à jour. Un contenu en échec n'empêche pas les autres : l'actualité est
+ * gardée sans texte, et redemandée à la synchro suivante.
  */
 export async function newsWithContent(
   handle: SessionHandle,
   known: ReadonlyMap<string, News>
 ): Promise<News[]> {
   const list: News[] = [];
+  let missing = 0;
+  let failure: string | undefined;
+  let stop = false;
   // L'une après l'autre : PRONOTE numérote ses requêtes.
   for (const item of (await news(handle)).items) {
     const cached = known.get(newsKey(item));
-    if (cached && withoutContent(item)) {
+    if (!withoutContent(item)) {
+      list.push(toNews(item));
+    } else if (cached && hasContent(cached)) {
       const { content, attachments, needsAcknowledgement, acknowledged } =
         cached;
       list.push({
@@ -232,9 +258,39 @@ export async function newsWithContent(
         needsAcknowledgement,
         acknowledged,
       });
+    } else if (stop) {
+      missing++;
+      list.push(toNews(item));
     } else {
-      list.push(toNews(await detailed(handle, item)));
+      try {
+        list.push(toNews(await newsDetails(handle, item)));
+      } catch (error) {
+        // Toute la session est en cause : `PronoteSession.run` la refait ou attend.
+        if (
+          error instanceof SessionExpiredError ||
+          error instanceof SuspendedIPError ||
+          error instanceof RateLimitedError
+        ) {
+          throw error;
+        }
+        missing++;
+        failure ??= describe(error);
+        list.push(toNews(item));
+        // Requête perdue ou PRONOTE indisponible : les suivantes échoueraient aussi. Un refus
+        // ou un format que pawnote ne lit pas ne concerne que cette actualité.
+        stop =
+          lostExchange(handle) ||
+          error instanceof BusyPageError ||
+          error instanceof PageUnavailableError;
+      }
     }
+  }
+  if (failure) {
+    log(
+      "warn",
+      "sync",
+      `pronote NEWS : ${missing} contenu(s) manquant(s), ${failure}`
+    );
   }
   return list;
 }

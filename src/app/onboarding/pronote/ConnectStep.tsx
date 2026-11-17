@@ -102,7 +102,7 @@ export function ConnectStep({
       ) {
         throw new AlreadyLinked();
       }
-      const avatar = login.photoUrl && (await loadPhoto(login.photoUrl));
+      const avatar = login.resource && (await loadPhoto(login.resource));
       await accountManager.addAccount({
         id: accountId,
         ...login.profile,
@@ -132,7 +132,7 @@ export function ConnectStep({
     reload();
     // Actualités, carnet… : une synchro complète, qui ne redemande pas les étapes ci-dessus
     // (moins de 30 minutes). Sans elle, ils attendraient un clic sur « Synchroniser ».
-    void sync(accountId);
+    void sync([accountId]);
     onDone?.();
   };
 

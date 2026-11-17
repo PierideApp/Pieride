@@ -16,6 +16,7 @@
     "core:window:allow-destroy",
     "core:app:allow-default-window-icon",
     "allow-allow-instance",
+    "allow-instance-fetch",
     "allow-pronote-login",
     "allow-show-app",
     "allow-is-minimized",

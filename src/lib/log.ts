@@ -19,6 +19,8 @@ export interface RequestEntry {
   host: string;
   /** Absent si la requête n'a pas abouti. */
   status?: number;
+  /** Pourquoi elle n'a pas abouti : un code de `instance_fetch` (src-tauri/src/http.rs). */
+  failure?: string;
   /** En millisecondes. */
   duration: number;
 }

@@ -8,6 +8,22 @@ export function capitalize(text: string, locale: string): string {
   return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
 }
 
+/**
+ * Un écart en millisecondes (négatif : dans le passé), dans l'unité qui se lit pour
+ * `Intl.RelativeTimeFormat` : minutes, puis heures, puis jours (« il y a 3 jours »).
+ */
+export function relativeParts(ms: number): [number, "minute" | "hour" | "day"] {
+  const minutes = Math.round(ms / 60_000);
+  if (Math.abs(minutes) < 60) {
+    return [minutes, "minute"];
+  }
+  const hours = Math.round(ms / 3_600_000);
+  if (Math.abs(hours) < 24) {
+    return [hours, "hour"];
+  }
+  return [Math.round(ms / 86_400_000), "day"];
+}
+
 /** Heures manquées, comme les maquettes d'Assiduité : « 12 min », « 3 h 00 ». */
 export const hoursMinutes = (minutes: number) =>
   minutes < 60
