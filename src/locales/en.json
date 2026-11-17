@@ -39,15 +39,12 @@
     "noAccount": "No account yet",
     "switchAccount": "Switch account"
   },
-  "internet": {
-    "bannerOffline": "No internet connection. Your latest saved data is still available."
-  },
   "sync": {
     "never": "Not synced yet",
     "running": "Syncing…",
     "failed": "Sync failed",
-    "partial": "Partial sync: check your connection",
-    "offline": "No internet",
+    "partial": "Partly synced {{when}}",
+    "offline": "Offline",
     "done": "Synced {{when}}",
     "wait": "Try again {{when}}",
     "hint": "{{keys}} to sync (at most every 5 minutes)"

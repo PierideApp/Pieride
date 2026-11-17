@@ -1,6 +1,5 @@
 // Le cadre de la fenêtre (UX §3) : barre latérale, boutons de la fenêtre, page du module affiché,
 // panneau détail, palette de commandes et Paramètres.
-import { GlobeCross } from "@getpapillon/papicons";
 import {
   useCallback,
   useEffect,
@@ -17,7 +16,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary/ErrorBoundary";
 import { Page } from "@/components/Page/Page";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { useAutoUpdate } from "@/hooks/useAutoUpdate";
-import { useConnectivityMonitor } from "@/hooks/useConnectivityMonitor";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useTrayGlance } from "@/hooks/useTrayGlance";
@@ -26,7 +24,6 @@ import { SYNC_INTERVAL } from "@/services/account-manager";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
-import { useNetworkStore } from "@/stores/network";
 import { useSettingsStore } from "@/stores/settings";
 import { useSettingsDialog } from "@/stores/settingsDialog";
 import { useSyncStore } from "@/stores/sync";
@@ -40,22 +37,6 @@ import { Sidebar } from "./Sidebar";
 import { useReconnectNotice } from "./useReconnectNotice";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 import { WindowControls } from "./WindowControls";
-
-function OfflineBanner() {
-  const { t } = useTranslation();
-  const online = useNetworkStore(state => state.online);
-  useConnectivityMonitor();
-
-  if (online) {
-    return null;
-  }
-  return (
-    <div className={styles.offlineBanner} role="status">
-      <GlobeCross size={18} aria-hidden="true" />
-      <span>{t("internet.bannerOffline")}</span>
-    </div>
-  );
-}
 
 export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
   const { t } = useTranslation();
@@ -157,7 +138,6 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
       <WindowControls />
       <main className={styles.page} data-detail-open={detailOpen || undefined}>
         <div className={styles.pageContent}>
-          <OfflineBanner />
           <Routes>
             {modules.map(module => (
               <Route

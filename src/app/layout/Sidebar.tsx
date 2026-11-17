@@ -19,15 +19,14 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Spinner } from "@/components/Spinner/Spinner";
 import type { AccountSummary } from "@/hooks/useAccounts";
 import { relativeParts } from "@/hooks/useFormats";
-import { useLastSync, useSyncCounts } from "@/hooks/useLastSync";
+import { useAccountSync } from "@/hooks/useLastSync";
 import type { Loaded } from "@/hooks/useLoaded";
+import { useOnline } from "@/hooks/useOnline";
 import { Source, useQuery } from "@/hooks/useQuery";
 import { MOD } from "@/lib/platform";
-import { syncHealth } from "@/lib/syncStatus";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
 import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 import { useAccountStore } from "@/stores/accounts";
-import { useNetworkStore } from "@/stores/network";
 import { useSettingsStore } from "@/stores/settings";
 import { TOPICS, useSyncStore } from "@/stores/sync";
 
@@ -100,9 +99,8 @@ const REFUSED_NOTICE = 4000;
  */
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const { t, i18n } = useTranslation();
-  const lastSync = useLastSync(account?.id);
-  const counts = useSyncCounts(account?.id);
-  const online = useNetworkStore(state => state.online);
+  const sync = useAccountSync(account?.id);
+  const online = useOnline();
   const syncing = useSyncStore(state => state.syncing);
   const failed = useSyncStore(state => state.failed);
   const manualAt = useSyncStore(state => state.manualAt);
@@ -126,12 +124,9 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const relative = new Intl.RelativeTimeFormat(i18n.language, {
     numeric: "auto",
   });
-  const health = syncHealth(
-    counts.status === "ready" ? counts.data : undefined,
-    online,
-    failed
-  );
   let label = t("sync.never");
+  let Icon = Check;
+  let tone = styles.syncIcon;
   if (syncing) {
     label = t("sync.running");
   } else if (
@@ -143,43 +138,45 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
       (manualAt + MANUAL_SYNC_INTERVAL - refusedAt) / 60_000
     );
     label = t("sync.wait", { when: relative.format(minutes, "minute") });
-  } else if (health === "offline") {
+  } else if (!online) {
     label = t("sync.offline");
-  } else if (health === "failed" || lastSync.status === "error") {
+    Icon = GlobeCross;
+    tone = styles.syncIconError;
+  } else if (
+    failed ||
+    sync.status === "error" ||
+    (sync.status === "ready" && sync.data.failures === "all")
+  ) {
     label = t("sync.failed");
-  } else if (lastSync.status === "ready" && lastSync.data) {
-    label = t("sync.done", {
-      when: relative.format(...relativeParts(lastSync.data.getTime() - now)),
-    });
+    Icon = AlertTriangle;
+    tone = styles.syncIconError;
+  } else if (sync.status === "ready" && sync.data.last) {
+    const when = relative.format(
+      ...relativeParts(sync.data.last.getTime() - now)
+    );
+    if (sync.data.failures === "some") {
+      label = t("sync.partial", { when });
+      Icon = AlertTriangle;
+      tone = styles.syncIconWarning;
+    } else {
+      label = t("sync.done", { when });
+    }
   }
 
-  const showPartial = health === "partial" && !syncing;
-
   return (
-    <>
-      {showPartial && (
-        <p className={styles.syncNote} role="status">
-          {t("sync.partial")}
-        </p>
+    <p
+      className={`${styles.item} ${styles.status}`}
+      title={t("sync.hint", { keys: `${MOD} R` })}
+    >
+      {syncing ? (
+        <span className={styles.syncSpinner}>
+          <Spinner />
+        </span>
+      ) : (
+        <Icon size={20} className={tone} />
       )}
-      <p
-        className={`${styles.item} ${styles.status}`}
-        title={t("sync.hint", { keys: `${MOD} R` })}
-      >
-        {syncing ? (
-          <span className={styles.syncSpinner}>
-            <Spinner />
-          </span>
-        ) : health === "offline" ? (
-          <GlobeCross size={20} className={styles.syncIconError} />
-        ) : health === "failed" ? (
-          <AlertTriangle size={20} className={styles.syncIconError} />
-        ) : (
-          <Check size={20} className={styles.syncIcon} />
-        )}
-        <span className={styles.label}>{label}</span>
-      </p>
-    </>
+      <span className={styles.label}>{label}</span>
+    </p>
   );
 }
 
