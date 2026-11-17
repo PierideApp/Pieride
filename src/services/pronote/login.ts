@@ -18,6 +18,7 @@ import {
   securitySave,
   securitySource,
   type SessionHandle,
+  type UserResource,
 } from "@blockshub/pawnote-lts";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -215,8 +216,8 @@ export function splitName(name: string): {
 export interface PronoteLogin {
   secret: PronoteSecret;
   profile: Omit<Account, "id" | "avatar">;
-  /** La photo de l'élève, sur l'instance, valable le temps de la session. */
-  photoUrl?: string;
+  /** L'élève côté PRONOTE, pour sa photo (`loadPhoto`) tant que la session est ouverte. */
+  resource?: UserResource;
 }
 
 function loginOf(
@@ -239,7 +240,7 @@ function loginOf(
       schoolName: resource?.establishmentName,
       className: resource?.className,
     },
-    photoUrl: resource?.profilePicture?.url,
+    resource,
   };
 }
 
@@ -342,13 +343,40 @@ export async function loginWithEnt(
     : { kind: "done", login: await finish() };
 }
 
+/**
+ * La photo de l'élève, ou rien s'il n'en a pas. Depuis PRONOTE 2026, elle arrive en base64 dans
+ * la réponse (notre patch de pawnote) et son adresse `FichiersExternes` peut être en 404.
+ * Pas de type : `resizeImage` reconnaît le format dans les octets et refuse ce qui n'est pas une image.
+ */
+export async function photoOf(
+  resource: Pick<UserResource, "profilePicture" | "profilePictureBase64">
+): Promise<Blob | undefined> {
+  if (resource.profilePictureBase64) {
+    // Avec ou sans en-tête `data:` ; `atob` ignore les retours à la ligne.
+    const base64 = resource.profilePictureBase64.replace(/^data:[^,]*,/, "");
+    return new Blob([
+      Uint8Array.from(atob(base64), char => char.charCodeAt(0)),
+    ]);
+  }
+  if (!resource.profilePicture) {
+    return undefined;
+  }
+  const response = await fetch(resource.profilePicture.url);
+  if (!response.ok) {
+    throw new ServiceUnavailable(
+      `Photo refusée par PRONOTE : ${response.status}`
+    );
+  }
+  return await response.blob();
+}
+
 /** La photo en URL `data:` (lib/image.ts), ou rien si elle ne se charge pas : elle est facultative. */
-export async function loadPhoto(url: string): Promise<string | undefined> {
+export async function loadPhoto(
+  resource: UserResource
+): Promise<string | undefined> {
   try {
-    const response = await fetch(url);
-    return response.ok
-      ? await resizeImage(await response.blob(), 256, { square: true })
-      : undefined;
+    const photo = await photoOf(resource);
+    return photo ? await resizeImage(photo, 256, { square: true }) : undefined;
   } catch {
     return undefined;
   }

@@ -2,7 +2,14 @@
 // Paramètres.
 // Sous 1280 px de large, elle devient un rail d'icônes (layout.module.scss), sauf si
 // l'utilisateur l'a refusé dans les Paramètres.
-import { Check, ChevronDown, Gears, Search } from "@getpapillon/papicons";
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Gears,
+  GlobeCross,
+  Search,
+} from "@getpapillon/papicons";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router";
@@ -11,8 +18,10 @@ import icon from "@/assets/brand/icon.svg";
 import { Avatar } from "@/components/Avatar/Avatar";
 import { Spinner } from "@/components/Spinner/Spinner";
 import type { AccountSummary } from "@/hooks/useAccounts";
-import { useLastSync } from "@/hooks/useLastSync";
+import { relativeParts } from "@/hooks/useFormats";
+import { useAccountSync } from "@/hooks/useLastSync";
 import type { Loaded } from "@/hooks/useLoaded";
+import { useOnline } from "@/hooks/useOnline";
 import { Source, useQuery } from "@/hooks/useQuery";
 import { MOD } from "@/lib/platform";
 import { type ModuleManifest, modulePath } from "@/modules/registry";
@@ -85,12 +94,13 @@ function AccountSwitcher({
 const REFUSED_NOTICE = 4000;
 
 /**
- * « Synchronisé il y a 2 minutes ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
+ * « Synchronisé il y a 2 minutes », « il y a 3 heures », « hier ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
  * la relance au plus toutes les 5 minutes (« Réessaie dans 3 minutes » sinon).
  */
 function SyncStatus({ account }: { account: AccountSummary | undefined }) {
   const { t, i18n } = useTranslation();
-  const lastSync = useLastSync(account?.id);
+  const sync = useAccountSync(account?.id);
+  const online = useOnline();
   const syncing = useSyncStore(state => state.syncing);
   const failed = useSyncStore(state => state.failed);
   const manualAt = useSyncStore(state => state.manualAt);
@@ -115,6 +125,8 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
     numeric: "auto",
   });
   let label = t("sync.never");
+  let Icon = Check;
+  let tone = styles.syncIcon;
   if (syncing) {
     label = t("sync.running");
   } else if (
@@ -126,11 +138,29 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
       (manualAt + MANUAL_SYNC_INTERVAL - refusedAt) / 60_000
     );
     label = t("sync.wait", { when: relative.format(minutes, "minute") });
-  } else if (failed || lastSync.status === "error") {
+  } else if (!online) {
+    label = t("sync.offline");
+    Icon = GlobeCross;
+    tone = styles.syncIconError;
+  } else if (
+    failed ||
+    sync.status === "error" ||
+    (sync.status === "ready" && sync.data.failures === "all")
+  ) {
     label = t("sync.failed");
-  } else if (lastSync.status === "ready" && lastSync.data) {
-    const minutes = Math.round((lastSync.data.getTime() - now) / 60_000);
-    label = t("sync.done", { when: relative.format(minutes, "minute") });
+    Icon = AlertTriangle;
+    tone = styles.syncIconError;
+  } else if (sync.status === "ready" && sync.data.last) {
+    const when = relative.format(
+      ...relativeParts(sync.data.last.getTime() - now)
+    );
+    if (sync.data.failures === "some") {
+      label = t("sync.partial", { when });
+      Icon = AlertTriangle;
+      tone = styles.syncIconWarning;
+    } else {
+      label = t("sync.done", { when });
+    }
   }
 
   return (
@@ -143,7 +173,7 @@ function SyncStatus({ account }: { account: AccountSummary | undefined }) {
           <Spinner />
         </span>
       ) : (
-        <Check size={20} className={styles.syncIcon} />
+        <Icon size={20} className={tone} />
       )}
       <span className={styles.label}>{label}</span>
     </p>

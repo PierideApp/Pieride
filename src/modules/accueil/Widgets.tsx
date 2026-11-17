@@ -935,7 +935,7 @@ export function NewsWidget({
                   onClick={() => void navigate("/actualites")}
                 >
                   <Avatar account={authorOf(item.author)} size={30} />
-                  <span>
+                  <span className={styles.newsText}>
                     <strong>{item.title ?? t("actualites.untitled")}</strong>
                     <small>
                       {item.author} · {formats.shortDate.format(item.date)}

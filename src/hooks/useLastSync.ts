@@ -1,4 +1,4 @@
-import { and, eq, max } from "drizzle-orm";
+import { and, count, eq, max } from "drizzle-orm";
 
 import { db } from "@/database";
 import { services, syncState } from "@/database/schema";
@@ -6,21 +6,36 @@ import type { SyncedCapability } from "@/services/account-manager";
 
 import { Source, useQuery } from "./useQuery";
 
-const accountSync = new Source<Date | null>("sync");
+export interface AccountSync {
+  /** La dernière synchro réussie, tous services confondus. */
+  last: Date | null;
+  /** Les données dont la dernière synchro a échoué (`sync_state.last_error`). */
+  failures: "none" | "some" | "all";
+}
+
+const accountSync = new Source<AccountSync>("sync");
 const serviceSync = new Source<Date | null>("sync");
 
-/** Date de la dernière synchro réussie d'un compte, tous services confondus. */
-export function useLastSync(accountId: string | undefined) {
+/** L'état de synchro d'un compte (barre latérale) : « Synchronisé », « en partie » ou « échec ». */
+export function useAccountSync(accountId: string | undefined) {
   return useQuery(accountSync, `${accountId}`, async () => {
     if (!accountId) {
-      return null;
+      return { last: null, failures: "none" };
     }
     const [row] = await db
-      .select({ lastSync: max(syncState.lastSync) })
+      .select({
+        last: max(syncState.lastSync),
+        failed: count(syncState.lastError),
+        total: count(),
+      })
       .from(syncState)
       .innerJoin(services, eq(syncState.serviceId, services.id))
       .where(eq(services.accountId, accountId));
-    return row?.lastSync ?? null;
+    const { last = null, failed = 0, total = 0 } = row ?? {};
+    return {
+      last,
+      failures: failed === 0 ? "none" : failed < total ? "some" : "all",
+    };
   });
 }
 

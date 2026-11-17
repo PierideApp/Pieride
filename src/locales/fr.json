@@ -43,6 +43,8 @@
     "never": "Pas encore synchronisé",
     "running": "Synchronisation…",
     "failed": "Échec de la synchronisation",
+    "partial": "Synchronisé en partie {{when}}",
+    "offline": "Hors connexion",
     "done": "Synchronisé {{when}}",
     "wait": "Réessaie {{when}}",
     "hint": "{{keys}} pour synchroniser (au plus toutes les 5 minutes)"
@@ -66,6 +68,26 @@
     "minimize": "Réduire",
     "maximize": "Agrandir",
     "close": "Fermer"
+  },
+  "reconnect": {
+    "action": "Me reconnecter",
+    "other": "{{name}} doit se reconnecter à {{service}}",
+    "expired": {
+      "title": "Ta session {{service}} a expiré",
+      "text": "Tes données ne se mettent plus à jour"
+    },
+    "lost": {
+      "title": "La connexion à {{service}} a été coupée",
+      "text": "Ta session n'a pas pu être renouvelée"
+    },
+    "disabled": {
+      "title": "{{service}} refuse l'accès à ton compte",
+      "text": "Rapproche-toi de ton établissement"
+    },
+    "notification": {
+      "title": "Reconnexion à {{service}} nécessaire",
+      "body": "Les données de {{name}} ne se mettent plus à jour. Ouvre Piéride pour te reconnecter."
+    }
   },
   "tray": {
     "open": "Ouvrir Piéride",
@@ -576,6 +598,17 @@
       "status": "Statut",
       "duration": "Durée",
       "noResponse": "échec",
+      "failures": {
+        "timeout": "délai dépassé",
+        "connect": "connexion impossible",
+        "redirect": "redirection refusée",
+        "body": "réponse coupée",
+        "network": "erreur réseau",
+        "url_not_allowed": "adresse non ouverte",
+        "invalid_url": "adresse invalide",
+        "invalid_method": "méthode refusée",
+        "invalid_header": "en-tête invalide"
+      },
       "log": "Journal",
       "copy": "Copier",
       "copied": "Copié",
@@ -654,7 +687,11 @@
       },
       "autoUpdate": {
         "title": "Rechercher les mises à jour automatiquement",
-        "text": "Au lancement, puis toutes les 6 heures. Rien ne s'installe sans ton accord"
+        "text": "Au lancement, puis toutes les 6 heures"
+      },
+      "autoInstall": {
+        "title": "Installer les mises à jour au lancement",
+        "text": "Piéride se met à jour à l'ouverture, puis redémarre"
       }
     },
     "features": {
@@ -685,6 +722,12 @@
       "photo": "Photo de profil",
       "fromFile": "Depuis un fichier",
       "fromFileText": "Choisir une image sur ton ordinateur",
+      "fromPronote": "Récupérer depuis PRONOTE",
+      "fromPronoteText": "Utiliser la photo associée à ton compte scolaire",
+      "photoMissing": "PRONOTE ne fournit pas de photo pour ce compte.",
+      "photoFailed": "La photo n'a pas pu être récupérée. Vérifie la connexion PRONOTE.",
+      "cropTitle": "Recadrer la photo",
+      "cropText": "Déplace le cadre et ajuste le zoom avant d'enregistrer.",
       "removePhoto": "Supprimer la photo",
       "fromServices": "Informations transmises par {{services}}",
       "school": "Établissement",

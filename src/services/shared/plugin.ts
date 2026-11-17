@@ -69,6 +69,8 @@ export interface SchoolServicePlugin {
   readonly capabilities: Partial<CapabilityMethods>;
   /** Le contenu d'une pièce jointe de type fichier, téléchargé avec une adresse à jour. */
   downloadAttachment?(attachment: Attachment): Promise<Uint8Array>;
+  /** Photo de profil actuelle fournie par le service, au format `data:` de l'app. */
+  getProfilePhoto?(): Promise<string | undefined>;
 }
 
 /**

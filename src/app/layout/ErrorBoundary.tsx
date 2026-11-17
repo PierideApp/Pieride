@@ -1,7 +1,8 @@
 import { Component, type ReactNode } from "react";
+
 import { startScreen } from "@/app/layout/StartScreen";
-import { report } from "@/lib/log";
 import i18n from "@/lib/i18n";
+import { report } from "@/lib/log";
 
 interface Props {
   children: ReactNode;

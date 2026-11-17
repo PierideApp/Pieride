@@ -1,6 +1,7 @@
 // Les comptes et leurs services, lus dans la base. Relus après chaque synchronisation.
 import { db } from "@/database";
 import { accounts, services } from "@/database/schema";
+import type { AuthFailure } from "@/services/shared/auth";
 import type { Account, ServiceKind } from "@/services/shared/models";
 
 import { Source, useQuery } from "./useQuery";
@@ -10,8 +11,8 @@ export interface AccountService {
   kind: ServiceKind;
   /** Le service a refusé les identifiants : il faut se reconnecter. */
   needsLogin: boolean;
-  /** Refusés après une connexion coupée en plein renouvellement du jeton. */
-  credentialLost: boolean;
+  /** Pourquoi la dernière connexion a échoué (`credential_lost` : coupée en plein renouvellement). */
+  authFailure: AuthFailure | null;
   /** Adresse propre au compte (instance PRONOTE…). */
   instanceUrl?: string;
 }
@@ -43,7 +44,7 @@ async function loadAccounts(): Promise<AccountSummary[]> {
         id,
         kind,
         needsLogin,
-        credentialLost: authFailure === "credential_lost",
+        authFailure,
         instanceUrl: instanceUrl ?? undefined,
       }));
     return {

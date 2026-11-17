@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { parseCity, splitName, toSchool } from "./login";
+import { parseCity, photoOf, splitName, toSchool } from "./login";
 
 vi.mock("@/lib/http", () => ({}));
 vi.mock("@/lib/image", () => ({}));
@@ -69,4 +69,22 @@ describe("toSchool", () => {
   it("ignore une adresse illisible", () => {
     expect(toSchool({ ...school, url: "pas une adresse" })).toBeNull();
   });
+});
+
+describe("photoOf", () => {
+  it.each(["/9j/4AAQ\r\nSkZJRg==", "data:image/jpeg;base64,/9j/4AAQSkZJRg=="])(
+    "décode le base64 de PRONOTE 2026 sans passer par le réseau : %j",
+    async profilePictureBase64 => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      const photo = await photoOf({
+        profilePicture: null,
+        profilePictureBase64,
+      });
+      expect([...new Uint8Array((await photo?.arrayBuffer()) ?? [])]).toEqual([
+        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+      ]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      fetchSpy.mockRestore();
+    }
+  );
 });

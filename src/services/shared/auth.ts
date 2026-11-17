@@ -55,6 +55,36 @@ const BACKOFF_BASE = 30_000;
 const BACKOFF_MAX = 15 * 60_000;
 /** PRONOTE lève une suspension en quelques minutes : attendre juste assez pour ne pas la prolonger. */
 export const SUSPENSION_COOLDOWN = 5 * 60_000;
+/** Ce qu'on laisse au plus à une connexion en cours avant de quitter (`closeLogins`). */
+export const CLOSE_WAIT = 30_000;
+
+/** Les connexions en cours, tous services confondus. */
+const running = new Set<Promise<unknown>>();
+/** Vrai une fois l'arrêt demandé : plus aucune connexion ne part. */
+let closing = false;
+
+/**
+ * Avant de quitter ou de redémarrer. Couper l'app pendant que le service remplace le jeton le
+ * perd : le nouveau n'est jamais écrit, et seule une reconnexion y remédie (relevé aussi par
+ * l'intégration PRONOTE de Home Assistant). Plus aucune connexion ne part, et celles en cours
+ * ont jusqu'à `maxWait` pour finir.
+ */
+export async function closeLogins(maxWait = CLOSE_WAIT): Promise<void> {
+  closing = true;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    Promise.allSettled([...running]),
+    new Promise(resolve => {
+      timer = setTimeout(resolve, maxWait);
+    }),
+  ]);
+  clearTimeout(timer);
+}
+
+/** L'arrêt n'a pas eu lieu (installation en échec, ou terminée sans redémarrer) : on reprend. */
+export function reopenLogins(): void {
+  closing = false;
+}
 
 /** Ce que la base garde de la connexion d'un service. */
 export interface AuthRecord {
@@ -174,6 +204,23 @@ export class ServiceAuth {
     options: LoginOptions,
     run: (tracker: AuthTracker) => Promise<T>
   ): Promise<T> {
+    // Avant toute étape : rien n'est parti, s'arrêter ici ne coûte rien.
+    if (closing) {
+      throw new ServiceUnavailable("Piéride se ferme");
+    }
+    const task = this.attempt(options, run);
+    running.add(task);
+    try {
+      return await task;
+    } finally {
+      running.delete(task);
+    }
+  }
+
+  private async attempt<T>(
+    options: LoginOptions,
+    run: (tracker: AuthTracker) => Promise<T>
+  ): Promise<T> {
     const held = this.held();
     if (held) {
       throw heldError(held);
@@ -256,11 +303,16 @@ export class ServiceAuth {
   }
 
   /**
-   * L'utilisateur redemande tout de suite (`Ctrl R`) : l'attente et le refus sont levés, pas une
-   * suspension, que le service impose et que réessayer prolongerait.
+   * L'utilisateur redemande tout de suite (`Ctrl R`) : l'attente est levée, pas une suspension,
+   * que le service impose et que réessayer prolongerait, ni un refus, que seule la reconnexion
+   * lève (renvoyer le même jeton compte comme une erreur d'authentification de plus).
    */
   allowRetry(): void {
-    if (this.hold?.failure !== "suspended") {
+    if (
+      this.hold &&
+      this.hold.failure !== "suspended" &&
+      !RELINK.includes(this.hold.failure)
+    ) {
       this.hold = null;
     }
   }

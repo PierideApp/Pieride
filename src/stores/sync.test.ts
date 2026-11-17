@@ -36,3 +36,21 @@ describe("syncNow", () => {
     );
   });
 });
+
+describe("sync", () => {
+  it("synchronise chaque compte, même quand l'un échoue", async () => {
+    refreshAll
+      .mockReset()
+      .mockRejectedValueOnce(new Error("base"))
+      .mockResolvedValue(undefined);
+    await useSyncStore.getState().sync(["camille", "lou"]);
+    expect(refreshAll.mock.calls.map(([id]: unknown[]) => id)).toEqual([
+      "camille",
+      "lou",
+    ]);
+    expect(useSyncStore.getState()).toMatchObject({
+      syncing: false,
+      failed: true,
+    });
+  });
+});
