@@ -21,6 +21,7 @@ declare global {
   interface Window {
     appIsReady: () => void;
     appError: (error: string) => void;
+    splashDone?: boolean;
   }
 }
 

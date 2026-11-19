@@ -3,7 +3,7 @@
 // toute neuve ne l'ouvre pas : elle note la version et c'est tout.
 import { Cross } from "@getpapillon/papicons";
 import { getVersion } from "@tauri-apps/api/app";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
@@ -14,6 +14,13 @@ import { releases } from "@/lib/changelog";
 import { useSettingsStore } from "@/stores/settings";
 
 import styles from "./whatsNew.module.scss";
+
+// Une modal est prioritaire cette fonction permet d'attendre la fin du splash-screen
+function onSplashDone(callback: () => void) {
+  window.addEventListener("splashdone", callback);
+  return () => window.removeEventListener("splashdone", callback);
+}
+const splashDone = () => window.splashDone === true;
 
 export function WhatsNewDialog() {
   const { t, i18n } = useTranslation();
@@ -26,7 +33,8 @@ export function WhatsNewDialog() {
     version && seen && seen !== version
       ? releases(language).find(entry => entry.version === version)
       : undefined;
-  const dialog = useModalDialog(release !== undefined);
+  const shown = useSyncExternalStore(onSplashDone, splashDone);
+  const dialog = useModalDialog(release !== undefined && shown);
 
   useEffect(() => {
     // Première installation, ou mise à jour sans notes : rien à montrer.

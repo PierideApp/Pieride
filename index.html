@@ -161,6 +161,9 @@
         const app = document.getElementById("root");
         app.style.animation = "fadeIn 650ms ease-in-out forwards";
         app.style.display = null;
+        // Pour les modales qui s'ouvrent seules (WhatsNewDialog) : pas par-dessus le splash.
+        window.splashDone = true;
+        window.dispatchEvent(new Event("splashdone"));
       }
 
       closeAppButton.addEventListener("click", async () => {

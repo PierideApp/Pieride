@@ -60,6 +60,23 @@
   flex: 1;
   padding: var(--space-3) var(--space-5) var(--space-4);
   overflow: hidden auto;
+  // Le thème cache les barres de défilement, mais rien d'autre ne dit que les notes défilent.
+  // `auto` rend la main à `::-webkit-scrollbar` (ignoré dès que `scrollbar-width` ou
+  // `scrollbar-color` change) : la même barre sous WebKit et Chromium, donc sur les trois systèmes.
+  scrollbar-width: auto;
+
+  &::-webkit-scrollbar {
+    display: block;
+    width: 12px;
+    background: transparent;
+  }
+
+  // Bordure transparente : un pouce fin, décollé du bord du dialogue.
+  &::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: var(--radius-round);
+    background: var(--color-text-3) padding-box;
+  }
 }
 
 .banner {
