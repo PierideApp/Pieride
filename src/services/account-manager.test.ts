@@ -15,7 +15,13 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
-import { forgetFiles, openFile } from "@/lib/files";
+import {
+  forgetFiles,
+  openFile,
+  openSavedFile,
+  savedFolders,
+  saveFile,
+} from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { addDays } from "@/lib/week";
@@ -42,8 +48,13 @@ vi.mock("@/lib/keyring", () => ({
   deleteSecret: vi.fn(async (id: string) => void secrets.delete(id)),
 }));
 vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
-vi.mock("@/lib/files", () => ({
+// Aucun fichier téléchargé par défaut : `openSavedFile` répond `not_found`.
+vi.mock("@/lib/files", async importOriginal => ({
+  folderOf: (await importOriginal<typeof import("@/lib/files")>()).folderOf,
   openFile: vi.fn(async () => undefined),
+  saveFile: vi.fn(async () => undefined),
+  openSavedFile: vi.fn().mockRejectedValue("not_found"),
+  savedFolders: vi.fn(async (): Promise<Record<string, boolean>> => ({})),
   forgetFiles: vi.fn(async () => undefined),
 }));
 
@@ -117,6 +128,8 @@ beforeEach(() => {
   secrets.clear();
   connect.mockReset();
   vi.mocked(allowInstance).mockClear();
+  vi.mocked(openFile).mockClear();
+  vi.mocked(saveFile).mockClear();
   timetable = async () => [
     course("lundi", at(26, 8)),
     course("mardi", at(27, 9)),
@@ -546,6 +559,71 @@ describe("AccountManager", () => {
     await manager.openAttachment("pronote-1", attachment);
     expect(downloadAttachment).toHaveBeenCalledWith(attachment);
     expect(openFile).toHaveBeenCalledWith("pronote-1", "sujet.pdf", bytes);
+  });
+
+  it("ouvre la copie téléchargée sans rien demander au service", async () => {
+    const { manager } = await setup();
+    const downloadAttachment = vi.fn(async () => new Uint8Array());
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+      downloadAttachment,
+    }));
+    vi.mocked(openSavedFile).mockResolvedValueOnce();
+
+    await manager.openAttachment("pronote-1", {
+      kind: "file",
+      name: "sujet.pdf",
+      url: "https://exemple.fr/f/sujet.pdf",
+    });
+    expect(downloadAttachment).not.toHaveBeenCalled();
+    expect(openFile).not.toHaveBeenCalled();
+  });
+
+  it("garde une pièce jointe téléchargée et la reconnaît à sa clé", async () => {
+    const { manager } = await setup();
+    const bytes = new Uint8Array([37, 80, 68, 70]);
+    connect.mockImplementationOnce(async () => ({
+      kind: "pronote",
+      capabilities: {},
+      downloadAttachment: async () => bytes,
+    }));
+    const attachment: Attachment = {
+      kind: "file",
+      name: "sujet.pdf",
+      url: "https://exemple.fr/session-1/sujet.pdf",
+      key: "k1",
+    };
+
+    await manager.saveAttachment("pronote-1", attachment);
+    const folder = vi.mocked(saveFile).mock.calls[0]?.[1] ?? "";
+    expect(folder).toMatch(/^[0-9a-f]{64}$/);
+    expect(saveFile).toHaveBeenCalledWith(
+      "pronote-1",
+      folder,
+      "sujet.pdf",
+      bytes
+    );
+
+    // À la synchro suivante, l'adresse change mais pas la clé.
+    vi.mocked(savedFolders).mockResolvedValueOnce({ [folder]: true });
+    const again = {
+      ...attachment,
+      url: "https://exemple.fr/session-2/sujet.pdf",
+    };
+    const other = {
+      ...attachment,
+      url: "https://exemple.fr/autre.pdf",
+      key: "k2",
+    };
+    expect(await manager.savedAttachments("pronote-1", [again, other])).toEqual(
+      new Map([[again.url, true]])
+    );
+
+    vi.mocked(savedFolders).mockResolvedValueOnce({ [folder]: false });
+    expect(await manager.savedAttachments("pronote-1", [again])).toEqual(
+      new Map([[again.url, false]])
+    );
   });
 
   it("refuse d'ouvrir la pièce jointe d'un service qui ne la donne pas", async () => {

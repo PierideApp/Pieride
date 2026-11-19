@@ -65,7 +65,10 @@ export function ActualitesPage({ module }: ModulePageProps) {
   );
   const current =
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
-  const attachments = useOpenAttachment(current?.serviceId);
+  const files = useOpenAttachment(
+    current?.serviceId,
+    current?.attachments ?? []
+  );
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`
       ? acknowledgement.status
@@ -251,9 +254,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
               <AttachmentList
                 variant="tiles"
                 attachments={current.attachments}
-                onOpen={attachments.open}
-                opening={attachments.opening}
-                error={attachments.error}
+                {...files}
               />
             )}
             {current.needsAcknowledgement && (

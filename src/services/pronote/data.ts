@@ -142,6 +142,11 @@ const toAttachment =
           name: attachment.name,
           url: attachment.url.split("?")[0] ?? "",
           ref: JSON.stringify({ ...origin, file: attachment.id }),
+          // Dans une actualité, l'id du fichier change à chaque session : son nom le remplace.
+          key: JSON.stringify({
+            ...origin,
+            file: origin.source === "news" ? attachment.name : attachment.id,
+          }),
         };
 
 /** La `ref` d'une pièce jointe, ou `null` si elle est illisible (ligne d'avant les `ref`). */

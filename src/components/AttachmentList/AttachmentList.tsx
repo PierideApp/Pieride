@@ -2,8 +2,16 @@
 // son icône sur fond rouge pâle, son type (« PDF ») ou son site. En lignes dans une `Card rows`
 // (maquette 04-taches/02-tableau-detail), ou en tuiles sous un texte (`tiles`, maquette
 // 06-vie-scolaire/01-actualites). Avec `onOpen`, un clic l'ouvre ; un lien demande d'abord
-// confirmation, avec son adresse : il peut mener n'importe où.
-import { ExternalLink, Link, Paper } from "@getpapillon/papicons";
+// confirmation, avec son adresse : il peut mener n'importe où. Avec `onSave`, un bouton à côté
+// de chaque fichier le télécharge.
+import {
+  AlertTriangle,
+  ArrowDown,
+  ExternalLink,
+  Folder,
+  Link,
+  Paper,
+} from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -35,6 +43,10 @@ export function AttachmentList({
   variant = "rows",
   onOpen,
   opening,
+  onSave,
+  onReveal,
+  saving,
+  saved,
   error,
 }: {
   attachments: readonly Attachment[];
@@ -43,6 +55,11 @@ export function AttachmentList({
   onOpen?: (attachment: Attachment) => void;
   /** L'adresse de la pièce jointe en cours d'ouverture. */
   opening?: string;
+  onSave?: (attachment: Attachment) => void;
+  onReveal?: (attachment: Attachment) => void;
+  saving?: string;
+  /** Les fichiers téléchargés, par adresse : `false` s'il n'est plus dans son dossier. */
+  saved?: ReadonlyMap<string, boolean>;
   /** L'échec de la dernière ouverture, affiché s'il concerne une pièce jointe de la liste. */
   error?: { url: string; message: string };
 }) {
@@ -57,12 +74,34 @@ export function AttachmentList({
   const detail = (attachment: Attachment) =>
     attachment.kind === "link"
       ? `${t("attachmentList.link")} · ${siteOf(attachment.url)}`
-      : (typeOf(attachment.name) ?? t("attachmentList.file"));
-  const icon = (attachment: Attachment) => (
-    <span className={styles.icon} aria-hidden="true">
-      {attachment.kind === "link" ? <Link size={18} /> : <Paper size={18} />}
-    </span>
-  );
+      : [
+          typeOf(attachment.name) ?? t("attachmentList.file"),
+          saved?.has(attachment.url) &&
+            t(
+              saved.get(attachment.url)
+                ? "attachmentList.saved"
+                : "attachmentList.missing"
+            ),
+        ]
+          .filter(Boolean)
+          .join(" · ");
+  const icon = (attachment: Attachment) => {
+    const missing = saved?.get(attachment.url) === false;
+    return (
+      <span
+        className={styles.icon}
+        data-missing={missing || undefined}
+        aria-hidden="true"
+      >
+        {attachment.kind === "link" ? <Link size={18} /> : <Paper size={18} />}
+        {missing && (
+          <span className={styles.warning}>
+            <AlertTriangle size={12} />
+          </span>
+        )}
+      </span>
+    );
+  };
   const end = (attachment: Attachment) =>
     attachment.url === opening ? (
       <Spinner label={t("attachmentList.opening")} />
@@ -72,6 +111,40 @@ export function AttachmentList({
         <ExternalLink size={16} className={styles.end} aria-hidden="true" />
       )
     );
+  // À côté du fichier, pas dedans : un bouton ne peut pas en contenir un autre.
+  const action = (attachment: Attachment) => {
+    if (attachment.kind !== "file" || !onSave) {
+      return null;
+    }
+    if (attachment.url === saving) {
+      return (
+        <span className={styles.action}>
+          <Spinner label={t("attachmentList.saving")} />
+        </span>
+      );
+    }
+    const state = saved?.get(attachment.url);
+    const isSaved = state === true;
+    const label = t(
+      isSaved
+        ? "attachmentList.reveal"
+        : state === false
+          ? "attachmentList.saveAgain"
+          : "attachmentList.save"
+    );
+    return (
+      <button
+        type="button"
+        className={styles.action}
+        aria-label={label}
+        title={label}
+        disabled={attachment.url === opening}
+        onClick={() => (isSaved ? onReveal?.(attachment) : onSave(attachment))}
+      >
+        {isSaved ? <Folder size={16} /> : <ArrowDown size={16} />}
+      </button>
+    );
+  };
   const failed =
     error && attachments.some(attachment => attachment.url === error.url);
 
@@ -80,23 +153,26 @@ export function AttachmentList({
       {variant === "rows" ? (
         <Card rows>
           {attachments.map(attachment => (
-            <SettingRow
-              key={attachment.url}
-              as={open ? "button" : "div"}
-              media={icon(attachment)}
-              title={attachment.name}
-              text={detail(attachment)}
-              disabled={open ? attachment.url === opening : undefined}
-              onClick={open && (() => open(attachment))}
-            >
-              {end(attachment)}
-            </SettingRow>
+            <div key={attachment.url} className={styles.line}>
+              <SettingRow
+                as={open ? "button" : "div"}
+                className={styles.row}
+                media={icon(attachment)}
+                title={attachment.name}
+                text={detail(attachment)}
+                disabled={open ? attachment.url === opening : undefined}
+                onClick={open && (() => open(attachment))}
+              >
+                {end(attachment)}
+              </SettingRow>
+              {action(attachment)}
+            </div>
           ))}
         </Card>
       ) : (
         <ul className={styles.tiles}>
           {attachments.map(attachment => (
-            <li key={attachment.url}>
+            <li key={attachment.url} className={styles.line}>
               <button
                 type="button"
                 className={styles.tile}
@@ -110,6 +186,7 @@ export function AttachmentList({
                 </span>
                 {end(attachment)}
               </button>
+              {action(attachment)}
             </li>
           ))}
         </ul>

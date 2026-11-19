@@ -1,41 +1,61 @@
-// Ouvrir une pièce jointe : un fichier est téléchargé par l'AccountManager puis ouvert avec
-// l'app du système ; un lien, déjà confirmé dans `AttachmentList`, part dans le navigateur.
-// Pour l'écran : la pièce jointe en cours d'ouverture, et le dernier échec.
+// Ouvrir, télécharger ou montrer dans l'explorateur une pièce jointe, par l'AccountManager. Un
+// lien, déjà confirmé dans `AttachmentList`, part dans le navigateur.
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useLoaded } from "@/hooks/useLoaded";
 import { log } from "@/lib/log";
 import { accountManager } from "@/services";
 import type { Attachment } from "@/services/shared/models";
 
-/** Les codes de `attachments.rs` qui ont leur propre message ; le reste : `fallback`. */
+/** Les codes de `attachments.rs` qui ont leur propre message ; le reste : `download`. */
 const ERRORS = new Set(["type_refused", "too_large", "open_failed"]);
 
-/** `serviceId` : le service de la pièce jointe (aucun : rien ne s'ouvre). */
-export function useOpenAttachment(serviceId: string | undefined) {
+const NONE: ReadonlyMap<string, boolean> = new Map();
+
+/** `serviceId` : le service des pièces jointes (aucun : rien ne s'ouvre). */
+export function useOpenAttachment(
+  serviceId: string | undefined,
+  attachments: readonly Attachment[]
+) {
   const { t } = useTranslation();
-  const [state, setState] = useState<{ url: string; error?: string } | null>(
-    null
+  const [state, setState] = useState<{
+    url: string;
+    saving?: boolean;
+    error?: string;
+  } | null>(null);
+  const [version, setVersion] = useState(0);
+  // Au retour dans l'app : le fichier a pu être déplacé depuis l'explorateur.
+  useEffect(() => {
+    const reload = () => setVersion(count => count + 1);
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
+  }, []);
+  const saved = useLoaded(
+    async () =>
+      serviceId
+        ? accountManager.savedAttachments(serviceId, attachments)
+        : NONE,
+    // Le tableau est refait à chaque rendu : les adresses disent quand il change vraiment.
+    [serviceId, version, ...attachments.map(item => item.url)].join("\n")
   );
 
-  const fail = (
-    url: string,
-    error: unknown,
-    fallback: "download" | "link" = "download"
-  ) => {
+  const fail = (url: string, error: unknown, message?: string) => {
     const code = typeof error === "string" ? error : undefined;
     // Le code seulement : le message d'un service peut contenir l'adresse du fichier.
     log(
       "warn",
       "fichiers",
-      `Pièce jointe non ouverte : ${code ?? (error instanceof Error ? error.name : "?")}`
+      `Pièce jointe en échec : ${code ?? (error instanceof Error ? error.name : "?")}`
     );
     setState({
       url,
-      error: t(
-        `attachmentList.errors.${code && ERRORS.has(code) ? code : fallback}`
-      ),
+      error:
+        message ??
+        t(
+          `attachmentList.errors.${code && ERRORS.has(code) ? code : "download"}`
+        ),
     });
   };
 
@@ -44,7 +64,7 @@ export function useOpenAttachment(serviceId: string | undefined) {
       setState(null);
       // Seulement http et https (capabilities/default.json) : ni fichier, ni autre app.
       openUrl(attachment.url).catch((error: unknown) =>
-        fail(attachment.url, error, "link")
+        fail(attachment.url, error, t("attachmentList.errors.link"))
       );
       return;
     }
@@ -58,9 +78,42 @@ export function useOpenAttachment(serviceId: string | undefined) {
     );
   };
 
+  const save = (attachment: Attachment) => {
+    if (!serviceId) {
+      return;
+    }
+    setState({ url: attachment.url, saving: true });
+    accountManager.saveAttachment(serviceId, attachment).then(
+      () => {
+        setState(null);
+        setVersion(count => count + 1);
+      },
+      (error: unknown) => fail(attachment.url, error)
+    );
+  };
+
+  const reveal = (attachment: Attachment) => {
+    if (!serviceId) {
+      return;
+    }
+    setState(null);
+    accountManager
+      .revealAttachment(serviceId, attachment)
+      .catch((error: unknown) => {
+        fail(attachment.url, error, t("attachmentList.errors.reveal"));
+        setVersion(count => count + 1);
+      });
+  };
+
+  const busy = state && !state.error ? state : undefined;
+  // Les props d'`AttachmentList`, à lui passer telles quelles.
   return {
-    open,
-    opening: state && !state.error ? state.url : undefined,
+    onOpen: open,
+    onSave: save,
+    onReveal: reveal,
+    opening: busy && !busy.saving ? busy.url : undefined,
+    saving: busy?.saving ? busy.url : undefined,
+    saved: saved.status === "ready" ? saved.data : NONE,
     error:
       state?.error === undefined
         ? undefined

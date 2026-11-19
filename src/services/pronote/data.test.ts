@@ -211,6 +211,7 @@ describe("toHomework", () => {
           url: "https://exemple.fr/f/sujet.pdf",
           // Où redemander une adresse valable : les devoirs de la semaine 9.
           ref: JSON.stringify({ source: "homework", week: 9, file: "f1" }),
+          key: JSON.stringify({ source: "homework", week: 9, file: "f1" }),
         },
       ],
     });
@@ -284,6 +285,11 @@ describe("toNews", () => {
           name: "autorisation.pdf",
           url: "https://exemple.fr/f/autorisation.pdf",
           ref: JSON.stringify({ source: "news", news: KEY, file: "f1" }),
+          key: JSON.stringify({
+            source: "news",
+            news: KEY,
+            file: "autorisation.pdf",
+          }),
         },
       ],
     });

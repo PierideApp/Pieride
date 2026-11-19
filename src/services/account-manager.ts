@@ -18,7 +18,14 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
-import { forgetFiles, openFile } from "@/lib/files";
+import {
+  folderOf,
+  forgetFiles,
+  openFile,
+  openSavedFile,
+  savedFolders,
+  saveFile,
+} from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
@@ -88,6 +95,9 @@ function errorKind(error: unknown): string {
     ? error.name
     : "Unknown";
 }
+
+const savedFolder = (attachment: Attachment) =>
+  folderOf(attachment.key ?? attachment.url);
 
 /** Attend tout, puis signale la première erreur : un échec n'arrête pas les autres. */
 async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
@@ -475,13 +485,67 @@ export class AccountManager {
   }
 
   /**
-   * Télécharge une pièce jointe avec une adresse à jour (celle du service expire), puis
-   * l'ouvre avec l'app du système. Hors ligne ou en panne, l'erreur remonte à l'écran.
+   * Ouvre une pièce jointe : sa copie téléchargée s'il y en a une (hors ligne aussi), sinon
+   * le service, avec une adresse à jour (la sienne expire).
    */
   async openAttachment(
     serviceId: string,
     attachment: Attachment
   ): Promise<void> {
+    try {
+      await openSavedFile(serviceId, await savedFolder(attachment));
+      return;
+    } catch (error) {
+      if (error !== "not_found") {
+        throw error;
+      }
+    }
+    const bytes = await this.downloadAttachment(serviceId, attachment);
+    await openFile(serviceId, attachment.name, bytes);
+  }
+
+  async saveAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<void> {
+    const bytes = await this.downloadAttachment(serviceId, attachment);
+    await saveFile(
+      serviceId,
+      await savedFolder(attachment),
+      attachment.name,
+      bytes
+    );
+  }
+
+  async revealAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<void> {
+    await openSavedFile(serviceId, await savedFolder(attachment), true);
+  }
+
+  /** Par adresse (`url`) : `false` si le fichier n'est plus dans son dossier. */
+  async savedAttachments(
+    serviceId: string,
+    attachments: readonly Attachment[]
+  ): Promise<Map<string, boolean>> {
+    const folders = new Map(Object.entries(await savedFolders(serviceId)));
+    const files = attachments.filter(attachment => attachment.kind === "file");
+    const found = await Promise.all(
+      files.map(async attachment => folders.get(await savedFolder(attachment)))
+    );
+    return new Map(
+      files.flatMap((attachment, index): [string, boolean][] => {
+        const present = found[index];
+        return present === undefined ? [] : [[attachment.url, present]];
+      })
+    );
+  }
+
+  private async downloadAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<Uint8Array> {
     const [service] = await this.db
       .select()
       .from(services)
@@ -492,8 +556,7 @@ export class AccountManager {
         "Ce service ne donne pas ses pièces jointes"
       );
     }
-    const bytes = await plugin.downloadAttachment(attachment);
-    await openFile(serviceId, attachment.name, bytes);
+    return plugin.downloadAttachment(attachment);
   }
 
   /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */

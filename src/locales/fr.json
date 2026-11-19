@@ -208,6 +208,12 @@
     "file": "Fichier",
     "link": "Lien",
     "opening": "Ouverture…",
+    "save": "Télécharger",
+    "saving": "Téléchargement…",
+    "saved": "Téléchargé",
+    "missing": "Plus dans son dossier",
+    "saveAgain": "Télécharger à nouveau",
+    "reveal": "Afficher dans le dossier",
     "confirmTitle": "Ouvrir ce lien ?",
     "confirmText": "Il mène vers {{site}}, qui s'ouvrira dans ton navigateur. Ouvre-le seulement si tu fais confiance à ce site.",
     "confirm": "Ouvrir le lien",
@@ -216,7 +222,8 @@
       "link": "Ce lien ne peut pas s'ouvrir depuis Piéride.",
       "type_refused": "Ce type de fichier ne s'ouvre pas depuis Piéride, pour ta sécurité. Récupère-le sur le site de ton établissement.",
       "too_large": "Ce fichier est trop lourd pour être ouvert depuis Piéride.",
-      "open_failed": "Aucune app de ton ordinateur ne sait ouvrir ce fichier."
+      "open_failed": "Aucune app de ton ordinateur ne sait ouvrir ce fichier.",
+      "reveal": "Le fichier n'est plus dans son dossier. Télécharge-le à nouveau."
     }
   },
   "cours": {
