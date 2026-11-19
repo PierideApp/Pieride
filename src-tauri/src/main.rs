@@ -169,6 +169,9 @@ fn main() {
             database::db_batch,
             database::db_apply_migration,
             attachments::attachment_open,
+            attachments::attachment_save,
+            attachments::attachment_saved_open,
+            attachments::attachments_saved,
             attachments::attachments_forget
         ])
         .run(tauri::generate_context!())

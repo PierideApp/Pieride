@@ -1,10 +1,12 @@
-//! Pièces jointes des services (PDF d'un devoir, image d'une actualité…) : écrites dans le
-//! cache de l'app, un dossier par service, puis ouvertes avec l'app du système. Seulement des
+//! Pièces jointes des services, un dossier par service : ouvertes depuis le cache (vidé au
+//! lancement), ou téléchargées dans le dossier de données, une par sous-dossier. Seulement des
 //! documents, des images, des sons et des vidéos : jamais un programme ou un script, qui
-//! s'exécuterait à l'ouverture. Le dossier est vidé au lancement, et celui d'un service quand
-//! il est délié. Les erreurs sont des codes : jamais le nom du fichier.
+//! s'exécuterait à l'ouverture. Les erreurs sont des codes : jamais le nom du fichier.
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use tauri::{
     AppHandle, Manager,
@@ -17,7 +19,6 @@ use crate::secrets::valid_id;
 
 type Result<T> = std::result::Result<T, &'static str>;
 
-/// Le dossier des pièces jointes, dans le cache de l'app.
 const FOLDER: &str = "pieces-jointes";
 
 /// Au-delà, le fichier est refusé : PRONOTE limite ses dépôts bien en dessous.
@@ -83,11 +84,18 @@ fn percent_decode(text: &str) -> Option<String> {
     String::from_utf8(bytes).ok()
 }
 
-fn folder(app: &AppHandle) -> Result<PathBuf> {
+fn opened(app: &AppHandle) -> Result<PathBuf> {
     app.path()
         .app_cache_dir()
         .map(|cache| cache.join(FOLDER))
         .map_err(|_| "cache_unavailable")
+}
+
+fn saved(app: &AppHandle) -> Result<PathBuf> {
+    app.path()
+        .app_data_dir()
+        .map(|data| data.join(FOLDER))
+        .map_err(|_| "data_unavailable")
 }
 
 /// Sous Windows, la marque « venu d'Internet » (Mark of the Web), comme pour un fichier
@@ -111,31 +119,35 @@ fn write(folder: &Path, name: &str, bytes: &[u8]) -> Result<PathBuf> {
     Ok(path)
 }
 
-/// Écrit la pièce jointe reçue en corps brut, puis l'ouvre avec l'app du système.
 /// En-têtes : `service` (l'`id` du service lié), `name` (le nom du fichier, encodé pour l'URL).
-#[tauri::command]
-pub async fn attachment_open(app: AppHandle, request: Request<'_>) -> Result<()> {
+fn received(request: &Request<'_>) -> Result<(String, String, Vec<u8>)> {
     let InvokeBody::Raw(bytes) = request.body() else {
         return Err("invalid_body");
     };
     if bytes.len() > MAX_SIZE {
         return Err("too_large");
     }
-    let header = |key| {
-        request
-            .headers()
-            .get(key)
-            .and_then(|value| value.to_str().ok())
-    };
-    let service = header("service")
+    let service = header(request, "service")
         .filter(|id| valid_id(id))
         .ok_or("invalid_id")?;
-    let name = header("name")
+    let name = header(request, "name")
         .and_then(percent_decode)
         .ok_or("invalid_name")?;
     let name = safe_name(&name).ok_or("type_refused")?;
-    let target = folder(&app)?.join(service);
-    let bytes = bytes.clone();
+    Ok((service.to_string(), name, bytes.clone()))
+}
+
+fn header<'a>(request: &'a Request<'_>, key: &str) -> Option<&'a str> {
+    request
+        .headers()
+        .get(key)
+        .and_then(|value| value.to_str().ok())
+}
+
+#[tauri::command]
+pub async fn attachment_open(app: AppHandle, request: Request<'_>) -> Result<()> {
+    let (service, name, bytes) = received(&request)?;
+    let target = opened(&app)?.join(service);
     let path = spawn_blocking(move || write(&target, &name, &bytes))
         .await
         .map_err(|_| "write_failed")??;
@@ -144,24 +156,102 @@ pub async fn attachment_open(app: AppHandle, request: Request<'_>) -> Result<()>
         .map_err(|_| "open_failed")
 }
 
+/// En-tête `folder` en plus : le sous-dossier, tiré de la clé de la pièce jointe par le front.
+#[tauri::command]
+pub async fn attachment_save(app: AppHandle, request: Request<'_>) -> Result<()> {
+    let (service, name, bytes) = received(&request)?;
+    let folder = header(&request, "folder")
+        .filter(|id| valid_id(id))
+        .ok_or("invalid_id")?;
+    let target = saved(&app)?.join(service).join(folder);
+    spawn_blocking(move || {
+        remove(&target).map_err(|_| "write_failed")?;
+        write(&target, &name, &bytes)
+    })
+    .await
+    .map_err(|_| "write_failed")??;
+    Ok(())
+}
+
+/// `not_found` si elle n'a pas été téléchargée, ou n'est plus là.
+#[tauri::command]
+pub async fn attachment_saved_open(
+    app: AppHandle,
+    service: String,
+    folder: String,
+    reveal: bool,
+) -> Result<()> {
+    if !valid_id(&service) || !valid_id(&folder) {
+        return Err("invalid_id");
+    }
+    let target = saved(&app)?.join(service).join(folder);
+    let path = spawn_blocking(move || file_in(&target))
+        .await
+        .map_err(|_| "not_found")?
+        .ok_or("not_found")?;
+    if reveal {
+        app.opener().reveal_item_in_dir(path)
+    } else {
+        app.opener().open_path(path.to_string_lossy(), None::<&str>)
+    }
+    .map_err(|_| "open_failed")
+}
+
+/// Un sous-dossier vide : le fichier a été déplacé ou effacé à la main.
+#[tauri::command]
+pub async fn attachments_saved(app: AppHandle, service: String) -> Result<HashMap<String, bool>> {
+    if !valid_id(&service) {
+        return Err("invalid_id");
+    }
+    let target = saved(&app)?.join(service);
+    spawn_blocking(move || {
+        let Ok(entries) = std::fs::read_dir(target) else {
+            return HashMap::new();
+        };
+        entries
+            .flatten()
+            .filter(|entry| entry.path().is_dir())
+            .filter_map(|entry| {
+                let present = file_in(&entry.path()).is_some();
+                Some((entry.file_name().into_string().ok()?, present))
+            })
+            .collect()
+    })
+    .await
+    .map_err(|_| "read_failed")
+}
+
+fn file_in(folder: &Path) -> Option<PathBuf> {
+    std::fs::read_dir(folder)
+        .ok()?
+        .flatten()
+        .map(|entry| entry.path())
+        .find(|path| path.is_file())
+}
+
+fn remove(target: &Path) -> std::io::Result<()> {
+    match std::fs::remove_dir_all(target) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(error),
+        _ => Ok(()),
+    }
+}
+
 /// Efface les pièces jointes d'un service délié, ou d'un compte retiré.
 #[tauri::command]
 pub async fn attachments_forget(app: AppHandle, service: String) -> Result<()> {
     if !valid_id(&service) {
         return Err("invalid_id");
     }
-    let target = folder(&app)?.join(service);
-    spawn_blocking(move || match std::fs::remove_dir_all(target) {
-        Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err("delete_failed"),
-        _ => Ok(()),
-    })
-    .await
-    .map_err(|_| "delete_failed")?
+    let targets = [opened(&app)?.join(&service), saved(&app)?.join(&service)];
+    spawn_blocking(move || targets.iter().try_for_each(|target| remove(target)))
+        .await
+        .map_err(|_| "delete_failed")?
+        .map_err(|_| "delete_failed")
 }
 
 /// Au lancement : les fichiers ouverts aux sessions d'avant ne servent plus.
 pub fn clear(app: &AppHandle) {
-    if let Ok(target) = folder(app) {
+    if let Ok(target) = opened(app) {
         // Absent, ou encore ouvert dans une autre app sous Windows : on réessaiera au prochain.
         let _ = std::fs::remove_dir_all(target);
     }

@@ -18,6 +18,9 @@ fn main() {
             "db_batch",
             "db_apply_migration",
             "attachment_open",
+            "attachment_save",
+            "attachment_saved_open",
+            "attachments_saved",
             "attachments_forget",
         ]),
     ))
