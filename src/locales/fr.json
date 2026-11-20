@@ -832,29 +832,32 @@
       "atLogin": "Lancer au démarrage de l'ordinateur",
       "atLoginText": "À l'ouverture de ta session",
       "autostartFailed": "Le lancement au démarrage n'a pas pu être réglé sur ce système.",
-      "updates": "Mises à jour",
-      "version": "Piéride {{version}}",
-      "releases": "Voir les versions",
       "shortcuts": "Raccourcis clavier",
-      "to": "à",
       "shortcut": {
         "palette": "Palette de commandes",
         "sections": "Aller à une section",
         "sync": "Synchroniser (au plus toutes les 5 minutes)",
         "settings": "Paramètres",
         "close": "Fermer un panneau ou une fenêtre"
-      },
-      "notChecked": "Pas encore vérifié",
+      }
+    },
+    "updater": {
+      "notChecked": "Non vérifié. Clique pour rechercher les mises à jour.",
       "checking": "Recherche en cours…",
-      "upToDate": "À jour · vérifié à {{time}}",
+      "upToDate": "Pas de mises à jour disponible. Piéride est à jour.",
+      "checkedAt": "Dernière vérification à {{time}}",
       "available": "La version {{version}} est disponible",
-      "availableManual": "La version {{version}} est disponible. Installe-la avec le paquet de la page des versions",
+      "availableManual": "La version {{version}} est disponible. Installe-la avec le paquet de la page des versions.",
       "downloading": "Téléchargement… {{percent}}",
-      "ready": "La version {{version}} est installée. Redémarre pour l'utiliser",
-      "updateFailed": "La mise à jour n'a pas pu aboutir. Vérifie ta connexion puis réessaie",
+      "ready": "La version {{version}} est installée. Redémarre pour l'utiliser.",
+      "updateFailed": "Échec de la mise à jour. Vérifie ta connexion et réessaie.",
       "check": "Rechercher des mises à jour",
       "install": "Installer",
-      "restart": "Redémarrer"
+      "restart": "Redémarrer",
+      "title": "Mises à jour",
+      "version": "Piéride {{version}}",
+      "releases": "Voir les versions",
+      "to": "à"
     },
     "notifications": {
       "sampleFrom": "Piéride · maintenant",
