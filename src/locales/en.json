@@ -831,21 +831,20 @@
       "atLogin": "Launch at computer startup",
       "atLoginText": "When you log in",
       "autostartFailed": "Launch at startup could not be set on this system.",
-      "updates": "Updates",
-      "version": "Piéride {{version}}",
-      "releases": "See releases",
       "shortcuts": "Keyboard shortcuts",
-      "to": "to",
       "shortcut": {
         "palette": "Command palette",
         "sections": "Go to a section",
         "sync": "Sync (at most every 5 minutes)",
         "settings": "Settings",
         "close": "Close a panel or window"
-      },
+      }
+    },
+    "updater": {
       "notChecked": "Not checked yet",
       "checking": "Checking…",
-      "upToDate": "Up to date · checked at {{time}}",
+      "upToDate": "No updates are available. Piéride is up to date.",
+      "checkedAt": "Last checked at {{time}}",
       "available": "Version {{version}} is available",
       "availableManual": "Version {{version}} is available. Install it with the package on the releases page",
       "downloading": "Downloading… {{percent}}",
@@ -853,7 +852,11 @@
       "updateFailed": "The update could not complete. Check your connection and try again",
       "check": "Check for updates",
       "install": "Install",
-      "restart": "Restart"
+      "restart": "Restart",
+      "title": "Updates",
+      "version": "Piéride {{version}}",
+      "releases": "See releases",
+      "to": "to"
     },
     "notifications": {
       "sampleFrom": "Piéride · now",
