@@ -5,7 +5,7 @@ export const isMac = navigator.userAgent.includes("Mac");
 export const MOD = isMac ? "⌘" : "Ctrl";
 
 /** Le nom du système, pour « À propos ». */
-export const platformName = isMac
+export const platformName: "macOS" | "Windows" | "Linux" = isMac
   ? "macOS"
   : navigator.userAgent.includes("Windows")
     ? "Windows"
