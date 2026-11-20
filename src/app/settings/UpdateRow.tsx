@@ -3,7 +3,6 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { useTranslation } from "react-i18next";
 
-import icon from "@/assets/brand/icon.svg";
 import { Button } from "@/components/Button/Button";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { useLoaded } from "@/hooks/useLoaded";
@@ -11,7 +10,8 @@ import { openLink } from "@/lib/links";
 import { report } from "@/lib/log";
 import { useUpdateStore } from "@/stores/update";
 
-import styles from "./settings.module.scss";
+import { Card } from "@/components/Card/Card";
+import { AlertCircle, ArrowDownBox, Check, InfoBox } from "@getpapillon/papicons";
 
 export function UpdateRow() {
   const { t, i18n } = useTranslation();
@@ -21,73 +21,80 @@ export function UpdateRow() {
 
   const text =
     state.status === "upToDate"
-      ? t("settings.startup.upToDate", {
+      ? t("settings.updater.upToDate", {
           time: new Intl.DateTimeFormat(i18n.language, {
             timeStyle: "short",
           }).format(state.checkedAt),
         })
       : state.status === "checking"
-        ? t("settings.startup.checking")
+        ? t("settings.updater.checking")
         : state.status === "available"
           ? t(
               state.manual
-                ? "settings.startup.availableManual"
-                : "settings.startup.available",
+                ? "settings.updater.availableManual"
+                : "settings.updater.available",
               { version: state.version }
             )
           : state.status === "downloading"
-            ? t("settings.startup.downloading", {
+            ? t("settings.updater.downloading", {
                 percent:
                   state.progress === null
                     ? "…"
                     : `${Math.round(state.progress * 100)} %`,
               })
             : state.status === "ready"
-              ? t("settings.startup.ready", { version: state.version })
+              ? t("settings.updater.ready", { version: state.version })
               : state.status === "error"
-                ? t("settings.startup.updateFailed")
-                : t("settings.startup.notChecked");
+                ? t("settings.updater.updateFailed")
+                : t("settings.updater.notChecked");
 
   return (
-    <SettingRow
-      media={
-        <img
-          src={icon}
-          alt=""
-          width={44}
-          height={44}
-          className={styles.appIcon}
-        />
-      }
-      title={t("settings.startup.version", {
-        version: version.status === "ready" ? version.data : "",
-      })}
-      text={<span role="status">{text}</span>}
-    >
-      {state.status === "available" && state.manual ? (
-        <Button
-          variant="primary"
-          onClick={() =>
-            openLink("releases").catch((error: unknown) =>
-              report("update", error)
-            )
-          }
-        >
-          {t("settings.startup.releases")}
-        </Button>
-      ) : state.status === "available" ? (
-        <Button variant="primary" onClick={install}>
-          {t("settings.startup.install")}
-        </Button>
-      ) : state.status === "ready" ? (
-        <Button variant="primary" onClick={restart}>
-          {t("settings.startup.restart")}
-        </Button>
-      ) : (
-        <Button disabled={busy} onClick={() => check()}>
-          {t("settings.startup.check")}
-        </Button>
-      )}
-    </SettingRow>
+    <Card rows tone={
+      state.status === "error" ? "danger" :
+      state.status === "available" ? "warn" :
+      state.status === "upToDate" ? "success" :
+      undefined
+    } style={{ marginBottom: "10px" }}>
+      <SettingRow
+        icon={
+          state.status === "error" ? AlertCircle :
+          state.status === "available" ? ArrowDownBox :
+          state.status === "upToDate" ? Check : InfoBox
+        }
+        title={<span role="status">{text}</span>}
+        text={
+          state.status === "upToDate" && t("settings.updater.checkedAt", {
+            time: new Intl.DateTimeFormat(i18n.language, {
+              timeStyle: "short",
+            }).format(state.checkedAt),
+          })
+        }
+      >
+        {state.status === "available" && state.manual ? (
+          <Button
+            variant="primary"
+            onClick={() =>
+              openLink("releases").catch((error: unknown) =>
+                report("update", error)
+              )
+            }
+          >
+            {t("settings.updater.releases")}
+          </Button>
+        ) : state.status === "available" ? (
+          <Button variant="primary" onClick={install}>
+            {t("settings.updater.install")}
+          </Button>
+        ) : state.status === "ready" ? (
+          <Button variant="primary" onClick={restart}>
+            {t("settings.updater.restart")}
+          </Button>
+        ) : (
+          <Button disabled={busy} onClick={() => check()}>
+            {t("settings.updater.check")}
+          </Button>
+        )}
+      </SettingRow>
+    </Card>
   );
 }
