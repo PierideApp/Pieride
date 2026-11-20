@@ -3,6 +3,7 @@
 // Crowdin) ; ils s'ouvrent dans le navigateur (lib/links.ts).
 import {
   AlertTriangle,
+  ArrowDown,
   Butterfly,
   Code,
   ExternalLink,
@@ -10,11 +11,13 @@ import {
   type Home,
   Info,
   Paper,
+  Sparkles,
   User,
 } from "@getpapillon/papicons";
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { version as reactVersion } from "react";
 import { useTranslation } from "react-i18next";
+import { useSettingsStore } from "@/stores/settings";
 
 import mark from "@/assets/brand/mark.svg";
 import { Button } from "@/components/Button/Button";
@@ -26,6 +29,9 @@ import { report } from "@/lib/log";
 import { platformName } from "@/lib/platform";
 
 import styles from "./settings.module.scss";
+import { Section } from "@/components/Section/Section";
+import { SwitchRow } from "./SwitchRow";
+import { UpdateRow } from "./UpdateRow";
 
 const CARDS: readonly { link: keyof typeof LINKS; icon: typeof Home }[] = [
   { link: "repository", icon: Code },
@@ -43,6 +49,7 @@ export function AboutSettings() {
   const app = useLoaded(getVersion, "version");
   const tauri = useLoaded(getTauriVersion, "tauri-version");
   const version = app.status === "ready" ? app.data : "";
+  const autoUpdate = useSettingsStore(state => state.autoUpdate);
 
   return (
     <>
@@ -59,6 +66,19 @@ export function AboutSettings() {
           <p>{t("settings.about.text")}</p>
         </div>
       </section>
+
+      <Section title={t("settings.updater.title")}>
+        <UpdateRow />
+
+        <Card rows>
+          <SwitchRow icon={Sparkles} setting="autoUpdate" />
+          <SwitchRow
+            icon={ArrowDown}
+            setting="autoInstall"
+            disabled={!autoUpdate}
+          />
+        </Card>
+      </Section>
 
       <ul className={styles.links}>
         {CARDS.map(({ link, icon }) => (
