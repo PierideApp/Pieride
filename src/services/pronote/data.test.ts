@@ -18,7 +18,7 @@ import {
   TabLocation,
   type TimetableClassLesson,
 } from "@blockshub/pawnote-lts";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getLog } from "@/lib/log";
 
@@ -27,6 +27,7 @@ import { ServiceUnavailable } from "../shared/errors";
 import type { Course } from "../shared/models";
 import {
   capabilities,
+  downloadAttachment,
   newsWithContent,
   pickFile,
   pickNews,
@@ -462,6 +463,31 @@ describe("toNews", () => {
         expect(newsDetails).toHaveBeenCalledTimes(2);
         expect(first).toMatchObject({ content: "<p>Salle B12</p>" });
       });
+    });
+  });
+
+  describe("downloadAttachment", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("relit une fois l'actualité pour tous ses fichiers téléchargés à la suite", async () => {
+      const handle = createSessionHandle(vi.fn());
+      const item: NewsInformation = {
+        ...information,
+        attachments: [PDF, { ...PDF, name: "programme.pdf", id: "f2" }],
+      };
+      vi.mocked(news).mockClear();
+      vi.mocked(news).mockResolvedValue({ categories: [], items: [item] });
+      const fetch = vi.fn(async () => new Response(new Uint8Array([1])));
+      vi.stubGlobal("fetch", fetch);
+      const download = downloadAttachment({ run: request => request(handle) });
+
+      for (const attachment of toNews(item).attachments) {
+        expect(await download(attachment)).toEqual(new Uint8Array([1]));
+      }
+      expect(news).toHaveBeenCalledOnce();
+      expect(fetch).toHaveBeenCalledTimes(2);
     });
   });
 });
