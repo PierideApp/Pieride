@@ -6,6 +6,7 @@ import { nodeDriver } from "@/database/node-driver";
 import {
   attendance,
   courses,
+  downloads,
   grades,
   homework,
   news,
@@ -16,10 +17,12 @@ import {
   syncState,
 } from "@/database/schema";
 import {
+  chooseDownloadsFolder,
+  deleteFiles,
+  filesInfo,
   forgetFiles,
   openFile,
   openSavedFile,
-  savedFolders,
   saveFile,
 } from "@/lib/files";
 import { allowInstance } from "@/lib/http";
@@ -39,6 +42,8 @@ import {
 import type { Attachment, Course, News } from "./shared/models";
 import type { CapabilityMethods, ConnectService } from "./shared/plugin";
 
+const MODULES = { cours: "Cours", taches: "Tâches", actualites: "Actualités" };
+
 const secrets = vi.hoisted(() => new Map<string, string>());
 vi.mock("@/lib/keyring", () => ({
   getSecret: vi.fn(async (id: string) => secrets.get(id) ?? null),
@@ -48,14 +53,18 @@ vi.mock("@/lib/keyring", () => ({
   deleteSecret: vi.fn(async (id: string) => void secrets.delete(id)),
 }));
 vi.mock("@/lib/http", () => ({ allowInstance: vi.fn(async () => undefined) }));
-// Aucun fichier téléchargé par défaut : `openSavedFile` répond `not_found`.
-vi.mock("@/lib/files", async importOriginal => ({
-  folderOf: (await importOriginal<typeof import("@/lib/files")>()).folderOf,
+vi.mock("@/lib/files", () => ({
   openFile: vi.fn(async () => undefined),
-  saveFile: vi.fn(async () => undefined),
-  openSavedFile: vi.fn().mockRejectedValue("not_found"),
-  savedFolders: vi.fn(async (): Promise<Record<string, boolean>> => ({})),
+  saveFile: vi.fn(
+    async (folders: string[], name: string) => `${folders.join("/")}/${name}`
+  ),
+  openSavedFile: vi.fn(async () => undefined),
+  filesInfo: vi.fn(async (paths: string[]): Promise<[string, number][]> =>
+    paths.map(path => [`/maison/Documents/Piéride/${path}`, 1000])
+  ),
+  deleteFiles: vi.fn(async () => undefined),
   forgetFiles: vi.fn(async () => undefined),
+  chooseDownloadsFolder: vi.fn(async (): Promise<string[] | null> => null),
 }));
 
 // Lundi 26 octobre 2026, 10 h : la semaine va du 26 au 2 novembre.
@@ -130,6 +139,7 @@ beforeEach(() => {
   vi.mocked(allowInstance).mockClear();
   vi.mocked(openFile).mockClear();
   vi.mocked(saveFile).mockClear();
+  vi.mocked(forgetFiles).mockClear();
   timetable = async () => [
     course("lundi", at(26, 8)),
     course("mardi", at(27, 9)),
@@ -532,12 +542,20 @@ describe("AccountManager", () => {
   it("retire un compte : secrets puis données", async () => {
     const { db, manager } = await setup();
     await manager.refresh("camille", "TIMETABLE", NOW);
+    await db.insert(downloads).values({
+      serviceId: "pronote-1",
+      key: "k1",
+      path: "Camille Test/Maths/sujet.pdf",
+    });
     await manager.removeAccount("camille");
     expect(secrets.size).toBe(0);
     expect(await db.select().from(services)).toEqual([]);
     expect(await db.select().from(courses)).toEqual([]);
-    // Les pièces jointes déjà ouvertes aussi.
-    expect(forgetFiles).toHaveBeenCalledWith("pronote-1");
+    // Les pièces jointes ouvertes et téléchargées aussi.
+    expect(forgetFiles).toHaveBeenCalledWith("pronote-1", [
+      "Camille Test/Maths/sujet.pdf",
+    ]);
+    expect(await db.select().from(downloads)).toEqual([]);
   });
 
   it("télécharge une pièce jointe chez le service, puis l'ouvre", async () => {
@@ -562,20 +580,26 @@ describe("AccountManager", () => {
   });
 
   it("ouvre la copie téléchargée sans rien demander au service", async () => {
-    const { manager } = await setup();
+    const { db, manager } = await setup();
     const downloadAttachment = vi.fn(async () => new Uint8Array());
     connect.mockImplementationOnce(async () => ({
       kind: "pronote",
       capabilities: {},
       downloadAttachment,
     }));
-    vi.mocked(openSavedFile).mockResolvedValueOnce();
+    const url = "https://exemple.fr/f/sujet.pdf";
+    await db.insert(downloads).values({
+      serviceId: "pronote-1",
+      key: url,
+      path: "Camille Test/Maths/sujet.pdf",
+    });
 
     await manager.openAttachment("pronote-1", {
       kind: "file",
       name: "sujet.pdf",
-      url: "https://exemple.fr/f/sujet.pdf",
+      url,
     });
+    expect(openSavedFile).toHaveBeenCalledWith("Camille Test/Maths/sujet.pdf");
     expect(downloadAttachment).not.toHaveBeenCalled();
     expect(openFile).not.toHaveBeenCalled();
   });
@@ -595,18 +619,19 @@ describe("AccountManager", () => {
       key: "k1",
     };
 
-    await manager.saveAttachment("pronote-1", attachment);
-    const folder = vi.mocked(saveFile).mock.calls[0]?.[1] ?? "";
-    expect(folder).toMatch(/^[0-9a-f]{64}$/);
+    await manager.saveAttachment("pronote-1", attachment, {
+      module: "Tâches",
+      subject: "Maths",
+      date: at(27, 8),
+    });
     expect(saveFile).toHaveBeenCalledWith(
-      "pronote-1",
-      folder,
+      ["Camille Test", "2026-2027", "Tâches", "Maths"],
       "sujet.pdf",
-      bytes
+      bytes,
+      at(27, 8)
     );
 
     // À la synchro suivante, l'adresse change mais pas la clé.
-    vi.mocked(savedFolders).mockResolvedValueOnce({ [folder]: true });
     const again = {
       ...attachment,
       url: "https://exemple.fr/session-2/sujet.pdf",
@@ -616,14 +641,211 @@ describe("AccountManager", () => {
       url: "https://exemple.fr/autre.pdf",
       key: "k2",
     };
+    const folders = ["2026-2027", "Tâches", "Maths"];
     expect(await manager.savedAttachments("pronote-1", [again, other])).toEqual(
-      new Map([[again.url, true]])
+      new Map([
+        [
+          again.url,
+          {
+            folders,
+            location:
+              "/maison/Documents/Piéride/Camille Test/2026-2027/Tâches/Maths/sujet.pdf",
+          },
+        ],
+      ])
     );
 
-    vi.mocked(savedFolders).mockResolvedValueOnce({ [folder]: false });
+    vi.mocked(filesInfo).mockResolvedValueOnce([null]);
     expect(await manager.savedAttachments("pronote-1", [again])).toEqual(
-      new Map([[again.url, false]])
+      new Map([[again.url, { folders, location: undefined }]])
     );
+  });
+
+  it("télécharge les pièces jointes des nouvelles actualités seulement", async () => {
+    const { manager } = await setup();
+    const file = (name: string): Attachment => ({
+      kind: "file",
+      name,
+      url: `https://exemple.fr/${name}`,
+      key: name,
+    });
+    const item = (id: string, attachments: Attachment[]): News => ({
+      id,
+      kind: "information",
+      author: "Direction",
+      date: at(20, 8),
+      content: "",
+      read: false,
+      needsAcknowledgement: false,
+      acknowledged: false,
+      attachments,
+    });
+    let list = [item("n1", [file("ancienne.pdf")])];
+    const downloadAttachment = vi.fn(async () => new Uint8Array([1]));
+    connect.mockImplementation(async () => ({
+      kind: "pronote",
+      capabilities: {
+        NEWS: {
+          getNews: async () => list,
+          setNewsAsRead: async () => undefined,
+          setNewsAsAcknowledged: async () => undefined,
+        },
+      },
+      downloadAttachment,
+    }));
+
+    // La première synchro ne télécharge pas tout l'historique.
+    await manager.refreshAll("camille", NOW);
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
+
+    list = [
+      ...list,
+      item("n2", [
+        file("sortie.pdf"),
+        { kind: "link", name: "Site", url: "https://exemple.fr" },
+      ]),
+    ];
+    await manager.refreshAll("camille", LATER);
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(true);
+    expect(downloadAttachment).toHaveBeenCalledTimes(1);
+    expect(saveFile).toHaveBeenCalledWith(
+      ["Camille Test", "2026-2027", "Actualités"],
+      "sortie.pdf",
+      new Uint8Array([1]),
+      at(20, 8)
+    );
+    // Une seule fois par synchro.
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
+  });
+
+  it("télécharge une fois les fichiers ajoutés aux cours et aux devoirs, par matière", async () => {
+    const { manager } = await setup();
+    const file = (name: string): Attachment => ({
+      kind: "file",
+      name,
+      url: `https://exemple.fr/${name}`,
+      key: name,
+    });
+    let lesson = [file("cours.pdf")];
+    let task = [file("sujet.pdf")];
+    const downloadAttachment = vi.fn(async (attachment: Attachment) => {
+      if (attachment.name === "annexe.pdf") {
+        throw new ServiceUnavailable("hors ligne");
+      }
+      return new Uint8Array([1]);
+    });
+    connect.mockImplementation(async () => ({
+      kind: "pronote",
+      capabilities: {
+        TIMETABLE: {
+          getWeeklyTimetable: async () => [
+            {
+              ...course("lundi", at(26, 8)),
+              contents: [{ attachments: lesson }],
+            },
+          ],
+        },
+        HOMEWORK: {
+          getHomeworks: async () => [
+            {
+              id: "dm",
+              subject: "Maths",
+              content: "DM",
+              dueAt: at(27, 8),
+              done: false,
+              attachments: task,
+            },
+          ],
+          setHomeworkCompletion: async () => undefined,
+        },
+      },
+      downloadAttachment,
+    }));
+    await manager.refreshAll("camille", NOW);
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
+
+    await manager.updateSubject("camille", "Maths", {
+      displayName: "Mathématiques",
+    });
+    lesson = [...lesson, file("correction.pdf")];
+    task = [
+      ...task,
+      file("annexe.pdf"),
+      { kind: "link", name: "Exercices", url: "https://exemple.fr" },
+    ];
+    await manager.refreshAll("camille", LATER);
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(true);
+    expect(
+      vi.mocked(saveFile).mock.calls.map(call => call.slice(0, 2))
+    ).toEqual([
+      [
+        ["Camille Test", "2026-2027", "Cours", "Mathématiques"],
+        "correction.pdf",
+      ],
+    ]);
+    expect(downloadAttachment).toHaveBeenCalledTimes(2);
+
+    // L'échec n'est pas redemandé au service à chaque synchro.
+    await manager.refreshAll(
+      "camille",
+      new Date(LATER.getTime() + SYNC_INTERVAL)
+    );
+    expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
+    expect(downloadAttachment).toHaveBeenCalledTimes(2);
+  });
+
+  it("garde le chemin de chaque fichier déplacé vers le nouveau dossier", async () => {
+    const { db, manager } = await setup();
+    await db.insert(downloads).values([
+      { serviceId: "pronote-1", key: "k1", path: "Camille Test/Maths/a.pdf" },
+      { serviceId: "pronote-1", key: "k2", path: "Camille Test/Maths/b.pdf" },
+      // Le même fichier pour un cours et un devoir : déplacé une seule fois.
+      { serviceId: "pronote-1", key: "k3", path: "Camille Test/Maths/b.pdf" },
+    ]);
+    expect(await manager.changeDownloadsFolder("Choisis")).toBe(false);
+
+    vi.mocked(chooseDownloadsFolder).mockImplementationOnce(async (_, paths) =>
+      paths.map(path => path.replace("b.pdf", "b (2).pdf"))
+    );
+    expect(await manager.changeDownloadsFolder("Choisis")).toBe(true);
+    expect(vi.mocked(chooseDownloadsFolder).mock.calls[1]?.[1]).toEqual([
+      "Camille Test/Maths/a.pdf",
+      "Camille Test/Maths/b.pdf",
+    ]);
+    const rows = await db.select().from(downloads).orderBy(downloads.key);
+    expect(rows.map(row => row.path)).toEqual([
+      "Camille Test/Maths/a.pdf",
+      "Camille Test/Maths/b (2).pdf",
+      "Camille Test/Maths/b (2).pdf",
+    ]);
+  });
+
+  it("compte et efface les téléchargements d'une année scolaire", async () => {
+    const { db, manager } = await setup();
+    const old = "Camille Test/2025-2026/Cours/Maths/a.pdf";
+    const current = "Camille Test/2026-2027/Cours/Maths/b.pdf";
+    await db.insert(downloads).values([
+      { serviceId: "pronote-1", key: "k1", path: old },
+      { serviceId: "pronote-1", key: "k2", path: current },
+      { serviceId: "pronote-1", key: "k3", path: current },
+    ]);
+    expect(await manager.downloadsByYear("camille")).toEqual([
+      { year: "2026-2027", count: 1, size: 1000 },
+      { year: "2025-2026", count: 1, size: 1000 },
+    ]);
+
+    await manager.deleteDownloads("camille", "2025-2026");
+    expect(deleteFiles).toHaveBeenCalledWith([old]);
+    expect(
+      (await db.select().from(downloads)).map(row => row.key).sort()
+    ).toEqual(["k2", "k3"]);
+
+    // Un fichier ouvert ailleurs : rien n'est oublié, l'élève pourra réessayer.
+    vi.mocked(deleteFiles).mockRejectedValueOnce("delete_failed");
+    await expect(manager.deleteDownloads("camille", "2026-2027")).rejects.toBe(
+      "delete_failed"
+    );
+    expect(await db.select().from(downloads)).toHaveLength(2);
   });
 
   it("refuse d'ouvrir la pièce jointe d'un service qui ne la donne pas", async () => {

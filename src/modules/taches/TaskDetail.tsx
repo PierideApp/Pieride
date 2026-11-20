@@ -47,7 +47,11 @@ export function TaskDetail({
     tasks.status === "ready"
       ? tasks.data.find(task => task.serviceId === serviceId && task.id === id)
       : undefined;
-  const files = useOpenAttachment(serviceId, item?.attachments ?? []);
+  const files = useOpenAttachment(serviceId, item?.attachments ?? [], {
+    module: t("modules.taches"),
+    subject: item?.label,
+    date: item?.dueAt ?? dueAt,
+  });
 
   useEffect(() => {
     if (!item) {

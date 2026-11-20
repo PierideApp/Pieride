@@ -5,21 +5,35 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useLoaded } from "@/hooks/useLoaded";
+import type { SavedFile } from "@/lib/files";
 import { log } from "@/lib/log";
 import { accountManager } from "@/services";
+import type { Placement } from "@/services/account-manager";
 import type { Attachment } from "@/services/shared/models";
+import { useSyncStore } from "@/stores/sync";
 
 /** Les codes de `attachments.rs` qui ont leur propre message ; le reste : `download`. */
-const ERRORS = new Set(["type_refused", "too_large", "open_failed"]);
+const ERRORS = new Set([
+  "type_refused",
+  "too_large",
+  "open_failed",
+  "write_failed",
+]);
 
-const NONE: ReadonlyMap<string, boolean> = new Map();
+const NONE: ReadonlyMap<string, SavedFile> = new Map();
 
-/** `serviceId` : le service des pièces jointes (aucun : rien ne s'ouvre). */
+/**
+ * `serviceId` : le service des pièces jointes (aucun : rien ne s'ouvre). `placement` : où les
+ * télécharger, sous le dossier du compte.
+ */
 export function useOpenAttachment(
   serviceId: string | undefined,
-  attachments: readonly Attachment[]
+  attachments: readonly Attachment[],
+  placement: Placement
 ) {
   const { t } = useTranslation();
+  const downloads = useSyncStore(state => state.versions.downloads);
+  const changed = useSyncStore(state => state.reload);
   const [state, setState] = useState<{
     url: string;
     saving?: boolean;
@@ -38,7 +52,9 @@ export function useOpenAttachment(
         ? accountManager.savedAttachments(serviceId, attachments)
         : NONE,
     // Le tableau est refait à chaque rendu : les adresses disent quand il change vraiment.
-    [serviceId, version, ...attachments.map(item => item.url)].join("\n")
+    [serviceId, version, downloads, ...attachments.map(item => item.url)].join(
+      "\n"
+    )
   );
 
   const fail = (url: string, error: unknown, message?: string) => {
@@ -83,10 +99,10 @@ export function useOpenAttachment(
       return;
     }
     setState({ url: attachment.url, saving: true });
-    accountManager.saveAttachment(serviceId, attachment).then(
+    accountManager.saveAttachment(serviceId, attachment, placement).then(
       () => {
         setState(null);
-        setVersion(count => count + 1);
+        changed("downloads");
       },
       (error: unknown) => fail(attachment.url, error)
     );

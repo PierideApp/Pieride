@@ -67,7 +67,8 @@ export function ActualitesPage({ module }: ModulePageProps) {
     all.find(item => `${item.serviceId}:${item.id}` === selected) ?? shown[0];
   const files = useOpenAttachment(
     current?.serviceId,
-    current?.attachments ?? []
+    current?.attachments ?? [],
+    { module: t("modules.actualites"), date: current?.date ?? new Date() }
   );
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`

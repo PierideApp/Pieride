@@ -228,3 +228,17 @@ export const grades = sqliteTable(
     index("grades_period").on(t.serviceId, t.periodId),
   ]
 );
+
+/** Pièces jointes téléchargées : où chacune est rangée, sous le dossier des téléchargements. */
+export const downloads = sqliteTable(
+  "downloads",
+  {
+    serviceId: serviceId(),
+    /** `Attachment.key`, sinon son adresse. */
+    key: text("key").notNull(),
+    /** Séparé par des `/`, sous le dossier choisi dans les Paramètres. */
+    path: text("path").notNull(),
+    createdAt: createdAt(),
+  },
+  t => [primaryKey({ columns: [t.serviceId, t.key] })]
+);

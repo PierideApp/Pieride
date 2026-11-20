@@ -113,6 +113,8 @@ export interface Preferences {
   showCanteen: boolean;
   tasksLayout: TasksLayout;
   hideDoneTasks: boolean;
+  /** Pièces jointes (actualités, cours, tâches) apparues depuis la dernière synchro. */
+  autoDownload: boolean;
   /** Barre latérale en rail d'icônes sous 1280 px (UX §4). */
   sidebarAutoCollapse: boolean;
   /** Pastilles des modules (tâches à faire…). */
@@ -237,6 +239,7 @@ export const useSettingsStore = create<SettingsState>()(
       showCanteen: true,
       tasksLayout: "board",
       hideDoneTasks: false,
+      autoDownload: false,
       sidebarAutoCollapse: true,
       sidebarBadges: true,
       startMinimized: true,

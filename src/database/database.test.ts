@@ -34,6 +34,7 @@ describe("migrate", () => {
       ["0004_contenu_cours"],
       ["0005_actualites"],
       ["0006_connexion"],
+      ["0007_pieces_jointes"],
     ]);
   });
 

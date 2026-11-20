@@ -38,7 +38,8 @@ export function CourseDetail({
   const lastSync = useServiceSync(course.serviceId, "TIMETABLE");
   const files = useOpenAttachment(
     course.serviceId,
-    course.contents?.flatMap(content => content.attachments) ?? []
+    course.contents?.flatMap(content => content.attachments) ?? [],
+    { module: t("modules.cours"), subject: course.label, date: course.from }
   );
   const length = (course.to.getTime() - course.from.getTime()) / 60_000;
   const ongoing =

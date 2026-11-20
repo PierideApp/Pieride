@@ -3,7 +3,7 @@
 // (maquette 04-taches/02-tableau-detail), ou en tuiles sous un texte (`tiles`, maquette
 // 06-vie-scolaire/01-actualites). Avec `onOpen`, un clic l'ouvre ; un lien demande d'abord
 // confirmation, avec son adresse : il peut mener n'importe où. Avec `onSave`, un bouton à côté
-// de chaque fichier le télécharge.
+// de chaque fichier le télécharge ; dessous, le dossier où il est rangé.
 import {
   AlertTriangle,
   ArrowDown,
@@ -19,6 +19,7 @@ import { Card } from "@/components/Card/Card";
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Spinner } from "@/components/Spinner/Spinner";
+import type { SavedFile } from "@/lib/files";
 import type { Attachment } from "@/services/shared/models";
 
 import styles from "./AttachmentList.module.scss";
@@ -58,8 +59,8 @@ export function AttachmentList({
   onSave?: (attachment: Attachment) => void;
   onReveal?: (attachment: Attachment) => void;
   saving?: string;
-  /** Les fichiers téléchargés, par adresse : `false` s'il n'est plus dans son dossier. */
-  saved?: ReadonlyMap<string, boolean>;
+  /** Les fichiers téléchargés, par adresse. */
+  saved?: ReadonlyMap<string, SavedFile>;
   /** L'échec de la dernière ouverture, affiché s'il concerne une pièce jointe de la liste. */
   error?: { url: string; message: string };
 }) {
@@ -71,22 +72,27 @@ export function AttachmentList({
       attachment.kind === "link"
         ? setConfirming(attachment)
         : onOpen(attachment));
-  const detail = (attachment: Attachment) =>
-    attachment.kind === "link"
-      ? `${t("attachmentList.link")} · ${siteOf(attachment.url)}`
-      : [
-          typeOf(attachment.name) ?? t("attachmentList.file"),
-          saved?.has(attachment.url) &&
-            t(
-              saved.get(attachment.url)
-                ? "attachmentList.saved"
-                : "attachmentList.missing"
-            ),
-        ]
-          .filter(Boolean)
-          .join(" · ");
+  const detail = (attachment: Attachment) => {
+    if (attachment.kind === "link") {
+      return `${t("attachmentList.link")} · ${siteOf(attachment.url)}`;
+    }
+    const type = typeOf(attachment.name) ?? t("attachmentList.file");
+    const file = saved?.get(attachment.url);
+    if (!file) {
+      return type;
+    }
+    return (
+      <span title={file.location}>
+        {type} ·{" "}
+        {file.location
+          ? t("attachmentList.savedIn", { folder: file.folders.join(" › ") })
+          : t("attachmentList.missing")}
+      </span>
+    );
+  };
   const icon = (attachment: Attachment) => {
-    const missing = saved?.get(attachment.url) === false;
+    const file = saved?.get(attachment.url);
+    const missing = file !== undefined && !file.location;
     return (
       <span
         className={styles.icon}
@@ -123,12 +129,12 @@ export function AttachmentList({
         </span>
       );
     }
-    const state = saved?.get(attachment.url);
-    const isSaved = state === true;
+    const file = saved?.get(attachment.url);
+    const isSaved = file?.location !== undefined;
     const label = t(
       isSaved
         ? "attachmentList.reveal"
-        : state === false
+        : file
           ? "attachmentList.saveAgain"
           : "attachmentList.save"
     );

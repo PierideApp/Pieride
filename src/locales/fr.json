@@ -210,7 +210,7 @@
     "opening": "Ouverture…",
     "save": "Télécharger",
     "saving": "Téléchargement…",
-    "saved": "Téléchargé",
+    "savedIn": "Téléchargé dans {{folder}}",
     "missing": "Plus dans son dossier",
     "saveAgain": "Télécharger à nouveau",
     "reveal": "Afficher dans le dossier",
@@ -223,6 +223,7 @@
       "type_refused": "Ce type de fichier ne s'ouvre pas depuis Piéride, pour ta sécurité. Récupère-le sur le site de ton établissement.",
       "too_large": "Ce fichier est trop lourd pour être ouvert depuis Piéride.",
       "open_failed": "Aucune app de ton ordinateur ne sait ouvrir ce fichier.",
+      "write_failed": "Le fichier n'a pas pu être rangé dans ton dossier des téléchargements. Vérifie-le dans les Paramètres, Fonctionnalités.",
       "reveal": "Le fichier n'est plus dans son dossier. Télécharge-le à nouveau."
     }
   },
@@ -648,6 +649,10 @@
         "title": "Masquer les tâches terminées",
         "text": "Elles restent visibles avec le filtre Terminées"
       },
+      "autoDownload": {
+        "title": "Télécharger les nouvelles pièces jointes",
+        "text": "Actualités, cours et tâches, dès leur arrivée, pour les ouvrir même hors ligne"
+      },
       "sidebarAutoCollapse": {
         "title": "Replier automatiquement",
         "text": "Quand la fenêtre fait moins de 1280 px de large"
@@ -708,7 +713,20 @@
       "tasksLayout": "Affichage des tâches",
       "tasksLayoutText": "Une colonne par jour, ou une liste par date de rendu",
       "board": "Tableau",
-      "list": "Liste"
+      "list": "Liste",
+      "attachments": "Pièces jointes",
+      "downloadsFolder": "Dossier des téléchargements",
+      "openFolder": "Ouvrir",
+      "changeFolder": "Changer",
+      "chooseFolder": "Choisis où ranger tes pièces jointes",
+      "folderRefused": "Piéride ne peut pas utiliser ce dossier. Choisis-en un autre.",
+      "folderUnavailable": "Le dossier des téléchargements ne s'ouvre pas.",
+      "yearFiles_one": "{{count}} fichier · {{size}}",
+      "yearFiles_other": "{{count}} fichiers · {{size}}",
+      "deleteYear": "Supprimer",
+      "deleteYearTitle": "Supprimer les téléchargements de {{year}} ?",
+      "deleteYearText": "Les fichiers rangés par Piéride pour cette année sont effacés de ton dossier. Tu pourras les télécharger à nouveau tant qu'ils sont sur ton espace scolaire.",
+      "deleteFailed": "Certains fichiers n'ont pas pu être effacés. Ferme-les s'ils sont ouverts dans une autre app, puis réessaie."
     },
     "language": {
       "recommended": "Recommandé"

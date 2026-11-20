@@ -62,3 +62,12 @@ export function displayedToday(now: Date, weekend: boolean): Date {
   const today = startOfDay(now);
   return !weekend && isWeekend(today) ? shiftDay(today, 1, false) : today;
 }
+
+/**
+ * L'année scolaire de `date` (« 2026-2027 »), du 1er août au 31 juillet : la rentrée des
+ * académies d'outre-mer de l'hémisphère sud (La Réunion, Mayotte) tombe à la mi-août.
+ */
+export function schoolYear(date: Date): string {
+  const start = date.getFullYear() - (date.getMonth() < 7 ? 1 : 0);
+  return `${start}-${start + 1}`;
+}
