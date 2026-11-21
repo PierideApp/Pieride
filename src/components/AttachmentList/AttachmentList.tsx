@@ -2,7 +2,7 @@
 // son icône sur fond rouge pâle, son type (« PDF ») ou son site. En lignes dans une `Card rows`
 // (maquette 04-taches/02-tableau-detail), ou en tuiles sous un texte (`tiles`, maquette
 // 06-vie-scolaire/01-actualites). Avec `onOpen`, un clic l'ouvre ; un lien demande d'abord
-// confirmation, avec son adresse : il peut mener n'importe où. Avec `onSave`, un bouton à côté
+// confirmation, avec son adresse : il peut mener n'importe où. Avec `onSave`, un bouton au bout
 // de chaque fichier le télécharge ; dessous, le dossier où il est rangé.
 import {
   AlertTriangle,
@@ -117,7 +117,7 @@ export function AttachmentList({
         <ExternalLink size={16} className={styles.end} aria-hidden="true" />
       )
     );
-  // À côté du fichier, pas dedans : un bouton ne peut pas en contenir un autre.
+  // Dans la ligne ou la tuile, mais hors du bouton qui ouvre : un bouton ne peut pas en contenir un autre.
   const action = (attachment: Attachment) => {
     if (attachment.kind !== "file" || !onSave) {
       return null;
@@ -178,10 +178,10 @@ export function AttachmentList({
       ) : (
         <ul className={styles.tiles}>
           {attachments.map(attachment => (
-            <li key={attachment.url} className={styles.line}>
+            <li key={attachment.url} className={styles.tile}>
               <button
                 type="button"
-                className={styles.tile}
+                className={styles.tileOpen}
                 disabled={!open || attachment.url === opening}
                 onClick={open && (() => open(attachment))}
               >
