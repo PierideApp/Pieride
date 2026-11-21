@@ -5,6 +5,7 @@ import {
   displayedToday,
   isoWeek,
   sameDay,
+  schoolYear,
   shiftDay,
   weekDays,
   weekStart,
@@ -83,5 +84,13 @@ describe("displayedToday", () => {
     expect(displayedToday(new Date(2026, 9, 15, 10), false)).toEqual(
       new Date(2026, 9, 15)
     );
+  });
+});
+
+describe("schoolYear", () => {
+  it("change d'année le 1er août", () => {
+    expect(schoolYear(new Date(2026, 6, 31, 23))).toBe("2025-2026");
+    expect(schoolYear(new Date(2026, 7, 1))).toBe("2026-2027");
+    expect(schoolYear(new Date(2027, 0, 15))).toBe("2026-2027");
   });
 });

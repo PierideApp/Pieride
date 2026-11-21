@@ -9,6 +9,7 @@ import {
   accounts,
   attendance,
   courses,
+  downloads,
   grades,
   homework,
   news,
@@ -18,11 +19,20 @@ import {
   subjects,
   syncState,
 } from "@/database/schema";
-import { forgetFiles, openFile } from "@/lib/files";
+import {
+  chooseDownloadsFolder,
+  deleteFiles,
+  filesInfo,
+  forgetFiles,
+  openFile,
+  openSavedFile,
+  type SavedFile,
+  saveFile,
+} from "@/lib/files";
 import { allowInstance } from "@/lib/http";
 import { deleteSecret, getSecret, setSecret } from "@/lib/keyring";
 import { log } from "@/lib/log";
-import { addDays, weekStart } from "@/lib/week";
+import { addDays, schoolYear, weekStart } from "@/lib/week";
 
 import { ServiceAuth } from "./shared/auth";
 import {
@@ -35,6 +45,7 @@ import type {
   Account,
   Attachment,
   Attendance,
+  Course,
   LinkedService,
   News,
   ServiceKind,
@@ -89,6 +100,53 @@ function errorKind(error: unknown): string {
     : "Unknown";
 }
 
+/** Ce qui retrouve le téléchargement d'une pièce jointe d'une synchro à l'autre. */
+const downloadKey = (attachment: Attachment) =>
+  attachment.key ?? attachment.url;
+
+/** Les modules dont les pièces jointes se téléchargent, chacun son dossier. */
+export type FileModule = "cours" | "taches" | "actualites";
+
+/**
+ * Où ranger un fichier sous le dossier du compte : l'année scolaire de `date`, le module (son
+ * nom affiché), puis la matière s'il y en a une. `date` date aussi le fichier.
+ */
+export interface Placement {
+  module: string;
+  subject?: string;
+  date: Date;
+}
+
+/** Un fichier vu à la synchro ; `subject` : le nom de la matière chez le service. */
+interface FoundFile {
+  attachment: Attachment;
+  module: FileModule;
+  subject?: string;
+  date: Date;
+}
+
+/** `chemin` : `<compte>/<année>/<module>/…/<fichier>`, découpé pour l'affichage. */
+const foldersOf = (path: string) => path.split("/").slice(1, -1);
+
+/** Les fichiers de `after` absents de `before` : apparus depuis la synchro d'avant. */
+function newFiles(before: Attachment[], after: FoundFile[]): FoundFile[] {
+  const known = new Set(before.map(downloadKey));
+  return after.filter(
+    ({ attachment }) =>
+      attachment.kind === "file" && !known.has(downloadKey(attachment))
+  );
+}
+
+const courseFiles = ({ contents, subject, from }: Course): FoundFile[] =>
+  (contents ?? []).flatMap(content =>
+    content.attachments.map(attachment => ({
+      attachment,
+      module: "cours" as const,
+      subject,
+      date: from,
+    }))
+  );
+
 /** Attend tout, puis signale la première erreur : un échec n'arrête pas les autres. */
 async function settleAll(tasks: Promise<unknown>[]): Promise<void> {
   const failed = (await Promise.allSettled(tasks)).find(
@@ -107,6 +165,8 @@ export class AccountManager {
   private readonly weeks = new Map<string, Promise<boolean>>();
   /** Les adresses rouvertes par `start` : une connexion les attend. */
   private started: Promise<unknown> = Promise.resolve();
+  /** Par service : les fichiers apparus à cette synchro (`saveNewAttachments`). */
+  private readonly fresh = new Map<string, FoundFile[]>();
 
   constructor(
     private readonly db: Db,
@@ -255,15 +315,31 @@ export class AccountManager {
       this.plugins.delete(id);
       this.auth.delete(id);
     }
+    const saved = await Promise.all(
+      linked.map(({ id }) => this.downloadPaths(id))
+    );
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
-    await Promise.all(linked.map(({ id }) => this.forgetFiles(id)));
+    await Promise.all(
+      linked.map(({ id }, index) => this.forgetFiles(id, saved[index] ?? []))
+    );
     return failed;
   }
 
-  /** Les fichiers ouverts d'un service : un échec n'empêche rien, le lancement les efface. */
-  private async forgetFiles(serviceId: string): Promise<void> {
+  private async downloadPaths(serviceId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ path: downloads.path })
+      .from(downloads)
+      .where(eq(downloads.serviceId, serviceId));
+    return rows.map(row => row.path);
+  }
+
+  /**
+   * Les fichiers ouverts et téléchargés d'un service. Un échec n'empêche rien : le lancement
+   * vide le cache, mais un téléchargement resté là n'est plus suivi par l'app.
+   */
+  private async forgetFiles(serviceId: string, paths: string[]): Promise<void> {
     try {
-      await forgetFiles(serviceId);
+      await forgetFiles(serviceId, paths);
     } catch (error) {
       log("warn", "fichiers", `Pièces jointes non effacées : ${String(error)}`);
     }
@@ -331,8 +407,9 @@ export class AccountManager {
     }
     this.plugins.delete(serviceId);
     this.auth.delete(serviceId);
+    const saved = await this.downloadPaths(serviceId);
     await this.db.delete(services).where(eq(services.id, serviceId));
-    await this.forgetFiles(serviceId);
+    await this.forgetFiles(serviceId, saved);
   }
 
   async refreshAll(
@@ -340,6 +417,7 @@ export class AccountManager {
     now = new Date(),
     interval = SYNC_INTERVAL
   ): Promise<void> {
+    this.fresh.clear();
     const errors: unknown[] = [];
     for (const capability of SYNCED) {
       await this.refresh(accountId, capability, now, interval).catch(
@@ -383,7 +461,9 @@ export class AccountManager {
         !lastSync || Math.abs(now.getTime() - lastSync.getTime()) >= interval
     );
     await settleAll(
-      due.map(({ service }) => this.refreshService(service, capability, now))
+      due.map(({ service, lastSync }) =>
+        this.refreshService(service, capability, now, !lastSync)
+      )
     );
   }
 
@@ -475,13 +555,266 @@ export class AccountManager {
   }
 
   /**
-   * Télécharge une pièce jointe avec une adresse à jour (celle du service expire), puis
-   * l'ouvre avec l'app du système. Hors ligne ou en panne, l'erreur remonte à l'écran.
+   * Ouvre une pièce jointe : sa copie téléchargée s'il y en a une (hors ligne aussi), sinon
+   * le service, avec une adresse à jour (la sienne expire).
    */
   async openAttachment(
     serviceId: string,
     attachment: Attachment
   ): Promise<void> {
+    const path = await this.downloaded(serviceId, attachment);
+    if (path) {
+      try {
+        await openSavedFile(path);
+        return;
+      } catch (error) {
+        if (error !== "not_found") {
+          throw error;
+        }
+      }
+    }
+    const bytes = await this.downloadAttachment(serviceId, attachment);
+    await openFile(serviceId, attachment.name, bytes);
+  }
+
+  async saveAttachment(
+    serviceId: string,
+    attachment: Attachment,
+    { module, subject, date }: Placement
+  ): Promise<void> {
+    const bytes = await this.downloadAttachment(serviceId, attachment);
+    const [owner] = await this.db
+      .select({ firstName: accounts.firstName, lastName: accounts.lastName })
+      .from(services)
+      .innerJoin(accounts, eq(accounts.id, services.accountId))
+      .where(eq(services.id, serviceId));
+    const account = `${owner?.firstName ?? ""} ${owner?.lastName ?? ""}`.trim();
+    const path = await saveFile(
+      [
+        account || serviceId,
+        schoolYear(date),
+        module,
+        ...(subject ? [subject] : []),
+      ],
+      attachment.name,
+      bytes,
+      date
+    );
+    await this.db
+      .insert(downloads)
+      .values({ serviceId, key: downloadKey(attachment), path })
+      .onConflictDoUpdate({
+        target: [downloads.serviceId, downloads.key],
+        set: { path },
+      });
+  }
+
+  async revealAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<void> {
+    const path = await this.downloaded(serviceId, attachment);
+    if (!path) {
+      throw new Error("Pièce jointe pas téléchargée");
+    }
+    await openSavedFile(path, true);
+  }
+
+  /** Par adresse (`url`). */
+  async savedAttachments(
+    serviceId: string,
+    attachments: readonly Attachment[]
+  ): Promise<Map<string, SavedFile>> {
+    const files = attachments.filter(attachment => attachment.kind === "file");
+    if (files.length === 0) {
+      return new Map();
+    }
+    const rows = await this.db
+      .select({ key: downloads.key, path: downloads.path })
+      .from(downloads)
+      .where(
+        and(
+          eq(downloads.serviceId, serviceId),
+          inArray(downloads.key, files.map(downloadKey))
+        )
+      );
+    const paths = new Map(rows.map(row => [row.key, row.path]));
+    const found = files.flatMap(attachment => {
+      const path = paths.get(downloadKey(attachment));
+      return path ? [{ url: attachment.url, path }] : [];
+    });
+    if (found.length === 0) {
+      return new Map();
+    }
+    const info = await filesInfo(found.map(item => item.path));
+    return new Map(
+      found.map(({ url, path }, index): [string, SavedFile] => [
+        url,
+        { folders: foldersOf(path), location: info[index]?.[0] },
+      ])
+    );
+  }
+
+  /** Les téléchargements du compte par année scolaire, de la plus récente à la plus ancienne. */
+  async downloadsByYear(
+    accountId: string
+  ): Promise<{ year: string; count: number; size: number }[]> {
+    const paths = await this.accountDownloads(accountId);
+    const info = await filesInfo(paths);
+    const years = new Map<string, { count: number; size: number }>();
+    paths.forEach((path, index) => {
+      const year = path.split("/")[1] ?? "";
+      const size = info[index]?.[1];
+      if (size !== undefined && /^\d{4}-\d{4}$/.test(year)) {
+        const total = years.get(year) ?? { count: 0, size: 0 };
+        years.set(year, { count: total.count + 1, size: total.size + size });
+      }
+    });
+    return [...years]
+      .map(([year, total]) => ({ year, ...total }))
+      .sort((a, b) => b.year.localeCompare(a.year));
+  }
+
+  /** Efface du dossier les fichiers d'une année scolaire, puis les oublie. */
+  async deleteDownloads(accountId: string, year: string): Promise<void> {
+    const ids = (await this.servicesOf(accountId)).map(({ id }) => id);
+    const rows = (
+      await this.db
+        .select()
+        .from(downloads)
+        .where(inArray(downloads.serviceId, ids))
+    ).filter(row => row.path.split("/")[1] === year);
+    await deleteFiles([...new Set(rows.map(row => row.path))]);
+    const writes = rows.map(row =>
+      this.db
+        .delete(downloads)
+        .where(
+          and(
+            eq(downloads.serviceId, row.serviceId),
+            eq(downloads.key, row.key)
+          )
+        )
+    );
+    const [first, ...rest] = writes;
+    if (first) {
+      await this.db.batch([first, ...rest]);
+    }
+  }
+
+  private async accountDownloads(accountId: string): Promise<string[]> {
+    const ids = (await this.servicesOf(accountId)).map(({ id }) => id);
+    const rows = await this.db
+      .select({ path: downloads.path })
+      .from(downloads)
+      .where(inArray(downloads.serviceId, ids));
+    return [...new Set(rows.map(row => row.path))];
+  }
+
+  /**
+   * Télécharge, l'un après l'autre, les fichiers apparus à la dernière synchro du compte
+   * (Paramètres > Fonctionnalités), chacun une seule fois : un échec va au journal, il reste
+   * le bouton. `modules` : le nom affiché de chaque module, son dossier. Renvoie vrai si un
+   * fichier a été rangé.
+   */
+  async saveNewAttachments(
+    accountId: string,
+    modules: Record<FileModule, string>
+  ): Promise<boolean> {
+    let saved = false;
+    for (const { id } of await this.servicesOf(accountId)) {
+      const files = this.fresh.get(id) ?? [];
+      this.fresh.delete(id);
+      if (files.length === 0) {
+        continue;
+      }
+      const chosen = await this.db
+        .select({ name: subjects.name, displayName: subjects.displayName })
+        .from(subjects)
+        .where(eq(subjects.serviceId, id));
+      const labels = new Map(
+        chosen.map(row => [row.name, row.displayName ?? row.name])
+      );
+      for (const { attachment, module, subject, date } of files) {
+        if (await this.downloaded(id, attachment)) {
+          continue;
+        }
+        try {
+          await this.saveAttachment(id, attachment, {
+            module: modules[module],
+            subject: subject && (labels.get(subject) ?? subject),
+            date,
+          });
+          saved = true;
+        } catch (error) {
+          log(
+            "warn",
+            "fichiers",
+            `Téléchargement automatique en échec : ${
+              typeof error === "string" ? error : errorKind(error)
+            }`
+          );
+        }
+      }
+    }
+    return saved;
+  }
+
+  /**
+   * Le dossier choisi dans le sélecteur du système ; les fichiers déjà téléchargés y sont
+   * déplacés. Faux si l'élève a annulé.
+   */
+  async changeDownloadsFolder(title: string): Promise<boolean> {
+    const rows = await this.db.select().from(downloads);
+    // Un fichier repris pour deux pièces jointes (cours et devoir) ne se déplace qu'une fois.
+    const before = [...new Set(rows.map(row => row.path))];
+    const after = await chooseDownloadsFolder(title, before);
+    if (!after) {
+      return false;
+    }
+    const moved = new Map(before.map((path, index) => [path, after[index]]));
+    const writes = rows.flatMap((row): Write[] => {
+      const path = moved.get(row.path);
+      return path && path !== row.path
+        ? [
+            this.db
+              .update(downloads)
+              .set({ path })
+              .where(
+                and(
+                  eq(downloads.serviceId, row.serviceId),
+                  eq(downloads.key, row.key)
+                )
+              ),
+          ]
+        : [];
+    });
+    const [first, ...rest] = writes;
+    if (first) {
+      await this.db.batch([first, ...rest]);
+    }
+    return true;
+  }
+
+  private async downloaded(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<string | undefined> {
+    const [row] = await this.db
+      .select({ path: downloads.path })
+      .from(downloads)
+      .where(
+        and(
+          eq(downloads.serviceId, serviceId),
+          eq(downloads.key, downloadKey(attachment))
+        )
+      );
+    return row?.path;
+  }
+
+  private async downloadAttachment(
+    serviceId: string,
+    attachment: Attachment
+  ): Promise<Uint8Array> {
     const [service] = await this.db
       .select()
       .from(services)
@@ -492,8 +825,7 @@ export class AccountManager {
         "Ce service ne donne pas ses pièces jointes"
       );
     }
-    const bytes = await plugin.downloadAttachment(attachment);
-    await openFile(serviceId, attachment.name, bytes);
+    return plugin.downloadAttachment(attachment);
   }
 
   /** Marque une actualité comme lue : chez le service d'abord, puis dans la base. */
@@ -544,19 +876,23 @@ export class AccountManager {
     return true;
   }
 
+  /** `first` : à la première synchro, tout serait nouveau, rien n'est téléchargé. */
   private async refreshService(
     service: ServiceRow,
     capability: SyncedCapability,
-    now: Date
+    now: Date,
+    first: boolean
   ): Promise<void> {
     const state = { serviceId: service.id, capability };
+    const found: FoundFile[] | undefined = first ? undefined : [];
     let writes: Write[] | null;
     try {
       writes = await this.fetch(
         await this.plugin(service),
         service.id,
         capability,
-        now
+        now,
+        found
       );
     } catch (error) {
       const mustLogin = error instanceof AuthenticationError;
@@ -612,6 +948,12 @@ export class AccountManager {
         .where(eq(services.id, service.id)),
       ...writes,
     ]);
+    if (found && found.length > 0) {
+      this.fresh.set(service.id, [
+        ...(this.fresh.get(service.id) ?? []),
+        ...found,
+      ]);
+    }
   }
 
   /** Connexion gardée pour la session ; refaite si elle a échoué. */
@@ -683,24 +1025,30 @@ export class AccountManager {
     return auth;
   }
 
-  /** Les écritures à faire, ou `null` si le service ne fournit pas cette capability. */
+  /**
+   * Les écritures à faire, ou `null` si le service ne fournit pas cette capability. `found`
+   * reçoit les fichiers apparus depuis la synchro d'avant.
+   */
   private async fetch(
     plugin: SchoolServicePlugin,
     serviceId: string,
     capability: SyncedCapability,
-    now: Date
+    now: Date,
+    found?: FoundFile[]
   ): Promise<Write[] | null> {
     const { TIMETABLE, HOMEWORK, GRADES, NEWS, ATTENDANCE } =
       plugin.capabilities;
     switch (capability) {
       case "TIMETABLE":
-        return TIMETABLE ? this.timetable(serviceId, TIMETABLE, now) : null;
+        return TIMETABLE
+          ? this.timetable(serviceId, TIMETABLE, now, found)
+          : null;
       case "HOMEWORK":
-        return HOMEWORK ? this.homework(serviceId, HOMEWORK, now) : null;
+        return HOMEWORK ? this.homework(serviceId, HOMEWORK, now, found) : null;
       case "GRADES":
         return GRADES ? this.grades(serviceId, GRADES) : null;
       case "NEWS":
-        return NEWS ? this.news(serviceId, NEWS) : null;
+        return NEWS ? this.news(serviceId, NEWS, found) : null;
       case "ATTENDANCE":
         return ATTENDANCE ? this.attendance(serviceId, ATTENDANCE) : null;
       default:
@@ -723,7 +1071,8 @@ export class AccountManager {
   private async timetable(
     serviceId: string,
     methods: CapabilityMethods["TIMETABLE"],
-    now: Date
+    now: Date,
+    found?: FoundFile[]
   ): Promise<Write[]> {
     const from = weekStart(now);
     const to = addDays(from, 7);
@@ -733,16 +1082,27 @@ export class AccountManager {
         course => course.from >= from && course.from < to
       )
     );
+    const week = and(
+      eq(courses.serviceId, serviceId),
+      gte(courses.from, from),
+      lt(courses.from, to)
+    );
+    if (found) {
+      const before = await this.db
+        .select({ contents: courses.contents })
+        .from(courses)
+        .where(week);
+      found.push(
+        ...newFiles(
+          before.flatMap(row =>
+            (row.contents ?? []).flatMap(content => content.attachments)
+          ),
+          list.flatMap(courseFiles)
+        )
+      );
+    }
     return [
-      this.db
-        .delete(courses)
-        .where(
-          and(
-            eq(courses.serviceId, serviceId),
-            gte(courses.from, from),
-            lt(courses.from, to)
-          )
-        ),
+      this.db.delete(courses).where(week),
       ...this.subjectsOf(
         serviceId,
         list.map(course => course.subject)
@@ -760,7 +1120,8 @@ export class AccountManager {
   private async homework(
     serviceId: string,
     methods: CapabilityMethods["HOMEWORK"],
-    now: Date
+    now: Date,
+    found?: FoundFile[]
   ): Promise<Write[]> {
     const from = weekStart(now);
     const to = addDays(from, 7);
@@ -769,16 +1130,32 @@ export class AccountManager {
         item => item.dueAt >= from && item.dueAt < to
       )
     );
-    return [
-      this.db
-        .delete(homework)
-        .where(
-          and(
-            eq(homework.serviceId, serviceId),
-            gte(homework.dueAt, from),
-            lt(homework.dueAt, to)
+    const week = and(
+      eq(homework.serviceId, serviceId),
+      gte(homework.dueAt, from),
+      lt(homework.dueAt, to)
+    );
+    if (found) {
+      const before = await this.db
+        .select({ attachments: homework.attachments })
+        .from(homework)
+        .where(week);
+      found.push(
+        ...newFiles(
+          before.flatMap(row => row.attachments),
+          list.flatMap(item =>
+            item.attachments.map(attachment => ({
+              attachment,
+              module: "taches" as const,
+              subject: item.subject,
+              date: item.dueAt,
+            }))
           )
-        ),
+        )
+      );
+    }
+    return [
+      this.db.delete(homework).where(week),
       ...this.subjectsOf(
         serviceId,
         list.map(item => item.subject)
@@ -852,7 +1229,8 @@ export class AccountManager {
 
   private async news(
     serviceId: string,
-    methods: CapabilityMethods["NEWS"]
+    methods: CapabilityMethods["NEWS"],
+    found?: FoundFile[]
   ): Promise<Write[]> {
     const rows = await this.db
       .select()
@@ -869,6 +1247,18 @@ export class AccountManager {
       ])
     );
     const list = uniqueById(await methods.getNews(known));
+    found?.push(
+      ...newFiles(
+        rows.flatMap(row => row.attachments),
+        list.flatMap(item =>
+          item.attachments.map(attachment => ({
+            attachment,
+            module: "actualites" as const,
+            date: item.date,
+          }))
+        )
+      )
+    );
     return [
       this.db.delete(news).where(eq(news.serviceId, serviceId)),
       ...(list.length > 0

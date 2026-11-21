@@ -142,6 +142,11 @@ const toAttachment =
           name: attachment.name,
           url: attachment.url.split("?")[0] ?? "",
           ref: JSON.stringify({ ...origin, file: attachment.id }),
+          // Dans une actualité, l'id du fichier change à chaque session : son nom le remplace.
+          key: JSON.stringify({
+            ...origin,
+            file: origin.source === "news" ? attachment.name : attachment.id,
+          }),
         };
 
 /** La `ref` d'une pièce jointe, ou `null` si elle est illisible (ligne d'avant les `ref`). */
@@ -334,13 +339,48 @@ async function filesAt(
   );
 }
 
-/** Le contenu d'un fichier, retrouvé là où il a été vu pour avoir une adresse valable. */
-export const downloadAttachment =
-  (session: PronoteSession) => (attachment: Attachment) =>
+/** Une lecture d'endroit reprise par les fichiers suivants tant qu'ils arrivent à la suite. */
+const REUSE_FOR = 60_000;
+
+/**
+ * Le contenu d'un fichier, retrouvé là où il a été vu pour avoir une adresse valable. Les
+ * fichiers d'une même semaine ou actualité, téléchargés à la suite, ne la relisent qu'une fois.
+ */
+export function downloadAttachment(session: Pick<PronoteSession, "run">) {
+  let last:
+    | {
+        handle: SessionHandle;
+        origin: string;
+        at: number;
+        files: Promise<readonly PronoteAttachment[]>;
+      }
+    | undefined;
+  return (attachment: Attachment) =>
     session.run(async handle => {
       const ref = parseRef(attachment.ref);
-      const file =
-        ref && pickFile(await filesAt(handle, ref), ref, attachment.name);
+      if (!ref) {
+        throw new ServiceUnavailable("Pièce jointe introuvable chez PRONOTE");
+      }
+      const origin =
+        ref.source === "news" ? ref.news : `${ref.source}:${ref.week}`;
+      if (
+        last?.handle !== handle ||
+        last.origin !== origin ||
+        Date.now() - last.at > REUSE_FOR
+      ) {
+        last = { handle, origin, at: Date.now(), files: filesAt(handle, ref) };
+      }
+      const reading = last;
+      let files: readonly PronoteAttachment[];
+      try {
+        files = await reading.files;
+      } catch (error) {
+        if (last === reading) {
+          last = undefined;
+        }
+        throw error;
+      }
+      const file = pickFile(files, ref, attachment.name);
       if (!file) {
         throw new ServiceUnavailable("Pièce jointe introuvable chez PRONOTE");
       }
@@ -352,6 +392,7 @@ export const downloadAttachment =
       }
       return new Uint8Array(await response.arrayBuffer());
     });
+}
 
 const toCourseContent =
   (week: number) =>

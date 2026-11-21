@@ -208,6 +208,12 @@
     "file": "File",
     "link": "Link",
     "opening": "Opening…",
+    "save": "Download",
+    "saving": "Downloading…",
+    "savedIn": "Downloaded to {{folder}}",
+    "missing": "No longer in its folder",
+    "saveAgain": "Download again",
+    "reveal": "Show in folder",
     "confirmTitle": "Open this link?",
     "confirmText": "It leads to {{site}}, which will open in your browser. Only open it if you trust this site.",
     "confirm": "Open link",
@@ -216,7 +222,9 @@
       "link": "This link cannot be opened from Piéride.",
       "type_refused": "This type of file does not open from Piéride, for your safety. Get it from your school's website.",
       "too_large": "This file is too large to be opened from Piéride.",
-      "open_failed": "No app on your computer can open this file."
+      "open_failed": "No app on your computer can open this file.",
+      "write_failed": "The file couldn't be saved to your downloads folder. Check it in Settings, Features.",
+      "reveal": "The file is no longer in its folder. Download it again."
     }
   },
   "cours": {
@@ -641,6 +649,10 @@
         "title": "Hide completed tasks",
         "text": "They stay visible with the Done filter"
       },
+      "autoDownload": {
+        "title": "Download new attachments",
+        "text": "News, courses and tasks, as soon as they arrive, to open them even offline"
+      },
       "sidebarAutoCollapse": {
         "title": "Collapse automatically",
         "text": "When the window is narrower than 1280 px"
@@ -701,7 +713,20 @@
       "tasksLayout": "Tasks layout",
       "tasksLayoutText": "One column per day, or a list by due date",
       "board": "Board",
-      "list": "List"
+      "list": "List",
+      "attachments": "Attachments",
+      "downloadsFolder": "Downloads folder",
+      "openFolder": "Open",
+      "changeFolder": "Change",
+      "chooseFolder": "Choose where to keep your attachments",
+      "folderRefused": "Piéride can't use this folder. Choose another one.",
+      "folderUnavailable": "The downloads folder can't be opened.",
+      "yearFiles_one": "{{count}} file · {{size}}",
+      "yearFiles_other": "{{count}} files · {{size}}",
+      "deleteYear": "Delete",
+      "deleteYearTitle": "Delete the downloads from {{year}}?",
+      "deleteYearText": "The files Piéride saved for this year are erased from your folder. You can download them again as long as they're on your school account.",
+      "deleteFailed": "Some files couldn't be erased. Close them if they're open in another app, then try again."
     },
     "language": {
       "recommended": "Recommended"

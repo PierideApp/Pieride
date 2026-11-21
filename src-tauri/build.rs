@@ -18,7 +18,14 @@ fn main() {
             "db_batch",
             "db_apply_migration",
             "attachment_open",
+            "attachment_save",
+            "attachment_saved_open",
+            "attachments_info",
+            "attachments_delete",
             "attachments_forget",
+            "downloads_folder",
+            "downloads_folder_open",
+            "downloads_folder_choose",
         ]),
     ))
     .expect("failed to run tauri-build");

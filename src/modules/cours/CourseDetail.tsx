@@ -36,7 +36,11 @@ export function CourseDetail({
   const duration = useFormatDuration();
   const homework = useHomework(accountId, course.from);
   const lastSync = useServiceSync(course.serviceId, "TIMETABLE");
-  const attachments = useOpenAttachment(course.serviceId);
+  const files = useOpenAttachment(
+    course.serviceId,
+    course.contents?.flatMap(content => content.attachments) ?? [],
+    { module: t("modules.cours"), subject: course.label, date: course.from }
+  );
   const length = (course.to.getTime() - course.from.getTime()) / 60_000;
   const ongoing =
     course.status !== "canceled" && now >= course.from && now < course.to;
@@ -106,9 +110,7 @@ export function CourseDetail({
                 {content.attachments.length > 0 && (
                   <AttachmentList
                     attachments={content.attachments}
-                    onOpen={attachments.open}
-                    opening={attachments.opening}
-                    error={attachments.error}
+                    {...files}
                   />
                 )}
               </Fragment>

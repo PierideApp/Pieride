@@ -46,6 +46,8 @@ export interface Attachment {
    * valant que pour sa session. Propre au service : l'app ne fait que le lui rendre.
    */
   ref?: string;
+  /** Pour un fichier : ce qui le reconnaît d'une synchro à l'autre (sinon `url`). */
+  key?: string;
 }
 
 /** Une matière, telle que l'app l'affiche (nom, couleur et emoji choisis localement). */

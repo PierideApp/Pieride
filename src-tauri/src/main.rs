@@ -169,7 +169,14 @@ fn main() {
             database::db_batch,
             database::db_apply_migration,
             attachments::attachment_open,
-            attachments::attachments_forget
+            attachments::attachment_save,
+            attachments::attachment_saved_open,
+            attachments::attachments_info,
+            attachments::attachments_delete,
+            attachments::attachments_forget,
+            attachments::downloads_folder,
+            attachments::downloads_folder_open,
+            attachments::downloads_folder_choose
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

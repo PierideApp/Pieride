@@ -43,11 +43,15 @@ export function TaskDetail({
   const tasks = useHomework(accountId, dueAt);
   const subjects = useSubjects(accountId);
   const { toggle, error, pending } = useToggleHomework();
-  const attachments = useOpenAttachment(serviceId);
   const item =
     tasks.status === "ready"
       ? tasks.data.find(task => task.serviceId === serviceId && task.id === id)
       : undefined;
+  const files = useOpenAttachment(serviceId, item?.attachments ?? [], {
+    module: t("modules.taches"),
+    subject: item?.label,
+    date: item?.dueAt ?? dueAt,
+  });
 
   useEffect(() => {
     if (!item) {
@@ -111,12 +115,7 @@ export function TaskDetail({
       </Section>
       {item.attachments.length > 0 && (
         <Section title={t("taches.attachments")}>
-          <AttachmentList
-            attachments={item.attachments}
-            onOpen={attachments.open}
-            opening={attachments.opening}
-            error={attachments.error}
-          />
+          <AttachmentList attachments={item.attachments} {...files} />
         </Section>
       )}
       <Section title={t("taches.information")}>

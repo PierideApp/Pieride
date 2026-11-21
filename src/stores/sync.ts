@@ -3,11 +3,17 @@
 // hooks de données relisent alors ce qu'ils lisent, et seulement ça (`useQuery`).
 import { create } from "zustand";
 
+import i18n from "@/lib/i18n";
 import { log } from "@/lib/log";
 import { accountManager } from "@/services";
 import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 
-/** Ce que les écrans lisent dans la base ; `sync` : les dates de dernière synchro. */
+import { useSettingsStore } from "./settings";
+
+/**
+ * Ce que les écrans lisent dans la base ; `sync` : les dates de dernière synchro,
+ * `downloads` : les pièces jointes téléchargées.
+ */
 export const TOPICS = [
   "accounts",
   "courses",
@@ -17,6 +23,7 @@ export const TOPICS = [
   "attendance",
   "subjects",
   "sync",
+  "downloads",
 ] as const;
 
 export type Topic = (typeof TOPICS)[number];
@@ -67,6 +74,7 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
     attendance: 0,
     subjects: 0,
     sync: 0,
+    downloads: 0,
   },
   syncing: false,
   failed: false,
@@ -110,6 +118,29 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
       }
       // Le premier compte est celui affiché : ses données s'affichent sans attendre les autres.
       set(state => ({ versions: bump(state.versions, TOPICS) }));
+      // Après l'affichage. Attendu : aucune synchro ne repart pendant les téléchargements, et
+      // PRONOTE numérote ses requêtes.
+      if (useSettingsStore.getState().autoDownload) {
+        await accountManager
+          .saveNewAttachments(accountId, {
+            cours: i18n.t("modules.cours"),
+            taches: i18n.t("modules.taches"),
+            actualites: i18n.t("modules.actualites"),
+          })
+          .then(
+            saved =>
+              saved &&
+              set(state => ({
+                versions: bump(state.versions, ["downloads"]),
+              })),
+            (error: unknown) =>
+              log(
+                "error",
+                "fichiers",
+                `Téléchargement automatique en échec : ${error instanceof Error ? error.name : "Unknown"}`
+              )
+          );
+      }
     }
     if (!failed) {
       log("info", "sync", "Synchronisation terminée");
