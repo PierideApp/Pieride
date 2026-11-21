@@ -17,19 +17,19 @@ import {
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { version as reactVersion } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettingsStore } from "@/stores/settings";
 
 import mark from "@/assets/brand/mark.svg";
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
+import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { useLoaded } from "@/hooks/useLoaded";
 import { LINKS, openLink } from "@/lib/links";
 import { report } from "@/lib/log";
 import { platformName } from "@/lib/platform";
+import { useSettingsStore } from "@/stores/settings";
 
 import styles from "./settings.module.scss";
-import { Section } from "@/components/Section/Section";
 import { SwitchRow } from "./SwitchRow";
 import { UpdateRow } from "./UpdateRow";
 
