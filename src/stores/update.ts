@@ -3,10 +3,10 @@
 // la ligne des Paramètres. Seul le lancement installe sans clic (réglage `autoInstall`).
 import { invoke } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { platformName } from "@/lib/platform";
 import { create } from "zustand";
 
 import { report } from "@/lib/log";
+import { platformName } from "@/lib/platform";
 import { closeLogins, reopenLogins } from "@/services/shared/auth";
 
 export type UpdateState =
@@ -30,6 +30,7 @@ interface UpdateStore {
   install: () => Promise<void>;
   /** Au lancement : cherche, installe si l'app peut se remplacer elle-même, puis redémarre. */
   checkAndInstall: () => Promise<void>;
+  downloadAndInstall: (forceInstall?: boolean) => Promise<void>;
   restart: () => Promise<void>;
 }
 
@@ -87,11 +88,6 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
           });
         }
       });
-      // Pas d'installation automatique sur Windows : l'installeur ferme l'app et la rouvre lui-même.
-      if (platformName === "Windows") {
-        set({ state: { status: "installReady", version } });
-      }
-      else get().install();
     } catch (error) {
       report("update", error);
       set({ state: { status: "error" } });
@@ -125,10 +121,21 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     if (state.status !== "available" || state.manual) {
       return;
     }
-    // Sur Windows, l'installeur ferme l'app et la rouvre lui-même : on n'arrive pas ici.
-    await get().install();
+
+    await get().downloadAndInstall(true);
     if (get().state.status === "restartReady") {
       await get().restart();
+    }
+  },
+  downloadAndInstall: async (forceInstall?: boolean) => {
+    const { state } = get();
+    if (state.status !== "available") {
+      return;
+    }
+
+    await get().download();
+    if (platformName !== "Windows" || forceInstall) {
+      await get().install();
     }
   },
   restart: async () => {
