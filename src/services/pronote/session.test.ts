@@ -38,6 +38,7 @@ vi.mock("@blockshub/pawnote-lts", async original => ({
   ...(await original<typeof import("@blockshub/pawnote-lts")>()),
   createSessionHandle: vi.fn(() => ({
     information: { order: 0 },
+    instance: { version: [2025, 1, 3] },
     user: { authorizations: { tabs: [] } },
   })),
   loginToken: vi.fn(),

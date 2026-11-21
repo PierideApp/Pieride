@@ -26,6 +26,7 @@ import {
 
 import { devExchange, devResult } from "@/lib/devlog";
 import { pronoteFetcher } from "@/lib/http";
+import { log } from "@/lib/log";
 import type {
   AuthFailure,
   AuthTracker,
@@ -283,6 +284,12 @@ export class PronoteSession {
         }
       );
       this.current = { handle, openedAt: Date.now() };
+      // À chaque session : la version reste près des erreurs dans un journal copié (#42).
+      log(
+        "info",
+        "sync",
+        `pronote : session ouverte, version ${handle.instance.version.join(".")}`
+      );
       return handle;
     } catch (error) {
       throw toServiceError(error);
