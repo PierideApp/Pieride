@@ -82,7 +82,7 @@ export const SYNC_INTERVAL = 30 * 60_000;
 export const MANUAL_SYNC_INTERVAL = 5 * 60_000;
 
 /** Les données rangées par semaine : `loadWeek` les charge pour une autre semaine. */
-const WEEKLY = ["TIMETABLE", "HOMEWORK"] as const;
+export type WeeklyCapability = "TIMETABLE" | "HOMEWORK";
 
 type ServiceRow = typeof services.$inferSelect;
 type Write = BatchItem<"sqlite">;
@@ -519,15 +519,17 @@ export class AccountManager {
   }
 
   /**
-   * Charge les cours et les devoirs d'une autre semaine que celle de la synchro (Cours,
-   * Tâches), une fois par session : y revenir ne redemande rien au service. La semaine en
-   * cours reste à la synchro et à son délai. Hors ligne ou en panne, la base garde ce
-   * qu'elle a et l'erreur va au journal ; la semaine sera redemandée à la prochaine visite.
+   * Charge les cours ou les devoirs d'une autre semaine que celle de la synchro, une fois par
+   * session : y revenir ne redemande rien au service. Chaque écran ne demande que ce qu'il lit,
+   * l'autre donnée peut appartenir à un module masqué. La semaine en cours reste à la synchro
+   * et à son délai. Hors ligne ou en panne, la base garde ce qu'elle a et l'erreur va au
+   * journal ; la semaine sera redemandée à la prochaine visite.
    * Renvoie vrai si la base a changé.
    */
   async loadWeek(
     accountId: string,
     week: Date,
+    capability: WeeklyCapability,
     now = new Date()
   ): Promise<boolean> {
     const monday = weekStart(week);
@@ -542,12 +544,12 @@ export class AccountManager {
       );
     const changed = await Promise.all(
       linked.map(service => {
-        const key = `${service.id}:${monday.getTime()}`;
+        const key = `${service.id}:${capability}:${monday.getTime()}`;
         const loading = this.weeks.get(key);
         if (loading) {
           return loading.then(() => false);
         }
-        const load = this.loadServiceWeek(service, monday).catch(
+        const load = this.loadServiceWeek(service, capability, monday).catch(
           (error: unknown) => {
             this.weeks.delete(key);
             if (error instanceof AuthenticationError) {
@@ -556,7 +558,7 @@ export class AccountManager {
             log(
               "warn",
               "sync",
-              `${service.kind} semaine : ${errorKind(error)}`
+              `${service.kind} ${capability} semaine : ${errorKind(error)}`
             );
             return false;
           }
@@ -910,16 +912,12 @@ export class AccountManager {
 
   private async loadServiceWeek(
     service: ServiceRow,
+    capability: WeeklyCapability,
     monday: Date
   ): Promise<boolean> {
     const plugin = await this.plugin(service);
-    const writes: Write[] = [];
-    for (const capability of WEEKLY) {
-      writes.push(
-        ...((await this.fetch(plugin, service.id, capability, monday)) ?? [])
-      );
-    }
-    const [first, ...rest] = writes;
+    const [first, ...rest] =
+      (await this.fetch(plugin, service.id, capability, monday)) ?? [];
     if (!first) {
       return false;
     }

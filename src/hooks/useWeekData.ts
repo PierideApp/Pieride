@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { log } from "@/lib/log";
 import { addDays, weekStart } from "@/lib/week";
 import { accountManager } from "@/services";
+import type { WeeklyCapability } from "@/services/account-manager";
 import { useSyncStore } from "@/stores/sync";
 
 import { type Query, type Source, useQuery } from "./useQuery";
@@ -16,6 +17,7 @@ export function useWeekData<T>(
   source: Source<T[]>,
   accountId: string | undefined,
   week: Date,
+  capability: WeeklyCapability,
   load: (accountId: string, from: Date, to: Date) => Promise<T[]>
 ): Query<T[]> {
   const reload = useSyncStore(state => state.reload);
@@ -32,7 +34,7 @@ export function useWeekData<T>(
     // suspend les adresses qui envoient trop de requêtes.
     const timer = setTimeout(() => {
       void accountManager
-        .loadWeek(accountId, new Date(monday))
+        .loadWeek(accountId, new Date(monday), capability)
         .then(
           changed => changed && reload("courses", "homework"),
           // Seule la base peut faire échouer `loadWeek` : l'écran l'affichera en la lisant.
@@ -41,7 +43,7 @@ export function useWeekData<T>(
         .finally(() => setAnswered(`${accountId}:${monday}`));
     }, WEEK_DELAY);
     return () => clearTimeout(timer);
-  }, [accountId, monday, reload]);
+  }, [accountId, monday, capability, reload]);
 
   const query = useQuery(source, key, () =>
     accountId

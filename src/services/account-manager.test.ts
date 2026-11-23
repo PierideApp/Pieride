@@ -332,13 +332,17 @@ describe("AccountManager", () => {
     ]);
     timetable = fetchTimetable;
 
-    expect(await manager.loadWeek("camille", nextWeek, NOW)).toBe(true);
+    expect(await manager.loadWeek("camille", nextWeek, "TIMETABLE", NOW)).toBe(
+      true
+    );
     expect(fetchTimetable).toHaveBeenCalledWith(new Date(2026, 10, 2));
     const stored = await db.select().from(courses);
     expect(stored.map(c => c.id)).toEqual(["mardi-suivant"]);
     expect(await db.select().from(syncState)).toEqual([]);
 
-    expect(await manager.loadWeek("camille", nextWeek, NOW)).toBe(false);
+    expect(await manager.loadWeek("camille", nextWeek, "TIMETABLE", NOW)).toBe(
+      false
+    );
     expect(fetchTimetable).toHaveBeenCalledOnce();
   });
 
@@ -349,14 +353,29 @@ describe("AccountManager", () => {
       course("maths", monday),
       course("maths", addDays(monday, 7)),
     ];
-    expect(await manager.loadWeek("camille", monday, NOW)).toBe(true);
+    expect(await manager.loadWeek("camille", monday, "TIMETABLE", NOW)).toBe(
+      true
+    );
     const stored = await db.select().from(courses);
     expect(stored.map(c => c.from)).toEqual([monday]);
   });
 
+  it("ne charge que la donnée demandée pour une autre semaine", async () => {
+    const { manager } = await setup();
+    const fetchTimetable = vi.fn(timetable);
+    timetable = fetchTimetable;
+    const nextWeek = new Date(2026, 10, 4);
+    expect(await manager.loadWeek("camille", nextWeek, "HOMEWORK", NOW)).toBe(
+      false
+    );
+    expect(fetchTimetable).not.toHaveBeenCalled();
+  });
+
   it("laisse la semaine en cours à la synchro", async () => {
     const { manager } = await setup();
-    expect(await manager.loadWeek("camille", at(30, 8), NOW)).toBe(false);
+    expect(await manager.loadWeek("camille", at(30, 8), "TIMETABLE", NOW)).toBe(
+      false
+    );
     expect(connect).not.toHaveBeenCalled();
   });
 
@@ -366,10 +385,14 @@ describe("AccountManager", () => {
     timetable = async () => {
       throw new ServiceUnavailable("hors ligne");
     };
-    expect(await manager.loadWeek("camille", nextWeek, NOW)).toBe(false);
+    expect(await manager.loadWeek("camille", nextWeek, "TIMETABLE", NOW)).toBe(
+      false
+    );
 
     timetable = async () => [course("lundi-suivant", new Date(2026, 10, 2, 8))];
-    expect(await manager.loadWeek("camille", nextWeek, NOW)).toBe(true);
+    expect(await manager.loadWeek("camille", nextWeek, "TIMETABLE", NOW)).toBe(
+      true
+    );
     expect(await db.select().from(courses)).toHaveLength(1);
   });
 
