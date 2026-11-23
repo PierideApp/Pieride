@@ -179,7 +179,6 @@ export function ActualitesPage({ module }: ModulePageProps) {
   const bodyNodes = current?.htmlContent
     ? newsContentNodes(current.htmlContent)
     : [];
-  const attachments = useOpenAttachment(current?.serviceId);
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`
       ? acknowledgement.status

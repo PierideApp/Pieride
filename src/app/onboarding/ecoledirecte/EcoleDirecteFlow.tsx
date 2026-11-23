@@ -106,7 +106,7 @@ export function EcoledirecteFlow({
     }
     setCurrentAccount(accountId);
     reload();
-    void sync(accountId);
+    void sync([accountId]);
     onDone?.();
   };
 

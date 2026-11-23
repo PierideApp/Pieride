@@ -30,6 +30,7 @@ export function relinkOf(account: AccountSummary): Relink | null {
   );
   return refused?.instanceUrl
     ? {
+        kind: "pronote",
         accountId: account.id,
         serviceId: refused.id,
         url: refused.instanceUrl,
