@@ -164,7 +164,8 @@
     "moveHint": "Drag the widget, or use the arrow keys (Shift + arrows: size)",
     "empty": {
       "title": "Nothing to show",
-      "text": "Nothing to show here yet. Add widgets to build your home."
+      "text": "Nothing to show here yet. Add widgets to build your home.",
+      "hidden": "Your widgets' modules are hidden. Show them again in Settings > Sidebar."
     },
     "sizes": {
       "mini": "card",
@@ -582,7 +583,7 @@
       "reorder": "Drag to reorder",
       "move": "Move {{name}}",
       "moveHint": "Drag the row, or use the up and down arrows",
-      "tip": "Each account has its own modules. With a university account (APPSCHO, ESUP Multi), only Home, Classes and News are available.",
+      "tip": "Each account has its own modules. A hidden module no longer syncs and its widget leaves the home page. With a university account (APPSCHO, ESUP Multi), only Home, Classes and News are available.",
       "display": "Display"
     },
     "developer": {

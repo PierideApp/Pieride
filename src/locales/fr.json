@@ -164,7 +164,8 @@
     "moveHint": "Glisse le widget, ou utilise les flèches du clavier (Maj + flèches : la taille)",
     "empty": {
       "title": "Rien à afficher",
-      "text": "Il n'y a rien à afficher ici pour le moment. Ajoute des widgets pour composer ton accueil."
+      "text": "Il n'y a rien à afficher ici pour le moment. Ajoute des widgets pour composer ton accueil.",
+      "hidden": "Les modules de tes widgets sont masqués. Réaffiche-les dans Paramètres > Barre latérale."
     },
     "sizes": {
       "mini": "carte",
@@ -582,7 +583,7 @@
       "reorder": "Glisse pour réordonner",
       "move": "Déplacer {{name}}",
       "moveHint": "Glisse la ligne, ou utilise les flèches haut et bas",
-      "tip": "Chaque compte a ses propres modules. Avec un compte universitaire (APPSCHO, ESUP Multi), seuls Accueil, Cours et Actualités sont disponibles.",
+      "tip": "Chaque compte a ses propres modules. Un module masqué ne se synchronise plus et son widget quitte l'accueil. Avec un compte universitaire (APPSCHO, ESUP Multi), seuls Accueil, Cours et Actualités sont disponibles.",
       "display": "Affichage"
     },
     "developer": {
