@@ -5,6 +5,7 @@ import { migrate } from "@/database/migrate";
 import { nodeDriver } from "@/database/node-driver";
 import {
   attendance,
+  attendancePeriods,
   courses,
   downloads,
   grades,
@@ -521,6 +522,11 @@ describe("AccountManager", () => {
     expect(
       (await db.select().from(attendance)).map(item => item.kind).sort()
     ).toEqual(["absence", "delay"]);
+    // Les siennes, sans demander les notes.
+    expect(
+      (await db.select().from(attendancePeriods)).map(period => period.name)
+    ).toEqual(["T1", "Année"]);
+    expect(await db.select().from(periods)).toEqual([]);
   });
 
   it("passe au service les actualités déjà en base, pour garder leur contenu", async () => {

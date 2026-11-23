@@ -12,7 +12,11 @@ import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { useAccounts } from "@/hooks/useAccounts";
-import { useAttendance } from "@/hooks/useAttendance";
+import {
+  attendanceOf,
+  currentAttendancePeriod,
+  useAttendance,
+} from "@/hooks/useAttendance";
 import { useFlip } from "@/hooks/useFlip";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
 import { currentPeriod, gradesOf, useGrades } from "@/hooks/useGrades";
@@ -110,8 +114,7 @@ export function AccueilPage() {
   const week = useTimetable(shownCourses ? accountId : undefined, today);
   const nextWeek = useTimetable(reading("courses"), nextDay);
   const homework = useHomework(reading("tasks"), today);
-  // Les absences se rangent dans la période des notes.
-  const grades = useGrades(reading("average", "grades", "attendance"));
+  const grades = useGrades(reading("average", "grades"));
   const news = useNews(reading("news"));
   const attendance = useAttendance(reading("attendance"));
   const { toggle, error, pending } = useToggleHomework();
@@ -229,11 +232,13 @@ export function AccueilPage() {
       ? currentPeriod(grades.data.periods, allGrades, now)
       : undefined;
   const periodGrades = gradesOf(allGrades, period);
-  const absences = (
-    attendance.status === "ready" ? attendance.data : []
-  ).filter(
-    item => !period || (item.from >= period.start && item.from <= period.end)
-  );
+  const absences =
+    attendance.status === "ready"
+      ? attendanceOf(
+          attendance.data.items,
+          currentAttendancePeriod(attendance.data, now)
+        )
+      : [];
   const background = wallpaperBackground(wallpaper);
   const newsItems = news.status === "ready" ? news.data : [];
   /** Le widget n'a rien à montrer, mais ses données sont en route. */

@@ -78,9 +78,9 @@ describe("syncedCapabilities", () => {
 
   it("garde une donnée tant qu'un module affiché la lit", () => {
     expect(synced(["taches"])).toContain("HOMEWORK");
-    expect(synced(["notes"])).toContain("GRADES");
     expect(synced(["taches", "cours"])).not.toContain("HOMEWORK");
-    expect(synced(["notes", "assiduite"])).not.toContain("GRADES");
+    // Assiduité a ses propres périodes : masquer Notes coupe les notes.
+    expect(synced(["notes"])).not.toContain("GRADES");
   });
 
   it("ne synchronise rien quand tous les modules sont masqués", () => {

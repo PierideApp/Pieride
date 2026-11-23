@@ -35,6 +35,7 @@ describe("migrate", () => {
       ["0005_actualites"],
       ["0006_connexion"],
       ["0007_pieces_jointes"],
+      ["0008_periodes_assiduite"],
     ]);
   });
 

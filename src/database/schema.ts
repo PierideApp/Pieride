@@ -86,6 +86,22 @@ export const subjects = sqliteTable(
   t => [primaryKey({ columns: [t.serviceId, t.name] })]
 );
 
+/**
+ * Les périodes de la vie scolaire, où se rangent les absences. Elles peuvent différer de
+ * celles des notes, et Assiduité n'a pas à synchroniser les notes pour les connaître.
+ */
+export const attendancePeriods = sqliteTable(
+  "attendance_periods",
+  {
+    serviceId: serviceId(),
+    id: text("id").notNull(),
+    name: text("name").notNull(),
+    start: integer("start", { mode: "timestamp_ms" }).notNull(),
+    end: integer("end", { mode: "timestamp_ms" }).notNull(),
+  },
+  t => [primaryKey({ columns: [t.serviceId, t.id] })]
+);
+
 export const periods = sqliteTable(
   "periods",
   {

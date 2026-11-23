@@ -100,8 +100,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: UserCross,
     page: AssiduitePage,
     requires: ["ATTENDANCE"],
-    // Les notes pour leurs périodes : les absences s'y rangent.
-    syncs: ["ATTENDANCE", "GRADES"],
+    syncs: ["ATTENDANCE"],
     status: "stable",
     group: "school",
   },

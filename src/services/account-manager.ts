@@ -8,6 +8,7 @@ import type { Db } from "@/database/client";
 import {
   accounts,
   attendance,
+  attendancePeriods,
   courses,
   downloads,
   grades,
@@ -1326,8 +1327,9 @@ export class AccountManager {
     methods: CapabilityMethods["ATTENDANCE"]
   ): Promise<Write[]> {
     const found = new Map<string, Attendance>();
+    const periodList = uniqueById(await methods.getAttendancePeriods());
     // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
-    for (const period of uniqueById(await methods.getAttendancePeriods())) {
+    for (const period of periodList) {
       for (const item of await methods.getAttendanceForPeriod(period)) {
         found.set(`${item.kind}:${item.id}`, item);
       }
@@ -1340,6 +1342,16 @@ export class AccountManager {
             this.db
               .insert(attendance)
               .values(list.map(item => ({ ...item, serviceId }))),
+          ]
+        : []),
+      this.db
+        .delete(attendancePeriods)
+        .where(eq(attendancePeriods.serviceId, serviceId)),
+      ...(periodList.length > 0
+        ? [
+            this.db
+              .insert(attendancePeriods)
+              .values(periodList.map(period => ({ ...period, serviceId }))),
           ]
         : []),
     ];

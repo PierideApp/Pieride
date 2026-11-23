@@ -20,9 +20,13 @@ import { Page } from "@/components/Page/Page";
 import { Segmented } from "@/components/Segmented/Segmented";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Spinner } from "@/components/Spinner/Spinner";
-import { type AttendanceView, useAttendance } from "@/hooks/useAttendance";
+import {
+  attendanceOf,
+  type AttendanceView,
+  currentAttendancePeriod,
+  useAttendance,
+} from "@/hooks/useAttendance";
 import { capitalize, hoursMinutes, useDateFormats } from "@/hooks/useFormats";
-import { currentPeriod, useGrades } from "@/hooks/useGrades";
 import { useNow } from "@/hooks/useNow";
 import type { ModulePageProps } from "@/modules/registry";
 import { useAccountStore } from "@/stores/accounts";
@@ -41,21 +45,21 @@ export function AssiduitePage({ module }: ModulePageProps) {
   const formats = useDateFormats();
   const now = useNow();
   const items = useAttendance(accountId);
-  const grades = useGrades(accountId);
   const [chosen, setChosen] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<string | null>(null);
 
-  const periods = grades.status === "ready" ? grades.data.periods : [];
+  const periods = items.status === "ready" ? items.data.periods : [];
   const period =
     chosen === "year"
       ? undefined
       : (periods.find(candidate => candidate.id === chosen) ??
-        (grades.status === "ready"
-          ? currentPeriod(periods, grades.data.grades, now)
+        (items.status === "ready"
+          ? currentAttendancePeriod(items.data, now)
           : undefined));
-  const all = (items.status === "ready" ? items.data : []).filter(
-    item => !period || (item.from >= period.start && item.from <= period.end)
+  const all = attendanceOf(
+    items.status === "ready" ? items.data.items : [],
+    period
   );
   const shown = all.filter(item => filter === "all" || item.kind === filter);
   const absences = all.filter(item => item.kind === "absence");
