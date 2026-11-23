@@ -82,17 +82,18 @@ const SUMMARY = {
   public: { _T: 24, V: { L: "Élève", N: "46#e", G: 4 } },
   informationListeContenu: { avecPJ: false, aToutRepondu: false },
 };
-const LIST = {
+const list = (...items: unknown[]) => ({
   dataSec: {
     data: {
-      listeModesAff: [{ G: 0, listeActualites: { _T: 24, V: [SUMMARY] } }],
+      listeModesAff: [{ G: 0, listeActualites: { _T: 24, V: items } }],
       listeNatures: {
         _T: 24,
         V: [{ L: "Divers", N: "70#d", estDefaut: true }],
       },
     },
   },
-};
+});
+const LIST = list(SUMMARY);
 const DETAILS = {
   dataSec: {
     data: {
@@ -160,6 +161,59 @@ describe("patch de pawnote", () => {
       is: "information",
       title: "Association sportive",
       category: { name: "Divers" },
+      content: "",
+      attachments: [],
+      needToAcknowledge: false,
+    });
+  });
+
+  it.each([
+    ["sans liste", {}],
+    ["sans actualité", { listeModesAff: [{ G: 0 }] }],
+  ])("ne donne aucune actualité %s", async (_, data) => {
+    const { handle } = openSession(RECENT, { dataSec: { data } });
+    await expect(news(handle)).resolves.toEqual({ categories: [], items: [] });
+  });
+
+  it("lit une actualité à laquelle manquent des champs (#42)", async () => {
+    // Une clé à `undefined` disparaît à l'envoi (JSON.stringify).
+    const { handle } = openSession(
+      RECENT,
+      list(
+        {
+          ...SUMMARY,
+          dateCreation: undefined,
+          dateFin: undefined,
+          public: undefined,
+        },
+        { ...SUMMARY, dateDebut: undefined }
+      )
+    );
+    handle.user = { ...handle.user, id: "46#e", kind: 4 };
+    const [first, second] = (await news(handle)).items;
+    expect(first).toMatchObject({
+      creationDate: new Date(2026, 8, 8, 7),
+      endDate: undefined,
+      public: { N: "46#e", G: 4 },
+    });
+    expect(second?.startDate).toBeUndefined();
+  });
+
+  it("lit une question sans texte, pièce jointe ni réponse (#42)", async () => {
+    const { handle } = openSession(RECENT, LIST, {
+      dataSec: {
+        data: {
+          detailsActualite: {
+            listeQuestions: { V: [{ N: "q1", L: "", genreReponse: 0 }] },
+          },
+        },
+      },
+    });
+    const [item] = (await news(handle)).items;
+    if (!item) {
+      throw new Error("liste vide");
+    }
+    await expect(newsDetails(handle, item)).resolves.toMatchObject({
       content: "",
       attachments: [],
       needToAcknowledge: false,
