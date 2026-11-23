@@ -33,6 +33,7 @@ import {
   AccountManager,
   MANUAL_SYNC_INTERVAL,
   SYNC_INTERVAL,
+  SYNCED,
 } from "./account-manager";
 import {
   AuthenticationError,
@@ -224,8 +225,8 @@ describe("AccountManager", () => {
       auth.login({ rotatesCredential: true }, sent)
     );
     // Une synchro demande cinq données, la suivante autant : un seul envoi.
-    await manager.refreshAll("camille", NOW);
-    await manager.refreshAll("camille", LATER);
+    await manager.refreshAll("camille", SYNCED, NOW);
+    await manager.refreshAll("camille", SYNCED, LATER);
     expect(sent).toHaveBeenCalledOnce();
     const [service] = await db.select().from(services);
     expect(service).toMatchObject({
@@ -235,13 +236,13 @@ describe("AccountManager", () => {
     });
 
     manager.allowAuthRetries();
-    await manager.refreshAll("camille", LATER);
+    await manager.refreshAll("camille", SYNCED, LATER);
     // Un autre lancement : le refus vient de la base, pas de la mémoire.
     const relaunched = new AccountManager(db, {
       pronote: connect,
       mock: connect,
     });
-    await relaunched.refreshAll("camille", LATER);
+    await relaunched.refreshAll("camille", SYNCED, LATER);
     expect(sent).toHaveBeenCalledOnce();
 
     await relaunched.relinkService("pronote-1", "nouveau-jeton");
@@ -290,6 +291,35 @@ describe("AccountManager", () => {
       MANUAL_SYNC_INTERVAL
     );
     expect(fetchTimetable).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne demande que les données des modules affichés", async () => {
+    const { db, manager } = await setup();
+    const fetchTimetable = vi.fn(timetable);
+    timetable = fetchTimetable;
+    await manager.refreshAll("camille", ["GRADES"], NOW);
+    expect(fetchTimetable).not.toHaveBeenCalled();
+    const synced = await db.select().from(syncState);
+    expect(synced.map(row => row.capability)).toEqual(["GRADES"]);
+  });
+
+  it("connecte une fois par lancement le service dont tous les modules sont masqués", async () => {
+    const { db, manager } = await setup();
+    const fetchTimetable = vi.fn(timetable);
+    timetable = fetchTimetable;
+    await manager.refreshAll("camille", [], NOW);
+    await manager.refreshAll("camille", [], LATER);
+    expect(connect).toHaveBeenCalledOnce();
+    expect(fetchTimetable).not.toHaveBeenCalled();
+    expect(await db.select().from(syncState)).toEqual([]);
+  });
+
+  it("demande la reconnexion quand cette connexion est refusée", async () => {
+    const { db, manager } = await setup();
+    connect.mockRejectedValue(new AuthenticationError("refusé"));
+    await manager.refreshAll("camille", [], NOW);
+    const [service] = await db.select().from(services);
+    expect(service?.needsLogin).toBe(true);
   });
 
   it("charge une autre semaine une seule fois, sans toucher à la synchro", async () => {
@@ -515,7 +545,7 @@ describe("AccountManager", () => {
       { id: "t1", name: "T1", start: at(1, 0), end: at(30, 0) },
       { id: "t2", name: "T2", start: at(31, 0), end: at(31, 0) },
     ];
-    await manager.refreshAll("camille", NOW);
+    await manager.refreshAll("camille", SYNCED, NOW);
     expect((await db.select().from(grades)).map(g => g.id)).toEqual([
       "note-t1",
       "note-t2",
@@ -695,7 +725,7 @@ describe("AccountManager", () => {
     }));
 
     // La première synchro ne télécharge pas tout l'historique.
-    await manager.refreshAll("camille", NOW);
+    await manager.refreshAll("camille", SYNCED, NOW);
     expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
 
     list = [
@@ -705,7 +735,7 @@ describe("AccountManager", () => {
         { kind: "link", name: "Site", url: "https://exemple.fr" },
       ]),
     ];
-    await manager.refreshAll("camille", LATER);
+    await manager.refreshAll("camille", SYNCED, LATER);
     expect(await manager.saveNewAttachments("camille", MODULES)).toBe(true);
     expect(downloadAttachment).toHaveBeenCalledTimes(1);
     expect(saveFile).toHaveBeenCalledWith(
@@ -761,7 +791,7 @@ describe("AccountManager", () => {
       },
       downloadAttachment,
     }));
-    await manager.refreshAll("camille", NOW);
+    await manager.refreshAll("camille", SYNCED, NOW);
     expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);
 
     await manager.updateSubject("camille", "Maths", {
@@ -773,7 +803,7 @@ describe("AccountManager", () => {
       file("annexe.pdf"),
       { kind: "link", name: "Exercices", url: "https://exemple.fr" },
     ];
-    await manager.refreshAll("camille", LATER);
+    await manager.refreshAll("camille", SYNCED, LATER);
     expect(await manager.saveNewAttachments("camille", MODULES)).toBe(true);
     expect(
       vi.mocked(saveFile).mock.calls.map(call => call.slice(0, 2))
@@ -788,6 +818,7 @@ describe("AccountManager", () => {
     // L'échec n'est pas redemandé au service à chaque synchro.
     await manager.refreshAll(
       "camille",
+      SYNCED,
       new Date(LATER.getTime() + SYNC_INTERVAL)
     );
     expect(await manager.saveNewAttachments("camille", MODULES)).toBe(false);

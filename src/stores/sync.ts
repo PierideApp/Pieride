@@ -7,6 +7,7 @@ import i18n from "@/lib/i18n";
 import { log } from "@/lib/log";
 import { accountManager } from "@/services";
 import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
+import type { Capability } from "@/services/shared/plugin";
 
 import { useSettingsStore } from "./settings";
 
@@ -30,6 +31,12 @@ export type Topic = (typeof TOPICS)[number];
 
 type Versions = Record<Topic, number>;
 
+/** Un compte et les données de ses modules affichés (`syncedCapabilities` du registre). */
+export interface SyncTarget {
+  accountId: string;
+  capabilities: readonly Capability[];
+}
+
 interface SyncState {
   versions: Versions;
   syncing: boolean;
@@ -39,7 +46,7 @@ interface SyncState {
    * Redemande les données plus vieilles que `interval` (30 minutes par défaut), compte après
    * compte : chaque connexion renouvelle le jeton du service, même d'un compte qu'on n'ouvre pas.
    */
-  sync: (accountIds: readonly string[], interval?: number) => Promise<void>;
+  sync: (targets: readonly SyncTarget[], interval?: number) => Promise<void>;
   /** Le dernier `Ctrl R` accepté, et le dernier refusé (moins de 5 minutes après). */
   manualAt: number | null;
   refusedAt: number | null;
@@ -47,7 +54,7 @@ interface SyncState {
    * `Ctrl R` : une synchro au plus toutes les 5 minutes, même quand le service échoue (une
    * synchro en échec ne date rien dans la base : sans ce délai, chaque appui le redemanderait).
    */
-  syncNow: (accountId: string, now?: number) => void;
+  syncNow: (target: SyncTarget, now?: number) => void;
   /** La base a changé hors synchro : ces sujets sont relus, tous si on n'en donne aucun. */
   reload: (...topics: Topic[]) => void;
 }
@@ -59,6 +66,9 @@ const bump = (versions: Versions, topics: readonly Topic[]): Versions => {
   }
   return next;
 };
+
+/** La synchro demandée pendant une autre, lancée à sa fin (un module réaffiché entre-temps). */
+let queued: { targets: readonly SyncTarget[]; interval?: number } | null = null;
 
 /** Les versions de `topics`, en une chaîne qui change dès que l'une d'elles change. */
 export const stampOf = (topics: readonly Topic[]) => (state: SyncState) =>
@@ -84,7 +94,7 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
     set(state => ({
       versions: bump(state.versions, topics.length > 0 ? topics : TOPICS),
     })),
-  syncNow: (accountId, now = Date.now()) => {
+  syncNow: (target, now = Date.now()) => {
     const { syncing, manualAt } = get();
     if (syncing) {
       return;
@@ -96,17 +106,23 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
     }
     set({ manualAt: now, refusedAt: null });
     accountManager.allowAuthRetries();
-    void get().sync([accountId], MANUAL_SYNC_INTERVAL);
+    void get().sync([target], MANUAL_SYNC_INTERVAL);
   },
-  sync: async (accountIds, interval) => {
+  sync: async (targets, interval) => {
     if (get().syncing) {
+      queued = { targets, interval };
       return;
     }
     set({ syncing: true });
     let failed = false;
-    for (const accountId of accountIds) {
+    for (const { accountId, capabilities } of targets) {
       try {
-        await accountManager.refreshAll(accountId, new Date(), interval);
+        await accountManager.refreshAll(
+          accountId,
+          capabilities,
+          new Date(),
+          interval
+        );
       } catch (error) {
         failed = true;
         // Le type d'erreur seulement : le détail de chaque service est dans `sync_state`.
@@ -146,5 +162,10 @@ export const useSyncStore = create<SyncState>()((set, get) => ({
       log("info", "sync", "Synchronisation terminée");
     }
     set({ syncing: false, failed });
+    const next = queued;
+    queued = null;
+    if (next) {
+      void get().sync(next.targets, next.interval);
+    }
   },
 }));

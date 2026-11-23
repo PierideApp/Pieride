@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useMemo,
   useState,
@@ -19,14 +20,18 @@ import { useAutoUpdate } from "@/hooks/useAutoUpdate";
 import type { Loaded } from "@/hooks/useLoaded";
 import { useShortcuts } from "@/hooks/useShortcuts";
 import { useTrayGlance } from "@/hooks/useTrayGlance";
-import { modulePath, visibleModules } from "@/modules/registry";
+import {
+  modulePath,
+  syncedCapabilities,
+  visibleModules,
+} from "@/modules/registry";
 import { SYNC_INTERVAL } from "@/services/account-manager";
 import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
 import { useDetailStore } from "@/stores/detail";
 import { useSettingsStore } from "@/stores/settings";
 import { useSettingsDialog } from "@/stores/settingsDialog";
-import { useSyncStore } from "@/stores/sync";
+import { type SyncTarget, useSyncStore } from "@/stores/sync";
 
 import { CommandPalette } from "./CommandPalette";
 import { DetailPanel } from "./DetailPanel";
@@ -57,9 +62,8 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [accounts]
   );
   const current = list.find(account => account.id === currentId) ?? list[0];
-  const hidden = useSettingsStore(state =>
-    current ? state.hiddenModules[current.id] : undefined
-  );
+  const hiddenModules = useSettingsStore(state => state.hiddenModules);
+  const hidden = current ? hiddenModules[current.id] : undefined;
   const order = useSettingsStore(state =>
     current ? state.moduleOrder[current.id] : undefined
   );
@@ -68,40 +72,48 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     () => visibleModules(capabilitiesOf(current?.kinds ?? []), hidden, order),
     [current, hidden, order]
   );
+  const synced = useMemo(() => syncedCapabilities(modules), [modules]);
   const sync = useSyncStore(state => state.sync);
   const syncNow = useSyncStore(state => state.syncNow);
   const syncing = useSyncStore(state => state.syncing);
   const currentAccountId = current?.id;
-  // En chaîne, pour que la relecture des comptes après chaque synchro n'en relance pas une.
-  const others = list
-    .filter(account => account.id !== currentAccountId)
-    .map(account => account.id)
-    .join(" ");
   // Tous les comptes, l'affiché d'abord : PRONOTE ne renouvelle le jeton qu'à la connexion, un
-  // compte qu'on n'ouvre jamais le laisserait expirer.
-  const syncCurrent = useCallback(() => {
-    if (currentAccountId) {
-      void sync([currentAccountId, ...others.split(" ").filter(Boolean)]);
+  // compte qu'on n'ouvre jamais le laisserait expirer. Chacun avec ses modules affichés.
+  const targets: SyncTarget[] = (
+    current ? [current, ...list.filter(account => account !== current)] : []
+  ).map(account => ({
+    accountId: account.id,
+    capabilities: syncedCapabilities(
+      visibleModules(capabilitiesOf(account.kinds), hiddenModules[account.id])
+    ),
+  }));
+  // En chaîne, pour que la relecture des comptes après chaque synchro n'en relance pas une.
+  const plan = targets
+    .map(({ accountId, capabilities }) => `${accountId}:${capabilities.join()}`)
+    .join(" ");
+  const syncAll = useEffectEvent(() => void sync(targets));
+  // Au lancement, au changement de compte et quand un module est masqué ou réaffiché. Une
+  // donnée de moins de 30 minutes n'est pas redemandée (`SYNC_INTERVAL`).
+  useEffect(() => {
+    if (plan) {
+      syncAll();
     }
-  }, [currentAccountId, others, sync]);
-  // Au lancement et au changement de compte. Une donnée de moins de 30 minutes n'est pas
-  // redemandée (`SYNC_INTERVAL`).
-  useEffect(syncCurrent, [syncCurrent]);
+  }, [plan]);
   // Puis 30 minutes après la fin de chaque synchro, tant que l'app est ouverte. Compter depuis
   // la fin plutôt qu'à heure fixe : la suivante trouve toujours ses données assez vieilles.
   useEffect(() => {
-    if (syncing) {
+    if (syncing || !plan) {
       return;
     }
-    const timer = setTimeout(syncCurrent, SYNC_INTERVAL);
+    const timer = setTimeout(() => syncAll(), SYNC_INTERVAL);
     return () => clearTimeout(timer);
-  }, [syncing, syncCurrent]);
+  }, [syncing, plan]);
   // `Ctrl R`, seule synchro à la demande : au plus toutes les 5 minutes (`syncNow`).
   const syncManually = useCallback(() => {
     if (currentAccountId) {
-      syncNow(currentAccountId);
+      syncNow({ accountId: currentAccountId, capabilities: synced });
     }
-  }, [currentAccountId, syncNow]);
+  }, [currentAccountId, synced, syncNow]);
   // Le détail appartient à la page et au compte affichés : il se ferme quand ils changent.
   // Avant les effets de la nouvelle page, qui peut en ouvrir un tout de suite (palette, `useJump`).
   useLayoutEffect(
@@ -109,7 +121,10 @@ export function Layout({ accounts }: { accounts: Loaded<AccountSummary[]> }) {
     [pathname, currentAccountId, closeDetail]
   );
 
-  useTrayGlance(currentAccountId);
+  // Le coup d'œil lit les cours : Cours masqué, ils ne sont plus mis à jour.
+  useTrayGlance(
+    modules.some(module => module.id === "cours") ? currentAccountId : undefined
+  );
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const openSettings = useCallback(

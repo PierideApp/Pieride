@@ -32,6 +32,8 @@ export interface ModuleManifest {
   page: ComponentType<ModulePageProps>;
   /** Le module s'affiche si un service du compte en fournit une. Vide : toujours. */
   requires: readonly Capability[];
+  /** Les données qu'il lit : la synchro ne demande que celles des modules affichés. */
+  syncs: readonly Capability[];
   /** `off` : livré mais caché ; `beta` : affiché avec une pastille. */
   status: "stable" | "beta" | "off";
   group: (typeof GROUPS)[number];
@@ -48,6 +50,8 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Home,
     page: AccueilPage,
     requires: [],
+    // Chaque widget suit son module : masqué avec lui, synchronisé par lui.
+    syncs: [],
     status: "stable",
     group: "main",
   },
@@ -57,6 +61,8 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Calendar,
     page: CoursPage,
     requires: [],
+    // Les devoirs : détail d'un cours et vue jour.
+    syncs: ["TIMETABLE", "HOMEWORK"],
     status: "stable",
     group: "main",
   },
@@ -65,6 +71,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Tasks,
     page: TachesPage,
     requires: ["HOMEWORK"],
+    syncs: ["HOMEWORK"],
     status: "stable",
     group: "main",
     badge: countPendingHomework,
@@ -74,6 +81,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Pie,
     page: NotesPage,
     requires: ["GRADES"],
+    syncs: ["GRADES"],
     status: "stable",
     group: "main",
   },
@@ -82,6 +90,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Newspaper,
     page: ActualitesPage,
     requires: ["NEWS"],
+    syncs: ["NEWS"],
     badge: countUnreadNews,
     status: "stable",
     group: "school",
@@ -91,6 +100,8 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: UserCross,
     page: AssiduitePage,
     requires: ["ATTENDANCE"],
+    // Les notes pour leurs périodes : les absences s'y rangent.
+    syncs: ["ATTENDANCE", "GRADES"],
     status: "stable",
     group: "school",
   },
@@ -98,6 +109,11 @@ export const MODULES: readonly ModuleManifest[] = [
 
 export const modulePath = (module: ModuleManifest) =>
   module.id === "accueil" ? "/" : `/${module.id}`;
+
+/** Les données que lisent ces modules : une donnée lue par deux modules reste tant que l'un est affiché. */
+export const syncedCapabilities = (
+  modules: readonly ModuleManifest[]
+): Capability[] => [...new Set(modules.flatMap(module => module.syncs))];
 
 /**
  * Les modules du compte en cours, groupe par groupe, chacun dans l'ordre choisi par

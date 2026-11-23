@@ -51,10 +51,12 @@ import type {
   ServiceKind,
 } from "./shared/models";
 import {
+  type Capability,
   type CapabilityMethods,
   type ConnectService,
   NO_SECRET,
   type SchoolServicePlugin,
+  SERVICE_CAPABILITIES,
 } from "./shared/plugin";
 
 /** Les capabilities qui ont déjà leurs tables. Les autres arriveront avec leur migration. */
@@ -412,21 +414,70 @@ export class AccountManager {
     await this.forgetFiles(serviceId, saved);
   }
 
+  /** `wanted` : les données des modules affichés (`syncedCapabilities` du registre). */
   async refreshAll(
     accountId: string,
+    wanted: readonly Capability[],
     now = new Date(),
     interval = SYNC_INTERVAL
   ): Promise<void> {
     this.fresh.clear();
     const errors: unknown[] = [];
-    for (const capability of SYNCED) {
+    for (const capability of SYNCED.filter(item => wanted.includes(item))) {
       await this.refresh(accountId, capability, now, interval).catch(
         (error: unknown) => errors.push(error)
       );
     }
+    await this.keepAlive(accountId, wanted).catch((error: unknown) =>
+      errors.push(error)
+    );
     if (errors.length > 0) {
       throw errors[0];
     }
+  }
+
+  /**
+   * Connecte, sans rien lui demander, un service dont tous les modules sont masqués : PRONOTE
+   * ne renouvelle le jeton qu'à la connexion. Une fois par lancement, la connexion est gardée.
+   */
+  private async keepAlive(
+    accountId: string,
+    wanted: readonly Capability[]
+  ): Promise<void> {
+    const linked = await this.db
+      .select()
+      .from(services)
+      .where(
+        and(eq(services.accountId, accountId), eq(services.needsLogin, false))
+      );
+    const idle = linked.filter(service => {
+      const provided = SYNCED.filter(item =>
+        SERVICE_CAPABILITIES[service.kind].includes(item)
+      );
+      return (
+        provided.length > 0 && !provided.some(item => wanted.includes(item))
+      );
+    });
+    await settleAll(
+      idle.map(service =>
+        this.plugin(service).then(
+          () => undefined,
+          async (error: unknown) => {
+            log(
+              "warn",
+              "sync",
+              `${service.kind} connexion : ${errorKind(error)}`
+            );
+            if (error instanceof AuthenticationError) {
+              await this.db
+                .update(services)
+                .set({ needsLogin: true })
+                .where(eq(services.id, service.id));
+            }
+          }
+        )
+      )
+    );
   }
 
   /**

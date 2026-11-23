@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { capabilitiesOf } from "@/services/shared/plugin";
 
-import { modulePath, MODULES, moveModule, visibleModules } from "./registry";
+import {
+  modulePath,
+  MODULES,
+  moveModule,
+  syncedCapabilities,
+  visibleModules,
+} from "./registry";
 
 const ids = (
   kinds: Parameters<typeof capabilitiesOf>[0],
@@ -63,6 +69,24 @@ describe("visibleModules", () => {
     const paths = MODULES.map(modulePath);
     expect(new Set(paths).size).toBe(paths.length);
     expect(paths[0]).toBe("/");
+  });
+});
+
+describe("syncedCapabilities", () => {
+  const synced = (hidden: string[]) =>
+    syncedCapabilities(visibleModules(capabilitiesOf(["pronote"]), hidden));
+
+  it("garde une donnée tant qu'un module affiché la lit", () => {
+    expect(synced(["taches"])).toContain("HOMEWORK");
+    expect(synced(["notes"])).toContain("GRADES");
+    expect(synced(["taches", "cours"])).not.toContain("HOMEWORK");
+    expect(synced(["notes", "assiduite"])).not.toContain("GRADES");
+  });
+
+  it("ne synchronise rien quand tous les modules sont masqués", () => {
+    expect(
+      synced(["cours", "taches", "notes", "actualites", "assiduite"])
+    ).toEqual([]);
   });
 });
 
