@@ -57,6 +57,13 @@
       "when": 1795128449196,
       "tag": "0007_pieces_jointes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795429860355,
+      "tag": "0008_periodes_assiduite",
+      "breakpoints": true
     }
   ]
 }

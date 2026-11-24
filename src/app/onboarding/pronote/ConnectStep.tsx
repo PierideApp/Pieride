@@ -11,6 +11,7 @@ import { InfoCard } from "@/components/InfoCard/InfoCard";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { TextField } from "@/components/TextField/TextField";
+import { syncedCapabilities, visibleModules } from "@/modules/registry";
 import { accountManager } from "@/services";
 import type { SyncedCapability } from "@/services/account-manager";
 import {
@@ -24,7 +25,9 @@ import {
   WrongPin,
 } from "@/services/pronote/login";
 import { DEMO_URL } from "@/services/pronote/session";
+import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
+import { useSettingsStore } from "@/stores/settings";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
@@ -70,6 +73,14 @@ export function ConnectStep({
   const setCurrentAccount = useAccountStore(state => state.setCurrentAccount);
   const reload = useSyncStore(state => state.reload);
   const sync = useSyncStore(state => state.sync);
+  // Une reconnexion ne demande pas les données des modules masqués ; un nouveau compte n'en a pas.
+  const hidden = useSettingsStore(state =>
+    relink ? state.hiddenModules[relink.accountId] : undefined
+  );
+  const wanted = syncedCapabilities(
+    visibleModules(capabilitiesOf(["pronote"]), hidden)
+  );
+  const syncSteps = SYNC_STEPS.filter(step => wanted.includes(step));
   // Le jeton de PRONOTE ne vaut que pour cet identifiant d'appareil.
   const [deviceUUID] = useState(() => crypto.randomUUID());
   const [phase, setPhase] = useState<Phase>({ id: "ready" });
@@ -124,7 +135,7 @@ export function ConnectStep({
         throw failure;
       }
     }
-    for (const [index, capability] of SYNC_STEPS.entries()) {
+    for (const [index, capability] of syncSteps.entries()) {
       setPhase({ id: "syncing", done: index + 1 });
       await accountManager.refresh(accountId, capability);
     }
@@ -132,7 +143,7 @@ export function ConnectStep({
     reload();
     // Actualités, carnet… : une synchro complète, qui ne redemande pas les étapes ci-dessus
     // (moins de 30 minutes). Sans elle, ils attendraient un clic sur « Synchroniser ».
-    void sync([accountId]);
+    void sync([{ accountId, capabilities: wanted }]);
     onDone?.();
   };
 
@@ -204,7 +215,7 @@ export function ConnectStep({
   );
 
   if (phase.id === "syncing") {
-    const steps = ["login", ...SYNC_STEPS] as const;
+    const steps = ["login", ...syncSteps];
     return (
       <div className={styles.step}>
         <h1 className={styles.title}>{t("onboarding.pronote.syncTitle")}</h1>

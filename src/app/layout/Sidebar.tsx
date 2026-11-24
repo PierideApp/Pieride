@@ -24,7 +24,11 @@ import type { Loaded } from "@/hooks/useLoaded";
 import { useOnline } from "@/hooks/useOnline";
 import { Source, useQuery } from "@/hooks/useQuery";
 import { MOD } from "@/lib/platform";
-import { type ModuleManifest, modulePath } from "@/modules/registry";
+import {
+  type ModuleManifest,
+  modulePath,
+  syncedCapabilities,
+} from "@/modules/registry";
 import { MANUAL_SYNC_INTERVAL } from "@/services/account-manager";
 import { useAccountStore } from "@/stores/accounts";
 import { useSettingsStore } from "@/stores/settings";
@@ -97,9 +101,15 @@ const REFUSED_NOTICE = 4000;
  * « Synchronisé il y a 2 minutes », « il y a 3 heures », « hier ». Rien à cliquer : la synchro est automatique, et `Ctrl R`
  * la relance au plus toutes les 5 minutes (« Réessaie dans 3 minutes » sinon).
  */
-function SyncStatus({ account }: { account: AccountSummary | undefined }) {
+function SyncStatus({
+  account,
+  modules,
+}: {
+  account: AccountSummary | undefined;
+  modules: ModuleManifest[];
+}) {
   const { t, i18n } = useTranslation();
-  const sync = useAccountSync(account?.id);
+  const sync = useAccountSync(account?.id, syncedCapabilities(modules));
   const online = useOnline();
   const syncing = useSyncStore(state => state.syncing);
   const failed = useSyncStore(state => state.failed);
@@ -301,7 +311,7 @@ export function Sidebar({
       )}
 
       <div className={styles.footer}>
-        <SyncStatus account={current} />
+        <SyncStatus account={current} modules={modules} />
         <button
           type="button"
           className={styles.item}

@@ -6,19 +6,23 @@ Chaque page de la barre latérale est un **module**. Un module s'affiche seuleme
 2. **Un service du compte sait le fournir.** Le module déclare les capabilities dont il a besoin. Il apparaît si au moins un service lié au compte en cours en déclare une.
 3. **L'utilisateur ne l'a pas masqué.** Dans Paramètres > Barre latérale, pour chaque compte, comme `disabledTabsByAccount` dans Papillon (`hiddenModules` dans `src/stores/settings.ts`). L'Accueil ne se masque pas : c'est la page d'ouverture.
 
+**Masquer un module le désactive pour ce compte.** Ses données ne sont plus demandées au service, son widget quitte l'Accueil (il reviendra à sa place) et ses erreurs de synchro ne comptent plus dans la barre latérale. Ce qui est en base reste : réafficher le module le montre tout de suite, puis relance la synchro. Une donnée lue par deux modules reste synchronisée tant que l'un d'eux est affiché (`syncs` ci-dessous). Si tous les modules d'un service sont masqués, l'app s'y connecte quand même une fois par lancement, sans rien demander : PRONOTE ne renouvelle le jeton qu'à la connexion.
+
 Un **compte** est une personne avec ses services liés : par exemple PRONOTE + TurboSelf pour Camille. La barre latérale change donc quand on change de compte.
 
 ## Les modules
 
-| Module     | Capabilities nécessaires (une suffit) | Fourni par                                                                     | Statut                              |
-| ---------- | ------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
-| Accueil    | aucune                                | toujours                                                                       | stable                              |
-| Cours      | `TIMETABLE`, ou un calendrier         | PRONOTE, ÉcoleDirecte, Skolengo, APPSCHO, ESUP Multi, iCal, calendriers locaux | stable                              |
-| Tâches     | `HOMEWORK`                            | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
-| Notes      | `GRADES`                              | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
-| Actualités | `NEWS`                                | PRONOTE, ÉcoleDirecte, Skolengo, APPSCHO, ESUP Multi                           | stable                              |
-| Assiduité  | `ATTENDANCE`                          | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
-| Messagerie | `CHAT_READ`                           | PRONOTE, Skolengo                                                              | **off** (pas d'écran dans Papillon) |
+| Module     | Capabilities nécessaires (une suffit) | Données synchronisées (`syncs`) | Fourni par                                                                     | Statut                              |
+| ---------- | ------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
+| Accueil    | aucune                                | aucune (celles des widgets)     | toujours                                                                       | stable                              |
+| Cours      | `TIMETABLE`, ou un calendrier         | `TIMETABLE`, `HOMEWORK`         | PRONOTE, ÉcoleDirecte, Skolengo, APPSCHO, ESUP Multi, iCal, calendriers locaux | stable                              |
+| Tâches     | `HOMEWORK`                            | `HOMEWORK`                      | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
+| Notes      | `GRADES`                              | `GRADES`                        | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
+| Actualités | `NEWS`                                | `NEWS`                          | PRONOTE, ÉcoleDirecte, Skolengo, APPSCHO, ESUP Multi                           | stable                              |
+| Assiduité  | `ATTENDANCE`                          | `ATTENDANCE`                    | PRONOTE, ÉcoleDirecte, Skolengo                                                | stable                              |
+| Messagerie | `CHAT_READ`                           |                                 | PRONOTE, Skolengo                                                              | **off** (pas d'écran dans Papillon) |
+
+Cours lit les devoirs (détail d'un cours, vue jour). Assiduité range les absences dans les périodes de la vie scolaire, enregistrées avec elles : elle ne lit pas les notes. Chaque widget de l'Accueil suit son module.
 
 Comme « Mes événements » existe toujours, Cours est en pratique toujours disponible, y compris pour un compte hors ligne.
 
@@ -43,7 +47,8 @@ export const MODULES: readonly ModuleManifest[] = [
     id: "accueil", // clé i18n `modules.accueil`, chemin `/`
     icon: Home,
     page: AccueilPage, // src/modules/accueil/AccueilPage.tsx
-    requires: [],
+    requires: [], // quand le module apparaît
+    syncs: [], // ce qu'il lit : la synchro ne demande que les données des modules affichés
     status: "stable",
     group: "main",
   },
@@ -52,6 +57,7 @@ export const MODULES: readonly ModuleManifest[] = [
     icon: Pie,
     page: NotesPage,
     requires: ["GRADES"],
+    syncs: ["GRADES"],
     status: "stable",
     group: "main",
   },

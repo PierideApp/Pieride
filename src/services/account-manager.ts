@@ -8,6 +8,7 @@ import type { Db } from "@/database/client";
 import {
   accounts,
   attendance,
+  attendancePeriods,
   courses,
   downloads,
   grades,
@@ -51,10 +52,12 @@ import type {
   ServiceKind,
 } from "./shared/models";
 import {
+  type Capability,
   type CapabilityMethods,
   type ConnectService,
   NO_SECRET,
   type SchoolServicePlugin,
+  SERVICE_CAPABILITIES,
 } from "./shared/plugin";
 
 /** Les capabilities qui ont déjà leurs tables. Les autres arriveront avec leur migration. */
@@ -80,7 +83,7 @@ export const SYNC_INTERVAL = 30 * 60_000;
 export const MANUAL_SYNC_INTERVAL = 5 * 60_000;
 
 /** Les données rangées par semaine : `loadWeek` les charge pour une autre semaine. */
-const WEEKLY = ["TIMETABLE", "HOMEWORK"] as const;
+export type WeeklyCapability = "TIMETABLE" | "HOMEWORK";
 
 type ServiceRow = typeof services.$inferSelect;
 type Write = BatchItem<"sqlite">;
@@ -412,21 +415,70 @@ export class AccountManager {
     await this.forgetFiles(serviceId, saved);
   }
 
+  /** `wanted` : les données des modules affichés (`syncedCapabilities` du registre). */
   async refreshAll(
     accountId: string,
+    wanted: readonly Capability[],
     now = new Date(),
     interval = SYNC_INTERVAL
   ): Promise<void> {
     this.fresh.clear();
     const errors: unknown[] = [];
-    for (const capability of SYNCED) {
+    for (const capability of SYNCED.filter(item => wanted.includes(item))) {
       await this.refresh(accountId, capability, now, interval).catch(
         (error: unknown) => errors.push(error)
       );
     }
+    await this.keepAlive(accountId, wanted).catch((error: unknown) =>
+      errors.push(error)
+    );
     if (errors.length > 0) {
       throw errors[0];
     }
+  }
+
+  /**
+   * Connecte, sans rien lui demander, un service dont tous les modules sont masqués : PRONOTE
+   * ne renouvelle le jeton qu'à la connexion. Une fois par lancement, la connexion est gardée.
+   */
+  private async keepAlive(
+    accountId: string,
+    wanted: readonly Capability[]
+  ): Promise<void> {
+    const linked = await this.db
+      .select()
+      .from(services)
+      .where(
+        and(eq(services.accountId, accountId), eq(services.needsLogin, false))
+      );
+    const idle = linked.filter(service => {
+      const provided = SYNCED.filter(item =>
+        SERVICE_CAPABILITIES[service.kind].includes(item)
+      );
+      return (
+        provided.length > 0 && !provided.some(item => wanted.includes(item))
+      );
+    });
+    await settleAll(
+      idle.map(service =>
+        this.plugin(service).then(
+          () => undefined,
+          async (error: unknown) => {
+            log(
+              "warn",
+              "sync",
+              `${service.kind} connexion : ${errorKind(error)}`
+            );
+            if (error instanceof AuthenticationError) {
+              await this.db
+                .update(services)
+                .set({ needsLogin: true })
+                .where(eq(services.id, service.id));
+            }
+          }
+        )
+      )
+    );
   }
 
   /**
@@ -468,15 +520,17 @@ export class AccountManager {
   }
 
   /**
-   * Charge les cours et les devoirs d'une autre semaine que celle de la synchro (Cours,
-   * Tâches), une fois par session : y revenir ne redemande rien au service. La semaine en
-   * cours reste à la synchro et à son délai. Hors ligne ou en panne, la base garde ce
-   * qu'elle a et l'erreur va au journal ; la semaine sera redemandée à la prochaine visite.
+   * Charge les cours ou les devoirs d'une autre semaine que celle de la synchro, une fois par
+   * session : y revenir ne redemande rien au service. Chaque écran ne demande que ce qu'il lit,
+   * l'autre donnée peut appartenir à un module masqué. La semaine en cours reste à la synchro
+   * et à son délai. Hors ligne ou en panne, la base garde ce qu'elle a et l'erreur va au
+   * journal ; la semaine sera redemandée à la prochaine visite.
    * Renvoie vrai si la base a changé.
    */
   async loadWeek(
     accountId: string,
     week: Date,
+    capability: WeeklyCapability,
     now = new Date()
   ): Promise<boolean> {
     const monday = weekStart(week);
@@ -491,12 +545,12 @@ export class AccountManager {
       );
     const changed = await Promise.all(
       linked.map(service => {
-        const key = `${service.id}:${monday.getTime()}`;
+        const key = `${service.id}:${capability}:${monday.getTime()}`;
         const loading = this.weeks.get(key);
         if (loading) {
           return loading.then(() => false);
         }
-        const load = this.loadServiceWeek(service, monday).catch(
+        const load = this.loadServiceWeek(service, capability, monday).catch(
           (error: unknown) => {
             this.weeks.delete(key);
             if (error instanceof AuthenticationError) {
@@ -505,7 +559,7 @@ export class AccountManager {
             log(
               "warn",
               "sync",
-              `${service.kind} semaine : ${errorKind(error)}`
+              `${service.kind} ${capability} semaine : ${errorKind(error)}`
             );
             return false;
           }
@@ -859,16 +913,12 @@ export class AccountManager {
 
   private async loadServiceWeek(
     service: ServiceRow,
+    capability: WeeklyCapability,
     monday: Date
   ): Promise<boolean> {
     const plugin = await this.plugin(service);
-    const writes: Write[] = [];
-    for (const capability of WEEKLY) {
-      writes.push(
-        ...((await this.fetch(plugin, service.id, capability, monday)) ?? [])
-      );
-    }
-    const [first, ...rest] = writes;
+    const [first, ...rest] =
+      (await this.fetch(plugin, service.id, capability, monday)) ?? [];
     if (!first) {
       return false;
     }
@@ -1277,8 +1327,9 @@ export class AccountManager {
     methods: CapabilityMethods["ATTENDANCE"]
   ): Promise<Write[]> {
     const found = new Map<string, Attendance>();
+    const periodList = uniqueById(await methods.getAttendancePeriods());
     // L'un après l'autre : certains services (PRONOTE) numérotent leurs requêtes.
-    for (const period of uniqueById(await methods.getAttendancePeriods())) {
+    for (const period of periodList) {
       for (const item of await methods.getAttendanceForPeriod(period)) {
         found.set(`${item.kind}:${item.id}`, item);
       }
@@ -1291,6 +1342,16 @@ export class AccountManager {
             this.db
               .insert(attendance)
               .values(list.map(item => ({ ...item, serviceId }))),
+          ]
+        : []),
+      this.db
+        .delete(attendancePeriods)
+        .where(eq(attendancePeriods.serviceId, serviceId)),
+      ...(periodList.length > 0
+        ? [
+            this.db
+              .insert(attendancePeriods)
+              .values(periodList.map(period => ({ ...period, serviceId }))),
           ]
         : []),
     ];

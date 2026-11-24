@@ -76,5 +76,5 @@ const source = new Source<CourseView[]>("courses", "subjects");
 
 /** Les cours de la semaine de `week`, du lundi au dimanche. */
 export function useTimetable(accountId: string | undefined, week: Date) {
-  return useWeekData(source, accountId, week, loadCourses);
+  return useWeekData(source, accountId, week, "TIMETABLE", loadCourses);
 }

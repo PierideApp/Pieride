@@ -13,6 +13,7 @@ import { Section } from "@/components/Section/Section";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { getLog, logText, report, subscribeLog } from "@/lib/log";
 import { accountManager } from "@/services";
+import { SYNCED } from "@/services/account-manager";
 import { useSyncStore } from "@/stores/sync";
 
 import type { SettingsSectionProps } from "./Settings";
@@ -52,7 +53,8 @@ function MockData({ account }: SettingsSectionProps) {
         accountId: account.id,
         kind: "mock",
       });
-      await sync([account.id]);
+      // Données fictives, sans réseau : tout, même les modules masqués.
+      await sync([{ accountId: account.id, capabilities: SYNCED }]);
     });
   const remove = () =>
     run(async () => {

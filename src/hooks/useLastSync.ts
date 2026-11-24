@@ -1,8 +1,9 @@
-import { and, count, eq, max } from "drizzle-orm";
+import { and, count, eq, inArray, max } from "drizzle-orm";
 
 import { db } from "@/database";
 import { services, syncState } from "@/database/schema";
 import type { SyncedCapability } from "@/services/account-manager";
+import type { Capability } from "@/services/shared/plugin";
 
 import { Source, useQuery } from "./useQuery";
 
@@ -16,9 +17,17 @@ export interface AccountSync {
 const accountSync = new Source<AccountSync>("sync");
 const serviceSync = new Source<Date | null>("sync");
 
-/** L'état de synchro d'un compte (barre latérale) : « Synchronisé », « en partie » ou « échec ». */
-export function useAccountSync(accountId: string | undefined) {
-  return useQuery(accountSync, `${accountId}`, async () => {
+/**
+ * L'état de synchro d'un compte (barre latérale) : « Synchronisé », « en partie » ou « échec ».
+ * Seules comptent `capabilities`, les données des modules affichés : l'erreur d'un module
+ * masqué ne reste pas affichée.
+ */
+export function useAccountSync(
+  accountId: string | undefined,
+  capabilities: readonly Capability[]
+) {
+  const key = `${accountId}:${capabilities.join()}`;
+  return useQuery(accountSync, key, async () => {
     if (!accountId) {
       return { last: null, failures: "none" };
     }
@@ -30,7 +39,12 @@ export function useAccountSync(accountId: string | undefined) {
       })
       .from(syncState)
       .innerJoin(services, eq(syncState.serviceId, services.id))
-      .where(eq(services.accountId, accountId));
+      .where(
+        and(
+          eq(services.accountId, accountId),
+          inArray(syncState.capability, [...capabilities])
+        )
+      );
     const { last = null, failed = 0, total = 0 } = row ?? {};
     return {
       last,

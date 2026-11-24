@@ -65,5 +65,5 @@ const source = new Source<HomeworkView[]>("homework", "subjects");
 
 /** Les devoirs à rendre dans la semaine de `week`, du lundi au dimanche. */
 export function useHomework(accountId: string | undefined, week: Date) {
-  return useWeekData(source, accountId, week, loadHomework);
+  return useWeekData(source, accountId, week, "HOMEWORK", loadHomework);
 }

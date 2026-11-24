@@ -12,7 +12,11 @@ import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { EmptyState } from "@/components/EmptyState/EmptyState";
 import { useAccounts } from "@/hooks/useAccounts";
-import { useAttendance } from "@/hooks/useAttendance";
+import {
+  attendanceOf,
+  currentAttendancePeriod,
+  useAttendance,
+} from "@/hooks/useAttendance";
 import { useFlip } from "@/hooks/useFlip";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
 import { currentPeriod, gradesOf, useGrades } from "@/hooks/useGrades";
@@ -64,14 +68,14 @@ const UNDO_DELAY = 6000;
 /** Hauteur des boutons de la fenêtre en haut de la page (layout.module.scss, `.controls`). */
 const CONTROLS_HEIGHT = 40;
 
-/** Ce qu'un service du compte doit fournir pour qu'un widget ait du sens. */
-const REQUIRES: Record<HomeWidget, Capability> = {
-  attendance: "ATTENDANCE",
-  news: "NEWS",
-  courses: "TIMETABLE",
-  average: "GRADES",
-  tasks: "HOMEWORK",
-  grades: "GRADES",
+/** Le module de chaque widget, masqué avec lui, et ce qu'un service du compte doit fournir. */
+const WIDGETS: Record<HomeWidget, { module: string; requires: Capability }> = {
+  attendance: { module: "assiduite", requires: "ATTENDANCE" },
+  news: { module: "actualites", requires: "NEWS" },
+  courses: { module: "cours", requires: "TIMETABLE" },
+  average: { module: "notes", requires: "GRADES" },
+  tasks: { module: "taches", requires: "HOMEWORK" },
+  grades: { module: "notes", requires: "GRADES" },
 };
 
 export function AccueilPage() {
@@ -91,20 +95,29 @@ export function AccueilPage() {
     accounts.status === "ready"
       ? accounts.data.find(candidate => candidate.id === accountId)
       : undefined;
+  const hidden = useSettingsStore(state =>
+    accountId ? state.hiddenModules[accountId] : undefined
+  );
   const [editing, setEditing] = useState(false);
+
+  const capabilities = capabilitiesOf(account?.kinds ?? []);
+  const shownCourses = !hidden?.includes("cours");
+  const provided = (id: HomeWidget) =>
+    capabilities.has(WIDGETS[id].requires) &&
+    !hidden?.includes(WIDGETS[id].module);
+  // Un widget masqué ne lit rien, et ne demande rien au service (la semaine suivante).
+  const reading = (...ids: HomeWidget[]) =>
+    ids.some(provided) ? accountId : undefined;
 
   const today = startOfDay(now);
   const nextDay = shiftDay(today, 1, weekend);
-  const week = useTimetable(accountId, today);
-  const nextWeek = useTimetable(accountId, nextDay);
-  const homework = useHomework(accountId, today);
-  const grades = useGrades(accountId);
-  const news = useNews(accountId);
-  const attendance = useAttendance(accountId);
+  const week = useTimetable(shownCourses ? accountId : undefined, today);
+  const nextWeek = useTimetable(reading("courses"), nextDay);
+  const homework = useHomework(reading("tasks"), today);
+  const grades = useGrades(reading("average", "grades"));
+  const news = useNews(reading("news"));
+  const attendance = useAttendance(reading("attendance"));
   const { toggle, error, pending } = useToggleHomework();
-
-  const capabilities = capabilitiesOf(account?.kinds ?? []);
-  const provided = (id: HomeWidget) => capabilities.has(REQUIRES[id]);
 
   const pageRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLElement>(null);
@@ -219,11 +232,13 @@ export function AccueilPage() {
       ? currentPeriod(grades.data.periods, allGrades, now)
       : undefined;
   const periodGrades = gradesOf(allGrades, period);
-  const absences = (
-    attendance.status === "ready" ? attendance.data : []
-  ).filter(
-    item => !period || (item.from >= period.start && item.from <= period.end)
-  );
+  const absences =
+    attendance.status === "ready"
+      ? attendanceOf(
+          attendance.data.items,
+          currentAttendancePeriod(attendance.data, now)
+        )
+      : [];
   const background = wallpaperBackground(wallpaper);
   const newsItems = news.status === "ready" ? news.data : [];
   /** Le widget n'a rien à montrer, mais ses données sont en route. */
@@ -356,10 +371,13 @@ export function AccueilPage() {
             : t("accueil.helloAnonymous")}
         </h1>
         <p className={styles.summary} data-tauri-drag-region>
-          {capitalize(formats.longDate.format(now), formats.locale)} ·{" "}
-          {held.length > 0
-            ? t("accueil.coursesLeft", { count: held.length })
-            : t("accueil.noMoreCourses")}
+          {capitalize(formats.longDate.format(now), formats.locale)}
+          {shownCourses &&
+            ` · ${
+              held.length > 0
+                ? t("accueil.coursesLeft", { count: held.length })
+                : t("accueil.noMoreCourses")
+            }`}
         </p>
       </header>
       {(zones[0].length > 0 || editing) && (
@@ -383,9 +401,13 @@ export function AccueilPage() {
             <EmptyState
               icon={Ghost}
               title={t("accueil.empty.title")}
-              text={t("accueil.empty.text")}
+              text={t(
+                addable.length > 0
+                  ? "accueil.empty.text"
+                  : "accueil.empty.hidden"
+              )}
               action={
-                editing
+                editing || addable.length === 0
                   ? undefined
                   : {
                       label: t("accueil.addWidget"),
