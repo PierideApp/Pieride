@@ -1,5 +1,5 @@
-// Aller à un élément depuis la palette de commandes : elle ouvre la page du module avec
-// l'élément visé dans l'état de la navigation. La page se cale dessus (semaine, période,
+// Aller à un élément depuis la palette de commandes ou l'accueil : ils ouvrent la page du
+// module avec l'élément visé dans l'état de la navigation. La page se cale dessus (semaine, période,
 // filtres) puis l'ouvre dès qu'elle l'a lu dans la base.
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
