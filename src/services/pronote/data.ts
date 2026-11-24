@@ -31,6 +31,7 @@ import {
   SessionExpiredError,
   type SessionHandle,
   SuspendedIPError,
+  type Tab,
   TabLocation,
   type Timetable,
   timetableFromWeek,
@@ -520,6 +521,16 @@ export function toGrade(grade: PronoteGrade, periodId: string): Grade {
   };
 }
 
+/** Les périodes d'un onglet, avec celle que PRONOTE y ouvre lui-même. */
+export const toPeriods = (tab: Tab | undefined): Period[] =>
+  (tab?.periods ?? []).map(period => ({
+    id: period.id,
+    name: period.name,
+    start: period.startDate,
+    end: period.endDate,
+    isDefault: period.id === tab?.defaultPeriod?.id,
+  }));
+
 /**
  * Le numéro PRONOTE de la semaine, comme Papillon : demandée par dates (du lundi au lundi),
  * elle déborde sur le lundi suivant.
@@ -569,14 +580,7 @@ export function capabilities(
   const grades: CapabilityMethods["GRADES"] = {
     getGradesPeriods: () =>
       session.run(async handle =>
-        (handle.userResource.tabs.get(TabLocation.Grades)?.periods ?? []).map(
-          (period): Period => ({
-            id: period.id,
-            name: period.name,
-            start: period.startDate,
-            end: period.endDate,
-          })
-        )
+        toPeriods(handle.userResource.tabs.get(TabLocation.Grades))
       ),
     getGradesForPeriod: period =>
       session.run(async handle => {
@@ -625,14 +629,7 @@ export function capabilities(
   const attendanceMethods: CapabilityMethods["ATTENDANCE"] = {
     getAttendancePeriods: () =>
       session.run(async handle =>
-        (handle.userResource.tabs.get(TabLocation.Notebook)?.periods ?? []).map(
-          (period): Period => ({
-            id: period.id,
-            name: period.name,
-            start: period.startDate,
-            end: period.endDate,
-          })
-        )
+        toPeriods(handle.userResource.tabs.get(TabLocation.Notebook))
       ),
     getAttendanceForPeriod: period =>
       session.run(async handle => {

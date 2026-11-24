@@ -35,6 +35,7 @@ import {
   toGrade,
   toHomework,
   toNews,
+  toPeriods,
 } from "./data";
 import { lostExchange, PronoteSession } from "./session";
 
@@ -568,6 +569,47 @@ describe("toGrade", () => {
     );
     expect(result.classAverage).toBeUndefined();
     expect(result.outOf).toBe(20);
+  });
+});
+
+describe("toPeriods", () => {
+  it("reprend les périodes d'un onglet et marque celle que PRONOTE y ouvre", () => {
+    const outside = {
+      id: "p0",
+      name: "Hors période",
+      kind: 1,
+      startDate: new Date(2026, 7, 24),
+      endDate: new Date(2027, 7, 31),
+    };
+    const first = {
+      id: "p1",
+      name: "Trimestre 1",
+      kind: 1,
+      startDate: new Date(2026, 8, 1),
+      endDate: new Date(2026, 10, 30),
+    };
+    expect(
+      toPeriods({
+        location: TabLocation.Grades,
+        periods: [outside, first],
+        defaultPeriod: first,
+      })
+    ).toEqual([
+      {
+        id: "p0",
+        name: "Hors période",
+        start: outside.startDate,
+        end: outside.endDate,
+        isDefault: false,
+      },
+      {
+        id: "p1",
+        name: "Trimestre 1",
+        start: first.startDate,
+        end: first.endDate,
+        isDefault: true,
+      },
+    ]);
   });
 });
 

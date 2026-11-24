@@ -64,6 +64,13 @@
       "when": 1795429860355,
       "tag": "0008_periodes_assiduite",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1795515129306,
+      "tag": "0009_periode_par_defaut",
+      "breakpoints": true
     }
   ]
 }
