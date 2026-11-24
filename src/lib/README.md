@@ -13,5 +13,6 @@ Les briques techniques partagées :
 - **Semaines** (`week.ts`) : lundi d'une semaine, numéro ISO, jours affichés, jour suivant sans le week-end masqué.
 - **Emploi du temps** (`timetable.ts`) : plage horaire de la grille, cours qui se chevauchent côte à côte, pauses entre deux cours.
 - **Moyennes** (`grades.ts`) : pondérée, des matières ou médiane, évolution et influence d'une note, sur 20.
+- **Périodes** (`periods.ts`) : la période qu'ouvrent Notes et Assiduité, celle du service d'abord, sinon la plus courte en cours.
 - **HTML des services** (`html.ts`) : texte d'une consigne en HTML, pour l'afficher comme du texte, jamais comme du HTML.
 - **Recherche** (`search.ts`) : filtrer une liste sans tenir compte des accents ni des majuscules.

@@ -11,6 +11,7 @@ import {
   subjectAverages,
   subjects,
 } from "@/database/schema";
+import { periodToOpen } from "@/lib/periods";
 import { subjectLook } from "@/lib/subjects";
 import type { Grade, Period, SubjectAverage } from "@/services/shared/models";
 
@@ -102,23 +103,20 @@ export async function loadGrades(accountId: string): Promise<GradesData> {
   };
 }
 
-/** La période en cours, sinon la dernière qui a des notes, sinon la première. */
+/**
+ * La période à ouvrir : celle que le service ouvre lui-même, sinon la plus courte des périodes
+ * en cours, sinon la dernière qui a des notes, sinon la première.
+ */
 export function currentPeriod(
   periods: readonly PeriodView[],
   grades: readonly GradeView[],
   now: Date
 ): PeriodView | undefined {
-  return (
-    periods.find(period => period.start <= now && now <= period.end) ??
-    [...periods]
-      .reverse()
-      .find(period =>
-        grades.some(
-          grade =>
-            grade.serviceId === period.serviceId && grade.periodId === period.id
-        )
-      ) ??
-    periods[0]
+  return periodToOpen(periods, now, period =>
+    grades.some(
+      grade =>
+        grade.serviceId === period.serviceId && grade.periodId === period.id
+    )
   );
 }
 
