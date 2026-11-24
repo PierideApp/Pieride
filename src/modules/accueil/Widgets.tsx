@@ -32,6 +32,7 @@ import {
 } from "@/hooks/useFormats";
 import type { GradeView, PeriodView } from "@/hooks/useGrades";
 import type { HomeworkView } from "@/hooks/useHomework";
+import { jumpTo } from "@/hooks/useJump";
 import type { NewsView } from "@/hooks/useNews";
 import { useScore } from "@/hooks/useScore";
 import type { CourseView } from "@/hooks/useTimetable";
@@ -214,7 +215,15 @@ function CourseList({
               course={course}
               variant="full"
               selected={false}
-              onOpen={() => void navigate("/cours")}
+              onOpen={() =>
+                void navigate("/cours", {
+                  state: jumpTo({
+                    serviceId: course.serviceId,
+                    id: course.id,
+                    at: course.from.getTime(),
+                  }),
+                })
+              }
               badge={
                 ongoing && (
                   <span className={styles.ongoingBadge}>
@@ -875,6 +884,14 @@ export function NewsWidget({
   const { t } = useTranslation();
   const formats = useDateFormats();
   const navigate = useNavigate();
+  const open = (item: NewsView) =>
+    void navigate("/actualites", {
+      state: jumpTo({
+        serviceId: item.serviceId,
+        id: item.id,
+        at: item.date.getTime(),
+      }),
+    });
   const unread = items.filter(item => !item.read).length;
 
   if (level === "mini") {
@@ -917,7 +934,7 @@ export function NewsWidget({
             <button
               type="button"
               className={styles.featured}
-              onClick={() => void navigate("/actualites")}
+              onClick={() => open(featured)}
             >
               <small>
                 {featured.author} · {formats.shortDate.format(featured.date)}
@@ -932,7 +949,7 @@ export function NewsWidget({
                 <button
                   type="button"
                   data-unread={!item.read || undefined}
-                  onClick={() => void navigate("/actualites")}
+                  onClick={() => open(item)}
                 >
                   <Avatar account={authorOf(item.author)} size={30} />
                   <span className={styles.newsText}>

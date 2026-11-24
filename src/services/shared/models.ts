@@ -64,6 +64,8 @@ export interface Period {
   name: string;
   start: Date;
   end: Date;
+  /** La période que le service ouvre lui-même. */
+  isDefault?: boolean;
 }
 
 export interface Course {

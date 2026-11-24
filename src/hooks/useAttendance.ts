@@ -4,6 +4,7 @@ import { desc, eq } from "drizzle-orm";
 
 import { db } from "@/database";
 import { attendance, attendancePeriods, services } from "@/database/schema";
+import { periodToOpen, within } from "@/lib/periods";
 import type { Attendance, Period } from "@/services/shared/models";
 
 import { Source, useQuery } from "./useQuery";
@@ -47,25 +48,18 @@ async function loadAttendance(accountId: string): Promise<AttendanceData> {
   };
 }
 
-const within = (period: Period, date: Date) =>
-  period.start <= date && date <= period.end;
-
-/** La période en cours, sinon la dernière qui a des absences ou des retards, sinon la première. */
+/**
+ * La période à ouvrir : celle que le service ouvre lui-même, sinon la plus courte des périodes
+ * en cours, sinon la dernière qui a des absences ou des retards, sinon la première.
+ */
 export function currentAttendancePeriod(
   { items, periods }: AttendanceData,
   now: Date
 ): AttendancePeriodView | undefined {
-  return (
-    periods.find(period => within(period, now)) ??
-    [...periods]
-      .reverse()
-      .find(period =>
-        items.some(
-          item =>
-            item.serviceId === period.serviceId && within(period, item.from)
-        )
-      ) ??
-    periods[0]
+  return periodToOpen(periods, now, period =>
+    items.some(
+      item => item.serviceId === period.serviceId && within(period, item.from)
+    )
   );
 }
 

@@ -98,6 +98,9 @@ export const attendancePeriods = sqliteTable(
     name: text("name").notNull(),
     start: integer("start", { mode: "timestamp_ms" }).notNull(),
     end: integer("end", { mode: "timestamp_ms" }).notNull(),
+    isDefault: integer("is_default", { mode: "boolean" })
+      .notNull()
+      .default(false),
   },
   t => [primaryKey({ columns: [t.serviceId, t.id] })]
 );
@@ -110,6 +113,9 @@ export const periods = sqliteTable(
     name: text("name").notNull(),
     start: integer("start", { mode: "timestamp_ms" }).notNull(),
     end: integer("end", { mode: "timestamp_ms" }).notNull(),
+    isDefault: integer("is_default", { mode: "boolean" })
+      .notNull()
+      .default(false),
     /** Moyennes générales de l'élève et de la classe, quand le service les donne. */
     average: real("average"),
     classAverage: real("class_average"),
