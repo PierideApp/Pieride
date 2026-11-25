@@ -80,47 +80,51 @@ export function AboutSettings() {
         </Card>
       </Section>
 
-      <ul className={styles.links}>
-        {CARDS.map(({ link, icon }) => (
-          <li key={link}>
-            <SettingRow
-              as="button"
-              className={styles.linkCard}
-              icon={icon}
-              title={t(`settings.about.links.${link}.title`)}
-              text={t(`settings.about.links.${link}.text`)}
-              onClick={() => openLink(link).catch(fail)}
-            >
-              <ExternalLink size={16} aria-hidden="true" />
-            </SettingRow>
-          </li>
-        ))}
-      </ul>
+      <Section title={t("settings.about.linksTitle")}>
+        <ul className={styles.links}>
+          {CARDS.map(({ link, icon }) => (
+            <li key={link}>
+              <SettingRow
+                as="button"
+                className={styles.linkCard}
+                icon={icon}
+                title={t(`settings.about.links.${link}.title`)}
+                text={t(`settings.about.links.${link}.text`)}
+                onClick={() => openLink(link).catch(fail)}
+              >
+                <ExternalLink size={16} aria-hidden="true" />
+              </SettingRow>
+            </li>
+          ))}
+        </ul>
+      </Section>
 
-      <Card rows>
-        <SettingRow
-          icon={Info}
-          title={t("settings.about.appVersion")}
-          value={version}
-        />
-        <SettingRow
-          icon={Code}
-          title={t("settings.about.dependencies")}
-          value={`${tauri.status === "ready" ? `Tauri ${tauri.data} · ` : ""}React ${reactVersion}`}
-        />
-        <SettingRow
-          icon={Paper}
-          title={t("settings.about.licenses")}
-          text={t("settings.about.licensesText")}
-        >
-          <Button
-            trailingIcon={ExternalLink}
-            onClick={() => openLink("license").catch(fail)}
+      <Section title={t("settings.about.advancedInfo")}>
+        <Card rows>
+          <SettingRow
+            icon={Info}
+            title={t("settings.about.appVersion")}
+            value={version}
+          />
+          <SettingRow
+            icon={Code}
+            title={t("settings.about.dependencies")}
+            value={`${tauri.status === "ready" ? `Tauri ${tauri.data} · ` : ""}React ${reactVersion}`}
+          />
+          <SettingRow
+            icon={Paper}
+            title={t("settings.about.licenses")}
+            text={t("settings.about.licensesText")}
           >
-            {t("settings.about.readLicense")}
-          </Button>
-        </SettingRow>
-      </Card>
+            <Button
+              trailingIcon={ExternalLink}
+              onClick={() => openLink("license").catch(fail)}
+            >
+              {t("settings.about.readLicense")}
+            </Button>
+          </SettingRow>
+        </Card>
+      </Section>
     </>
   );
 }

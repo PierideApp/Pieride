@@ -888,6 +888,8 @@
     "about": {
       "versionOn": "Version {{version}} · {{system}}",
       "text": "Maintenu par des élèves et étudiants bénévoles. Inspiré de Papillon, avec l'accord de son équipe.",
+      "advancedInfo": "Informations avancées",
+      "linksTitle": "Liens utiles",
       "links": {
         "repository": {
           "title": "Projet GitHub",
