@@ -11,6 +11,21 @@ import {
 } from "./data";
 import type { EcoledirecteSession } from "./session";
 
+describe("ÉcoleDirecte Buffer", () => {
+  it("reste compatible avec les vérifications instanceof des dépendances", () => {
+    const BufferConstructor = globalThis.Buffer;
+    if (!BufferConstructor) {
+      throw new Error("Le polyfill Buffer n'est pas initialisé");
+    }
+
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(() => bytes instanceof BufferConstructor).not.toThrow();
+    expect(BufferConstructor.from("QU5HTA==", "base64").toString("utf-8")).toBe(
+      "ANGL"
+    );
+  });
+});
+
 describe("ÉcoleDirecte GRADES", () => {
   it("synchronise les périodes et moyennes quand la réponse omet notes", async () => {
     const report = {
