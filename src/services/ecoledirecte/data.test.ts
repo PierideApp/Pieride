@@ -9,6 +9,7 @@ import {
   ecoledirecteCapabilities,
   normalizeMarksResponse,
 } from "./data";
+import schoolLifeFixture from "./fixtures/school-life.json";
 import type { EcoledirecteSession } from "./session";
 
 describe("ÉcoleDirecte Buffer", () => {
@@ -239,6 +240,38 @@ describe("ÉcoleDirecte ATTENDANCE", () => {
     expect(getSchoolLife).toHaveBeenCalledOnce();
   });
 
+  it("lit une réponse anonymisée de l'API ÉcoleDirecte", async () => {
+    const getSchoolLife = vi.fn(async () => schoolLifeFixture);
+    const client = {
+      schoollife: { getSchoolLife },
+    } as unknown as Client;
+    const session = {
+      selectedAccount: { modules: [{ code: "VIE_SCOLAIRE" }] },
+      run: async <T>(request: (value: Client) => Promise<T>) => request(client),
+    } as unknown as EcoledirecteSession;
+    const attendance = ecoledirecteCapabilities(session).ATTENDANCE!;
+    const period = {
+      id: "2026-2027",
+      name: "2026-2027",
+      start: new Date(2026, 8, 1),
+      end: new Date(2027, 7, 31, 23, 59, 59, 999),
+    };
+
+    // Extrait anonymisé de la réponse publiée pour /v3/eleves/{id}/viescolaire.awp.
+    // https://github.com/EduWireApps/ecoledirecte-api-docs#vie-scolaire
+    await expect(
+      attendance.getAttendanceForPeriod(period)
+    ).resolves.toMatchObject([
+      {
+        id: "1",
+        kind: "absence",
+        from: new Date(2026, 10, 20, 8, 30),
+        to: new Date(2026, 10, 20, 16, 30),
+      },
+    ]);
+    expect(getSchoolLife).toHaveBeenCalledOnce();
+  });
+
   it("lit les dates détaillées sans notes et écarte les dates invalides", async () => {
     const today = new Date();
     const startYear =
@@ -275,7 +308,14 @@ describe("ÉcoleDirecte ATTENDANCE", () => {
     expect(periods).toHaveLength(1);
     await expect(
       attendance.getAttendanceForPeriod(periods[0]!)
-    ).resolves.toMatchObject([{ id: "42", kind: "absence" }]);
+    ).resolves.toMatchObject([
+      {
+        id: "42",
+        kind: "absence",
+        from: new Date(startYear, 10, 9, 8),
+        to: new Date(startYear, 10, 9, 9),
+      },
+    ]);
     expect(getSchoolLife).toHaveBeenCalledOnce();
   });
 });

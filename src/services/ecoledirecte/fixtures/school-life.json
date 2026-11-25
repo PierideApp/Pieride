@@ -1,0 +1,11 @@
+{
+  "absencesRetards": [
+    {
+      "id": 1,
+      "typeElement": "Absence",
+      "date": "2026-11-20",
+      "displayDate": "le vendredi 20 novembre 2026 de 08:30 à 16:30",
+      "justifie": true
+    }
+  ]
+}
