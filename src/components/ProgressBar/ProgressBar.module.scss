@@ -1,40 +1,42 @@
 @keyframes linuxWait {
-    0% {
-        margin-left: 0%;
-    }
-    100% {
-        margin-left: 85%;
-    }
+  0% {
+    margin-left: 0%;
+  }
+  100% {
+    margin-left: 85%;
+  }
 }
 
 @keyframes windowsWait {
-    0% {
-        margin-left: -15%;
-    }
-    100% {
-        margin-left: 120%;
-    }
+  0% {
+    margin-left: -15%;
+  }
+  100% {
+    margin-left: 120%;
+  }
 }
 
 .progressBar {
-    width: 100%;
-    height: 10px;
-    background-color: var(--color-track);
-    border-radius: 10px;
-    overflow: hidden;
+  width: 100%;
+  height: 10px;
+  background-color: var(--color-track);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.progress, .progressLinuxWait, .progressWindowsWait {
-    height: 100%;
-    background-color: var(--color-accent);
-    border-radius: 10px;
-    transition: width 0.05s ease-in-out;
+.progress,
+.progressLinuxWait,
+.progressWindowsWait {
+  height: 100%;
+  background-color: var(--color-accent);
+  border-radius: 10px;
+  transition: width 0.05s ease-in-out;
 }
 
 .progressLinuxWait {
-    animation: linuxWait 3s linear alternate infinite;
+  animation: linuxWait 3s linear alternate infinite;
 }
 
 .progressWindowsWait {
-    animation: windowsWait 2s linear infinite;
+  animation: windowsWait 2s linear infinite;
 }

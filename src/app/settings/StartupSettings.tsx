@@ -1,12 +1,7 @@
 // Démarrage et fenêtre (maquette 12-demarrage-et-fenetre) : comment Piéride vit sur
 // l'ordinateur. Le lancement à l'ouverture de session est inscrit dans le système (plugin
 // autostart, avec `--minimized`) ; le reste est dans le store. Les mises à jour : UpdateRow.
-import {
-  ArrowDownBox,
-  Clock,
-  Cross,
-  Login
-} from "@getpapillon/papicons";
+import { ArrowDownBox, Clock, Cross, Login } from "@getpapillon/papicons";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

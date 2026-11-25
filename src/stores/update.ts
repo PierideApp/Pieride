@@ -16,7 +16,13 @@ export type UpdateState =
   /** `manual` : installé par un paquet (.deb, .rpm), que seul le système peut remplacer. */
   | { status: "available"; version: string; manual: boolean } // une mise à jour est disponible, mais pas encore téléchargée
   /** `progress` : de 0 à 1, ou null tant que la taille du fichier est inconnue. */
-  | { status: "downloading"; version: string; progress: number | null, done: number; total: number } // téléchargement en cours
+  | {
+      status: "downloading";
+      version: string;
+      progress: number | null;
+      done: number;
+      total: number;
+    } // téléchargement en cours
   | { status: "installing"; version: string } // Linux : l'installation est en cours (l'app se remplace elle-même)
   | { status: "installReady"; version: string } // Windows : l'installation est prête, l'app doit se fermer pour lancer l'installateur
   | { status: "restartReady"; version: string } // Linux : l'installation est terminée, l'app doit redémarrer pour utiliser la nouvelle version
@@ -41,7 +47,11 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
   state: { status: "idle" },
   check: async (silent = false) => {
     const before = get().state;
-    if (["checking", "downloading", "installReady", "restartReady"].includes(before.status)) {
+    if (
+      ["checking", "downloading", "installReady", "restartReady"].includes(
+        before.status
+      )
+    ) {
       return;
     }
     set({ state: { status: "checking" } });
@@ -70,7 +80,9 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     const { version } = state;
     let total = 0;
     let done = 0;
-    set({ state: { status: "downloading", version, progress: null, done, total } });
+    set({
+      state: { status: "downloading", version, progress: null, done, total },
+    });
     try {
       await pending.download(event => {
         if (event.event === "Started") {
@@ -83,7 +95,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
               version,
               progress: total > 0 ? Math.min(done / total, 1) : null,
               done,
-              total
+              total,
             },
           });
         }
@@ -95,7 +107,10 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
   },
   install: async () => {
     const { state } = get();
-    if ((state.status !== "installReady" && state.status !== "downloading") || !pending) {
+    if (
+      (state.status !== "installReady" && state.status !== "downloading") ||
+      !pending
+    ) {
       return;
     }
     const { version } = state;
@@ -136,8 +151,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     await get().download();
     if (platformName !== "Windows" || forceInstall) {
       await get().install();
-    }
-    else {
+    } else {
       set({ state: { status: "installReady", version: state.version } });
     }
   },

@@ -66,7 +66,13 @@ describe("install", () => {
     await useUpdateStore.getState().check();
     await useUpdateStore.getState().downloadAndInstall();
     expect(seen).toEqual([
-      { status: "downloading", version: "1.2.0", progress: 0.4, done: 40, total: 100 },
+      {
+        status: "downloading",
+        version: "1.2.0",
+        progress: 0.4,
+        done: 40,
+        total: 100,
+      },
     ]);
     expect(state()).toEqual({ status: "restartReady", version: "1.2.0" });
   });
