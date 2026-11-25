@@ -3,7 +3,7 @@
 // L'ouvrir la marque comme lue chez le service. L'accusé de réception, lui, ne part que sur
 // le bouton « J'en ai pris connaissance » : c'est une déclaration faite à l'établissement.
 import { Font, Paper } from "@getpapillon/papicons";
-import { createElement, type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AttachmentList } from "@/components/AttachmentList/AttachmentList";
@@ -40,112 +40,6 @@ const authorOf = (author: string) => {
   return { firstName, lastName: rest.join(" ") };
 };
 
-const titleOf = (item: NewsView, untitled: string) =>
-  item.title?.trim() ||
-  item.content
-    .split(/\r?\n/)
-    .find(line => line.trim())
-    ?.trim() ||
-  untitled;
-
-const SAFE_NEWS_TAGS = new Set([
-  "p",
-  "div",
-  "span",
-  "br",
-  "strong",
-  "b",
-  "em",
-  "i",
-  "u",
-  "s",
-  "ul",
-  "ol",
-  "li",
-  "blockquote",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "table",
-  "thead",
-  "tbody",
-  "tfoot",
-  "tr",
-  "td",
-  "th",
-]);
-
-const DROP_NEWS_TAGS = new Set([
-  "audio",
-  "button",
-  "embed",
-  "form",
-  "iframe",
-  "input",
-  "math",
-  "object",
-  "script",
-  "style",
-  "svg",
-  "template",
-  "video",
-]);
-
-function safeImageSource(source: string): string | undefined {
-  if (
-    /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,[a-z\d+/]+=*$/i.test(
-      source
-    )
-  ) {
-    return source;
-  }
-  return undefined;
-}
-
-// Le HTML de l'ENT est non fiable : seules les balises de mise en forme et images sûres passent.
-function renderNewsNode(node: ChildNode, key: number): ReactNode[] {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent ? [node.textContent] : [];
-  }
-  if (!(node instanceof Element)) {
-    return [];
-  }
-  const tag = node.tagName.toLowerCase();
-  if (DROP_NEWS_TAGS.has(tag)) {
-    return [];
-  }
-  if (tag === "img") {
-    const src = safeImageSource(node.getAttribute("src") ?? "");
-    return src
-      ? [
-          <img
-            key={key}
-            src={src}
-            alt={node.getAttribute("alt") ?? ""}
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-          />,
-        ]
-      : [];
-  }
-  if (tag === "br") {
-    return [<br key={key} />];
-  }
-  const children = Array.from(node.childNodes).flatMap(renderNewsNode);
-  return SAFE_NEWS_TAGS.has(tag)
-    ? [createElement(tag, { key }, ...children)]
-    : children;
-}
-
-function newsContentNodes(html: string): ReactNode[] {
-  const { body } = new DOMParser().parseFromString(html, "text/html");
-  return Array.from(body.childNodes).flatMap(renderNewsNode);
-}
-
 export function ActualitesPage({ module }: ModulePageProps) {
   const { t } = useTranslation();
   const accountId =
@@ -176,9 +70,6 @@ export function ActualitesPage({ module }: ModulePageProps) {
     current?.attachments ?? [],
     { module: t("modules.actualites"), date: current?.date ?? new Date() }
   );
-  const bodyNodes = current?.htmlContent
-    ? newsContentNodes(current.htmlContent)
-    : [];
   const ackStatus =
     current && acknowledgement?.key === `${current.serviceId}:${current.id}`
       ? acknowledgement.status
@@ -301,10 +192,8 @@ export function ActualitesPage({ module }: ModulePageProps) {
                       <span>{item.author}</span>
                       <span>{formats.shortDate.format(item.date)}</span>
                     </span>
-                    <strong>{titleOf(item, t("actualites.untitled"))}</strong>
-                    {item.title && item.content && (
-                      <span className={styles.excerpt}>{item.content}</span>
-                    )}
+                    <strong>{item.title ?? t("actualites.untitled")}</strong>
+                    <span className={styles.excerpt}>{item.content}</span>
                   </span>
                   {item.attachments.length > 0 && (
                     <Paper
@@ -326,7 +215,7 @@ export function ActualitesPage({ module }: ModulePageProps) {
             as="section"
             className={styles.reader}
             data-large={large || undefined}
-            aria-label={titleOf(current, t("actualites.untitled"))}
+            aria-label={current.title ?? t("actualites.untitled")}
           >
             <header className={styles.readerHead}>
               <Avatar account={authorOf(current.author)} size={44} />
@@ -358,13 +247,9 @@ export function ActualitesPage({ module }: ModulePageProps) {
               </div>
             )}
             <div className={styles.readerBody}>
-              {bodyNodes.length > 0 ? (
-                bodyNodes.map((node, index) =>
-                  typeof node === "string" ? <p key={index}>{node}</p> : node
-                )
-              ) : (
-                <p className={styles.noContent}>{t("actualites.noContent")}</p>
-              )}
+              {current.content.split("\n").map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
             </div>
             {current.attachments.length > 0 && (
               <AttachmentList
