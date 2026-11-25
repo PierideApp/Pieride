@@ -5,6 +5,7 @@ import { Button } from "@/components/Button/Button";
 import { InfoCard } from "@/components/InfoCard/InfoCard";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { TextField } from "@/components/TextField/TextField";
+import { syncedCapabilities, visibleModules } from "@/modules/registry";
 import { accountManager } from "@/services";
 import type { SyncedCapability } from "@/services/account-manager";
 import {
@@ -13,7 +14,9 @@ import {
   parseEcoledirecteSecret,
   type TwoFactorChallenge,
 } from "@/services/ecoledirecte/session";
+import { capabilitiesOf } from "@/services/shared/plugin";
 import { useAccountStore } from "@/stores/accounts";
+import { useSettingsStore } from "@/stores/settings";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
@@ -48,6 +51,12 @@ export function EcoleDirecteFlow({
   const setCurrentAccount = useAccountStore(state => state.setCurrentAccount);
   const reload = useSyncStore(state => state.reload);
   const sync = useSyncStore(state => state.sync);
+  const hidden = useSettingsStore(state =>
+    relink ? state.hiddenModules[relink.accountId] : undefined
+  );
+  const wanted = syncedCapabilities(
+    visibleModules(capabilitiesOf(["ecoledirecte"]), hidden)
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [answer, setAnswer] = useState("");
@@ -106,7 +115,7 @@ export function EcoleDirecteFlow({
     }
     setCurrentAccount(accountId);
     reload();
-    void sync([accountId]);
+    void sync([{ accountId, capabilities: wanted }]);
     onDone?.();
   };
 
