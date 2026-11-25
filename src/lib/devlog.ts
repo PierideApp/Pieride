@@ -1,10 +1,8 @@
 // Les requêtes des services dans la console de la WebView, seulement sous `pnpm tauri dev` : les
 // appels sont gardés par `import.meta.env.DEV`, que Vite remplace par `false` dans la version
 // publiée (code retiré), et `isTauri()` écarte `pnpm dev` seul dans un navigateur et les tests.
-// Filtrer la console sur `[pronote]` ou `[ecoledirecte]` pour isoler les appels et leur durée.
+// Filtrer la console sur `[pronote]` ou `[http]` pour isoler les appels et leur durée.
 import { isTauri } from "@tauri-apps/api/core";
-
-type DevService = "pronote" | "ecoledirecte" | "other";
 
 /**
  * Requêtes de connexion : identifiant, défi, nouveau jeton, code PIN, adresse de connexion à un
@@ -46,32 +44,16 @@ export function devRequest(request: {
   content?: string;
   status?: number;
   duration: number;
-  service?: DevService;
 }): void {
   if (!isTauri()) {
     return;
   }
   const outcome = `${request.status ?? "échec"} · ${Math.round(request.duration)} ms`;
-  const service =
-    request.service === "other"
-      ? undefined
-      : (request.service ??
-        (request.url.hostname === "ecoledirecte.com" ||
-        request.url.hostname.endsWith(".ecoledirecte.com")
-          ? "ecoledirecte"
-          : undefined));
-  if (service === "ecoledirecte") {
-    // Les ID d'élève apparaissent dans le chemin ÉcoleDirecte : on les masque aussi.
-    const path = request.url.pathname.replace(/\/\d+(?=\/|$)/g, "/:id");
-    console.log(
-      `[ecoledirecte] ${request.method} ${request.url.host}${path} · ${outcome}`
-    );
-    return;
-  }
   if (!request.url.pathname.includes("/appelfonction/")) {
     // Sans la query string, qui peut porter un jeton.
+    const path = request.url.pathname.replace(/\/\d+(?=\/|$)/g, "/:id");
     console.log(
-      `[${service ?? "http"}] ${request.method} ${request.url.host}${request.url.pathname} · ${outcome}`
+      `[http] ${request.method} ${request.url.host}${path} · ${outcome}`
     );
     return;
   }
