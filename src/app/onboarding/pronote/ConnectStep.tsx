@@ -31,9 +31,10 @@ import { useSettingsStore } from "@/stores/settings";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
+import { errorKey } from "../errors";
 import styles from "../onboarding.module.scss";
 import { DemoStep } from "./DemoStep";
-import { AlreadyLinked, errorKey } from "./errors";
+import { AlreadyLinked } from "./errors";
 import pronote from "./pronote.module.scss";
 
 /** Un service à reconnecter (Paramètres > Comptes liés). */
@@ -94,7 +95,7 @@ export function ConnectStep({
 
   const fail = (failure: unknown) => {
     setPhase({ id: "ready" });
-    setError(errorKey(failure));
+    setError(errorKey(failure, "onboarding.pronote"));
   };
 
   /** Crée le compte (ou remplace le secret du service refusé), puis la première synchro. */
@@ -196,7 +197,7 @@ export function ConnectStep({
     } catch (failure) {
       if (failure instanceof WrongPin) {
         setPhase({ id: "pin", finish });
-        setError(errorKey(failure));
+        setError(errorKey(failure, "onboarding.pronote"));
       } else {
         fail(failure);
       }

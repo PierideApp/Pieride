@@ -16,6 +16,7 @@ import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
+import { errorKey } from "../errors";
 import styles from "../onboarding.module.scss";
 import flow from "./ecoledirecte.module.scss";
 
@@ -31,26 +32,6 @@ const SYNC_STEPS = [
   "GRADES",
   "HOMEWORK",
 ] as const satisfies readonly SyncedCapability[];
-
-function errorKey(error: unknown): string {
-  const name = error instanceof Error ? error.name : String(error);
-  if (name === "AuthenticationError") {
-    return "onboarding.ecoledirecte.errors.AuthenticationError";
-  }
-  if (name === "ServiceUnavailable") {
-    return "onboarding.ecoledirecte.errors.ServiceUnavailable";
-  }
-  if (name === "SecurityChallenge") {
-    return "onboarding.ecoledirecte.errors.SecurityChallenge";
-  }
-  if (name === "InvalidSecurityAnswer") {
-    return "onboarding.ecoledirecte.errors.InvalidSecurityAnswer";
-  }
-  if (name === "keyring_unavailable") {
-    return "errors.keyring_unavailable";
-  }
-  return "errors.Unknown";
-}
 
 export function EcoledirecteFlow({
   relink,
@@ -127,7 +108,7 @@ export function EcoledirecteFlow({
       }
     } catch (failure) {
       setPhase("credentials");
-      setError(errorKey(failure));
+      setError(errorKey(failure, "onboarding.ecoledirecte"));
     }
   };
 
@@ -145,7 +126,7 @@ export function EcoledirecteFlow({
       await complete(result);
     } catch (failure) {
       setPhase("challenge");
-      setError(errorKey(failure));
+      setError(errorKey(failure, "onboarding.ecoledirecte"));
     }
   };
 
