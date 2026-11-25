@@ -10,17 +10,17 @@ import { platformName } from "@/lib/platform";
 import { closeLogins, reopenLogins } from "@/services/shared/auth";
 
 export type UpdateState =
-  | { status: "idle" }
-  | { status: "checking" }
-  | { status: "upToDate"; checkedAt: number }
+  | { status: "idle" } // aucune vérification n'a été faite depuis le lancement
+  | { status: "checking" } // vérification en cours (automatique ou manuelle)
+  | { status: "upToDate"; checkedAt: number } // la version actuelle est à jour
   /** `manual` : installé par un paquet (.deb, .rpm), que seul le système peut remplacer. */
-  | { status: "available"; version: string; manual: boolean }
+  | { status: "available"; version: string; manual: boolean } // une mise à jour est disponible, mais pas encore téléchargée
   /** `progress` : de 0 à 1, ou null tant que la taille du fichier est inconnue. */
-  | { status: "downloading"; version: string; progress: number | null, done?: number; total?: number }
-  | { status: "installing"; version: string }
-  | { status: "installReady"; version: string }
-  | { status: "restartReady"; version: string }
-  | { status: "error" };
+  | { status: "downloading"; version: string; progress: number | null, done: number; total: number } // téléchargement en cours
+  | { status: "installing"; version: string } // Linux : l'installation est en cours (l'app se remplace elle-même)
+  | { status: "installReady"; version: string } // Windows : l'installation est prête, l'app doit se fermer pour lancer l'installateur
+  | { status: "restartReady"; version: string } // Linux : l'installation est terminée, l'app doit redémarrer pour utiliser la nouvelle version
+  | { status: "error" }; // une erreur est survenue (hors ligne, jeton expiré, etc.) : l'état reste inchangé jusqu'à la prochaine vérification
 
 interface UpdateStore {
   state: UpdateState;
@@ -70,7 +70,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     const { version } = state;
     let total = 0;
     let done = 0;
-    set({ state: { status: "downloading", version, progress: null } });
+    set({ state: { status: "downloading", version, progress: null, done, total } });
     try {
       await pending.download(event => {
         if (event.event === "Started") {
@@ -136,6 +136,9 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     await get().download();
     if (platformName !== "Windows" || forceInstall) {
       await get().install();
+    }
+    else {
+      set({ state: { status: "installReady", version: state.version } });
     }
   },
   restart: async () => {
