@@ -375,15 +375,19 @@ describe("ÉcoleDirecte attachments", () => {
     ]);
   });
 
-  it("charge le contenu et les documents du cahier de textes pour un cours", async () => {
+  it("charge le contenu d'un cours dont le code semble encodé en Base64", async () => {
     const file = { id: 42, libelle: "Cours.pdf", type: "CAHIER_TEXTE" };
+    const codeMatiere = "ANGL";
+    const decodedCodeMatiere = new TextDecoder().decode(
+      Uint8Array.from(atob(codeMatiere), character => character.charCodeAt(0))
+    );
     const getHomeworksForDate = vi.fn(async (date: string) => ({
       date,
       matieres:
         date === "2026-11-02"
           ? [
               {
-                codeMatiere: "MAT",
+                codeMatiere: decodedCodeMatiere,
                 contenuDeSeance: {
                   contenu: "<p>Lecon du jour</p>",
                   documents: [file],
@@ -400,7 +404,7 @@ describe("ÉcoleDirecte attachments", () => {
             id: 1,
             text: "Mathématiques",
             matiere: "Mathématiques",
-            codeMatiere: "MAT",
+            codeMatiere,
             typeCours: "COURS",
             ["start_date"]: "2026-11-02 08:00:00",
             ["end_date"]: "2026-11-02 09:00:00",

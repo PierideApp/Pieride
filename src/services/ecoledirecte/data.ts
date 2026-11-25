@@ -251,9 +251,8 @@ async function inlineProtectedNewsImages(
 ): Promise<string> {
   let html: string;
   try {
-    const bytes = Uint8Array.from(
-      atob(value.replace(/\s/g, "")),
-      character => character.charCodeAt(0)
+    const bytes = Uint8Array.from(atob(value.replace(/\s/g, "")), character =>
+      character.charCodeAt(0)
     );
     html = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
@@ -689,6 +688,15 @@ function toAttendance(
   };
 }
 
+function decodeHomeworkCodeMatiere(value: string): string {
+  if (value.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
+    return value;
+  }
+  return new TextDecoder().decode(
+    Uint8Array.from(atob(value), character => character.charCodeAt(0))
+  );
+}
+
 export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   // BlocksDirecte vérifie la présence du module par son code, pas le champ `enable`.
   const available = new Set(
@@ -715,9 +723,7 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
             try {
               lessons.set(
                 key,
-                (
-                  await client.homework.getHomeworksForDate(key)
-                ).matieres
+                (await client.homework.getHomeworksForDate(key)).matieres
               );
             } catch {
               // Le planning reste utilisable si les détails du cahier de textes échouent.
@@ -726,10 +732,11 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
         );
         return items.flatMap(item => {
           const date = parseDate(item.start_date);
+          const codeMatiere = decodeHomeworkCodeMatiere(item.codeMatiere);
           const lesson = lessons
             .get(date ? dateKey(date) : "")
             ?.find(
-              subject => subject.codeMatiere === item.codeMatiere
+              subject => subject.codeMatiere === codeMatiere
             )?.contenuDeSeance;
           return toCourse(item, lesson) ?? [];
         });
