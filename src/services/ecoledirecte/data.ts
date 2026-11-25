@@ -5,7 +5,6 @@ import {
 } from "@blockshub/blocksdirecte";
 
 import { bytesToBase64 } from "@/lib/buffer";
-import { htmlToText } from "@/lib/html";
 import { addDays } from "@/lib/week";
 
 import { ServiceUnavailable } from "../shared/errors";
@@ -849,15 +848,10 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
           const content =
             known.get(id)?.content ??
             (await inlineProtectedNewsImages(session, post.contenu || ""));
-          const title =
-            htmlToText(content)
-              .split(/\r?\n/)
-              .find(line => line.trim())
-              ?.trim() || "Post-it";
           return {
             id,
             kind: "information" as const,
-            title,
+            title: "Post-it",
             author:
               [post.auteur?.prenom, post.auteur?.nom]
                 .filter(Boolean)

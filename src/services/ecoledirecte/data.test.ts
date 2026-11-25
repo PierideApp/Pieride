@@ -309,7 +309,7 @@ describe("ÉcoleDirecte NEWS", () => {
     await expect(news!.getNews(new Map())).resolves.toMatchObject([
       {
         id: "post-42",
-        title: "Affiche",
+        title: "Post-it",
         content: '<p>Affiche</p><img src="data:image/png;base64,iVBORw0KGgo=">',
       },
     ]);
