@@ -6,10 +6,12 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
 import { SettingRow } from "@/components/SettingRow/SettingRow";
+import { ProgressBar } from "@/components/ProgressBar/ProgressBar";
 import { openLink } from "@/lib/links";
 import { report } from "@/lib/log";
 import { platformName } from "@/lib/platform";
 import { useUpdateStore } from "@/stores/update";
+import { sizeFormater } from "@/lib/sizeFormater";
 
 export function UpdateRow() {
   const { t, i18n } = useTranslation();
@@ -42,7 +44,7 @@ export function UpdateRow() {
           percent:
             state.progress === null
               ? ""
-              : `${state.done} / ${state.total} - ${Math.round(state.progress * 100)} %`,
+              : `${sizeFormater(state.done)} / ${sizeFormater(state.total)} - ${Math.round(state.progress * 100)} %`,
         });
 
       case "installing":
@@ -77,11 +79,15 @@ export function UpdateRow() {
         }
         title={<span role="status">{text}</span>}
         text={
-          state.status === "upToDate" && t("settings.updater.checkedAt", {
+          state.status === "upToDate" ? t("settings.updater.checkedAt", {
             time: new Intl.DateTimeFormat(i18n.language, {
               timeStyle: "short",
             }).format(state.checkedAt),
-          })
+          }) : state.status === "downloading" ? (
+            <ProgressBar progress={state.progress === null ? 0 : state.progress * 100} />
+          ) : ["checking", "installing"].includes(state.status) && (
+            <ProgressBar progress={null} />
+          )
         }
       >
         {state.status === "available" && state.manual ? (
