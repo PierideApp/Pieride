@@ -8,7 +8,7 @@ import { WindowControls } from "@/app/layout/WindowControls";
 import mark from "@/assets/brand/mark.svg";
 
 import { BackButton } from "./BackButton";
-import { EcoledirecteFlow } from "./ecoledirecte/EcoleDirecteFlow";
+import { EcoleDirecteFlow } from "./ecoledirecte/EcoleDirecteFlow";
 import { OfflineAccountStep } from "./OfflineAccountStep";
 import styles from "./onboarding.module.scss";
 import { ProfileStep } from "./ProfileStep";
@@ -83,7 +83,7 @@ export function Onboarding() {
         {step === "offline" && <OfflineAccountStep onCancel={back} />}
         {/* Une fois connecté, le compte existe : l'app quitte le premier lancement. */}
         {step === "pronote" && <PronoteFlow onExit={back} />}
-        {step === "ecoledirecte" && <EcoledirecteFlow onExit={back} />}
+        {step === "ecoledirecte" && <EcoleDirecteFlow onExit={back} />}
       </main>
     </div>
   );

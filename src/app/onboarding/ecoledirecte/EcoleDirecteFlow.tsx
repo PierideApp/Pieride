@@ -33,7 +33,7 @@ const SYNC_STEPS = [
   "HOMEWORK",
 ] as const satisfies readonly SyncedCapability[];
 
-export function EcoledirecteFlow({
+export function EcoleDirecteFlow({
   relink,
   onExit,
   onDone,

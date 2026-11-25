@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
-  EcoledirecteFlow,
+  EcoleDirecteFlow,
   type EcoledirecteRelink,
 } from "@/app/onboarding/ecoledirecte/EcoleDirecteFlow";
 import { OfflineAccountStep } from "@/app/onboarding/OfflineAccountStep";
@@ -80,7 +80,7 @@ export function AddAccountDialog({
       {typeof start === "object" &&
         start !== null &&
         start.kind === "ecoledirecte" && (
-          <EcoledirecteFlow relink={start} onExit={close} onDone={close} />
+          <EcoleDirecteFlow relink={start} onExit={close} onDone={close} />
         )}
       {(start === "offline" ||
         (start === "service" && chosen === "offline")) && (
@@ -93,7 +93,7 @@ export function AddAccountDialog({
         <PronoteFlow onExit={() => setChosen(null)} onDone={close} />
       )}
       {start === "service" && chosen === "ecoledirecte" && (
-        <EcoledirecteFlow onExit={() => setChosen(null)} onDone={close} />
+        <EcoleDirecteFlow onExit={() => setChosen(null)} onDone={close} />
       )}
       {start === "service" && chosen === null && (
         <ServiceStep
