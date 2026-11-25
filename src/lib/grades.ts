@@ -47,16 +47,17 @@ function weighted(grades: readonly Graded[]): number | undefined {
   return weight > 0 ? sum / weight : undefined;
 }
 
-/** Moyenne de chaque matière, sur 20. */
-export function subjectAverages(
-  grades: readonly Graded[]
+/**
+ * Moyenne de chaque matière sur 20, par nom ou par `key`. Par nom, deux sous-services de même
+ * nom ne font qu'une matière : la moyenne générale ne la compte pas en double, comme PRONOTE.
+ */
+export function subjectAverages<T extends Graded>(
+  grades: readonly T[],
+  key: (grade: T) => string = grade => grade.subject
 ): Map<string, number> {
   const bySubject = new Map<string, Graded[]>();
   for (const grade of grades) {
-    bySubject.set(grade.subject, [
-      ...(bySubject.get(grade.subject) ?? []),
-      grade,
-    ]);
+    bySubject.set(key(grade), [...(bySubject.get(key(grade)) ?? []), grade]);
   }
   const averages = new Map<string, number>();
   for (const [subject, own] of bySubject) {

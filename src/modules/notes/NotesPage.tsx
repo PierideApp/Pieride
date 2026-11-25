@@ -243,7 +243,7 @@ export function NotesPage({ module }: ModulePageProps) {
           <div className={styles.subjects}>
             {summaries.map(summary => (
               <SubjectCard
-                key={summary.subject}
+                key={summary.subjectId}
                 summary={summary}
                 selected={selectedNow}
                 onOpenSubject={openSubject}
