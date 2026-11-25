@@ -1,3 +1,5 @@
+import "@/lib/buffer";
+
 import {
   type Account,
   Client,
@@ -39,44 +41,6 @@ export class InvalidSecurityAnswer extends Error {
 export type LoginResult =
   | { kind: "login"; login: EcoledirecteLogin }
   | { kind: "challenge"; challenge: TwoFactorChallenge };
-
-/** L'ÉcoleDirecte utilise des appels Buffer, alors que Piéride tourne dans une WebView. */
-function installBufferPolyfill(): void {
-  type EncodedBuffer = { toString(encoding?: string): string };
-  type BufferConstructor = {
-    from(value: string, encoding?: string): EncodedBuffer;
-  };
-  const runtime = globalThis as unknown as {
-    Buffer?: BufferConstructor;
-  };
-  if (runtime.Buffer) {
-    return;
-  }
-  runtime.Buffer = {
-    from(value: string, encoding?: string) {
-      const bytes =
-        encoding === "base64"
-          ? Uint8Array.from(atob(value), character => character.charCodeAt(0))
-          : new TextEncoder().encode(value);
-      return {
-        toString(outputEncoding?: string) {
-          if (outputEncoding !== "base64") {
-            return new TextDecoder().decode(bytes);
-          }
-          let binary = "";
-          for (let index = 0; index < bytes.length; index += 0x8000) {
-            binary += String.fromCharCode(
-              ...bytes.subarray(index, index + 0x8000)
-            );
-          }
-          return btoa(binary);
-        },
-      };
-    },
-  };
-}
-
-installBufferPolyfill();
 
 export function parseEcoledirecteSecret(
   value: string
