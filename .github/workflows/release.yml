@@ -25,6 +25,7 @@ jobs:
       contents: write
     outputs:
       release_id: ${{ steps.release.outputs.id }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -54,10 +55,13 @@ jobs:
             exit 1
           fi
 
-          # Le tag sera créé à la publication, sur le commit testé ici
-          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" -f target_commitish="$GITHUB_SHA" > /dev/null
+          # Le tag sera créé à la publication, sur le commit testé ici. Sans tag_name dans
+          # chaque PATCH, GitHub remplace le tag d'un brouillon par untagged-…
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$id" \
+            -f tag_name="$tag" -f target_commitish="$GITHUB_SHA" > /dev/null
           echo "Brouillon $tag ($id) fixé sur $GITHUB_SHA"
           echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build ${{ matrix.name }}
@@ -135,7 +139,14 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
-        run: gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          published="$(gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" \
+            -f tag_name="$TAG" -F draft=false --jq .tag_name)"
+          if [[ "$published" != "$TAG" ]]; then
+            echo "::error::Release publiée avec le tag $published au lieu de $TAG. Corrige le tag sur GitHub avant d'annoncer."
+            exit 1
+          fi
 
   # Pas de workflow `on: release` : une publication par GITHUB_TOKEN ne le lancerait pas
   notify:
