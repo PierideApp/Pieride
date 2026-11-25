@@ -65,7 +65,8 @@ describe("fetch global", () => {
     await fetch("https://api.ecoledirecte.com/v3/login.awp");
     expect(devRequest).toHaveBeenCalledWith(
       expect.objectContaining({
-        service: "ecoledirecte",
+        url: expect.any(URL),
+        method: "GET",
         status: 200,
       })
     );

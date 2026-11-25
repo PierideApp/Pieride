@@ -28,9 +28,6 @@ function hostOf(input: RequestInfo | URL): string {
   }
 }
 
-const isEcoledirecteHost = (hostname: string) =>
-  hostname === "ecoledirecte.com" || hostname.endsWith(".ecoledirecte.com");
-
 // Les URL internes de Tauri (ipc:, asset:, http://ipc.localhost) et l'origine de l'app
 // restent sur le fetch natif : l'IPC de Tauri appelle lui-même fetch, sinon boucle infinie.
 const isExternal = (url: URL) =>
@@ -100,28 +97,13 @@ globalThis.fetch = async (input, init) => {
   const method =
     init?.method ?? (input instanceof Request ? input.method : "GET");
   const started = performance.now();
+  let status: number | undefined;
   try {
     const response = await externalFetch(input, init);
-    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
-      devRequest({
-        url,
-        method,
-        status: response.status,
-        duration: performance.now() - started,
-        service: "ecoledirecte",
-      });
-    }
+    status = response.status;
     return response;
-  } catch (error) {
-    if (import.meta.env.DEV && isEcoledirecteHost(url.hostname)) {
-      devRequest({
-        url,
-        method,
-        duration: performance.now() - started,
-        service: "ecoledirecte",
-      });
-    }
-    throw error;
+  } finally {
+    devFetch({ url, method, status }, started);
   }
 };
 
