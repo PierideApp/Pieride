@@ -185,29 +185,6 @@
   }
 }
 
-.readerBody img {
-  display: block;
-  max-width: 100%;
-  max-height: 75vh;
-  height: auto;
-  margin: var(--space-3) 0;
-  border-radius: 12px;
-  object-fit: contain;
-}
-
-.readerBody table {
-  max-width: 100%;
-  border-collapse: collapse;
-}
-
-.attachments {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
 // Accusé de réception, après le texte et les pièces jointes : on lit d'abord.
 .acknowledgement {
   width: min(480px, 100%);
@@ -216,10 +193,4 @@
   button {
     margin-top: var(--space-3);
   }
-}
-
-.noContent {
-  font-size: 14px;
-  font-style: italic;
-  color: var(--color-text-3);
 }
