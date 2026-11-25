@@ -1,4 +1,7 @@
-import type { Client } from "@blockshub/blocksdirecte";
+import {
+  type Client,
+  SchoolLifeAttendanceItemType,
+} from "@blockshub/blocksdirecte";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -147,13 +150,16 @@ describe("ÉcoleDirecte GRADES", () => {
     );
   });
 
-  it("refuse les entrées de notes mal formées avant leur mapping", () => {
-    expect(() =>
+  it("écarte une note mal formée sans perdre les autres", () => {
+    expect(
       normalizeMarksResponse({
         periodes: [],
-        notes: [{ id: 12, date: "07/11/2026", valeur: { note: 12 } }],
-      })
-    ).toThrow("Liste des notes ÉcoleDirecte invalide");
+        notes: [
+          { id: 12, date: "07/11/2026", valeur: { note: 12 } },
+          { id: 13, date: "08/11/2026", valeur: "15" },
+        ],
+      }).notes
+    ).toEqual([{ id: 13, date: "08/11/2026", valeur: "15" }]);
   });
 
   it("réutilise le même relevé pour toutes les périodes", async () => {
@@ -217,6 +223,46 @@ describe("ÉcoleDirecte ATTENDANCE", () => {
 
     expect(getSchoolLife).toHaveBeenCalledOnce();
   });
+
+  it("lit les dates détaillées sans notes et écarte les dates invalides", async () => {
+    const today = new Date();
+    const startYear =
+      today.getMonth() >= 8 ? today.getFullYear() : today.getFullYear() - 1;
+    const getSchoolLife = vi.fn(async () => ({
+      absencesRetards: [
+        {
+          id: 42,
+          typeElement: SchoolLifeAttendanceItemType.ABSENCE,
+          displayDate: `Le lundi 9 novembre ${startYear} de 08:00 à 09:00`,
+          date: `09/11/${startYear}`,
+          motif: "Rendez-vous",
+          justifie: true,
+        },
+        {
+          id: 43,
+          typeElement: SchoolLifeAttendanceItemType.ABSENCE,
+          displayDate: "date invalide",
+          date: "date invalide",
+          justifie: false,
+        },
+      ],
+    }));
+    const client = {
+      schoollife: { getSchoolLife },
+    } as unknown as Client;
+    const session = {
+      selectedAccount: { modules: [{ code: "VIE_SCOLAIRE" }] },
+      run: async <T>(request: (value: Client) => Promise<T>) => request(client),
+    } as unknown as EcoledirecteSession;
+    const attendance = ecoledirecteCapabilities(session).ATTENDANCE!;
+    const periods = await attendance.getAttendancePeriods();
+
+    expect(periods).toHaveLength(1);
+    await expect(
+      attendance.getAttendanceForPeriod(periods[0]!)
+    ).resolves.toMatchObject([{ id: "42", kind: "absence" }]);
+    expect(getSchoolLife).toHaveBeenCalledOnce();
+  });
 });
 
 describe("ÉcoleDirecte NEWS", () => {
@@ -263,6 +309,7 @@ describe("ÉcoleDirecte NEWS", () => {
     await expect(news!.getNews(new Map())).resolves.toMatchObject([
       {
         id: "post-42",
+        title: "Affiche",
         content: '<p>Affiche</p><img src="data:image/png;base64,iVBORw0KGgo=">',
       },
     ]);
@@ -316,6 +363,7 @@ describe("ÉcoleDirecte attachments", () => {
             kind: "file",
             name: "Exercices.pdf",
             url: "https://api.ecoledirecte.com/v3/telechargement.awp?verbe=get&fichierId=42&leTypeDeFichier=CAHIER_TEXTE",
+            ref: JSON.stringify({ id: 42, type: "CAHIER_TEXTE" }),
           },
           {
             kind: "link",
@@ -337,7 +385,7 @@ describe("ÉcoleDirecte attachments", () => {
               {
                 codeMatiere: "MAT",
                 contenuDeSeance: {
-                  contenu: btoa("<p>Lecon du jour</p>"),
+                  contenu: "<p>Lecon du jour</p>",
                   documents: [file],
                   liensManuel: [],
                 },
@@ -394,7 +442,7 @@ describe("ÉcoleDirecte attachments", () => {
     await capabilities.HOMEWORK!.getHomeworks(new Date(2026, 10, 2));
     expect(
       getHomeworksForDate.mock.calls.filter(([date]) => date === "2026-11-02")
-    ).toHaveLength(1);
+    ).toHaveLength(2);
   });
 
   it("télécharge un fichier avec son identifiant et son type", async () => {
@@ -422,6 +470,7 @@ describe("ÉcoleDirecte attachments", () => {
         kind: "file",
         name: "Exercices.pdf",
         url: "https://api.ecoledirecte.com/v3/telechargement.awp?fichierId=42&leTypeDeFichier=CAHIER_TEXTE",
+        ref: JSON.stringify({ id: 42, type: "CAHIER_TEXTE" }),
       })
     ).resolves.toEqual(bytes);
   });
