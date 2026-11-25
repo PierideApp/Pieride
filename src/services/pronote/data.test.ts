@@ -534,6 +534,7 @@ describe("toGrade", () => {
     expect(toGrade(grade(), "t1")).toMatchObject({
       id: "g1",
       subject: "MATHEMATIQUES",
+      subjectId: "s1",
       periodId: "t1",
       title: "Contrôle chapitre 3",
       value: 14,

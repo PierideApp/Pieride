@@ -257,7 +257,9 @@ const HOMEWORK: readonly (Omit<Homework, "id" | "givenAt" | "dueAt"> & {
 
 /**
  * Les notes de chaque trimestre : [semaine après le début, matière, intitulé, note
- * (`null` : absent), coefficient, moyenne de la classe].
+ * (`null` : absent), coefficient, moyenne de la classe, `subjectId` s'il diffère du nom].
+ * Enseignement scientifique a deux professeurs : comme PRONOTE, deux sous-services de même
+ * nom, chacun avec ses notes et sa moyenne.
  */
 const GRADES: readonly [
   number,
@@ -266,18 +268,31 @@ const GRADES: readonly [
   number | null,
   number,
   number,
+  string?,
 ][] = [
   [1, "Mathématiques", "Interrogation sur les suites", 15.5, 1, 12.1],
   [2, "Français", "Commentaire de texte", 13, 2, 11.4],
   [2, "Anglais LV1", "Compréhension orale", 17, 1, 13.2],
+  [2, "Enseignement scientifique", "QCM", 16, 1, 13.1, "es-1"],
   [3, "Physique-Chimie", "Contrôle sur les ondes", 11.5, 2, 10.8],
+  [3, "Enseignement scientifique", "Énergie solaire", 14, 1, 12.4, "es-2"],
   [4, "Histoire-Géographie", "Composition", 14, 2, 12.5],
   [5, "SVT", "TP noté", null, 1, 13.9],
+  [5, "Enseignement scientifique", "Atmosphère", 12, 1, 10.6, "es-1"],
   [6, "Mathématiques", "Devoir surveillé", 16.25, 2, 11.7],
   [7, "Espagnol LV2", "Expression écrite", 12, 1, 12.3],
-  [8, "Enseignement scientifique", "Exposé", 18, 1, 14.6],
+  [8, "Enseignement scientifique", "Exposé", 18, 1, 14.6, "es-1"],
   [9, "EPS", "Course de demi-fond", 15, 1, 14.1],
+  [9, "Enseignement scientifique", "Évaluation", 17.5, 2, 13.9, "es-2"],
 ];
+
+/** Les services du relevé (`subjectId` et matière), listés même sans note dans la période. */
+const SERVICES = new Map(
+  GRADES.map(([, subject, , , , , subjectId]) => [
+    subjectId ?? subject,
+    subject,
+  ])
+);
 
 /** `day` jours après `start`, à `hour` heures, en heure locale (juste aux changements d'heure). */
 function at(start: Date, day: number, hour = 0): Date {
@@ -502,10 +517,22 @@ export function mockPlugin(now = () => new Date()): SchoolServicePlugin {
         getGradesPeriods: async () => trimesters(now()),
         getGradesForPeriod: async period => {
           const grades = GRADES.map(
-            ([week, subject, title, value, coefficient, classAverage], index) =>
+            (
+              [
+                week,
+                subject,
+                title,
+                value,
+                coefficient,
+                classAverage,
+                subjectId,
+              ],
+              index
+            ) =>
               ({
                 id: `mock-grade-${period.id}-${index}`,
                 subject,
+                subjectId: subjectId ?? subject,
                 periodId: period.id,
                 title,
                 date: at(period.start, week * 7, 12),
@@ -604,9 +631,9 @@ async function sampleImage(
 
 /** Moyennes fictives de chaque matière : celle des notes, la classe un peu autour. */
 function averagesOf(grades: readonly Grade[]): SubjectAverage[] {
-  return Object.keys(SUBJECTS).map(subject => {
+  return [...SERVICES].map(([subjectId, subject]) => {
     const own = grades.filter(
-      grade => grade.subject === subject && grade.value !== undefined
+      grade => grade.subjectId === subjectId && grade.value !== undefined
     );
     const weight = own.reduce((sum, grade) => sum + grade.coefficient, 0);
     const student = weight
@@ -621,6 +648,7 @@ function averagesOf(grades: readonly Grade[]): SubjectAverage[] {
       : undefined;
     return {
       subject,
+      subjectId,
       student,
       classAverage,
       min: classAverage === undefined ? undefined : classAverage - 5,

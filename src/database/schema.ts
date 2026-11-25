@@ -177,13 +177,14 @@ export const subjectAverages = sqliteTable(
     serviceId: serviceId(),
     periodId: text("period_id").notNull(),
     subject: text("subject").notNull(),
+    subjectId: text("subject_id").notNull(),
     student: real("student"),
     classAverage: real("class_average"),
     min: real("min"),
     max: real("max"),
     outOf: real("out_of").notNull(),
   },
-  t => [primaryKey({ columns: [t.serviceId, t.periodId, t.subject] })]
+  t => [primaryKey({ columns: [t.serviceId, t.periodId, t.subjectId] })]
 );
 
 export const courses = sqliteTable(
@@ -233,6 +234,7 @@ export const grades = sqliteTable(
     id: text("id").notNull(),
     periodId: text("period_id").notNull(),
     subject: text("subject").notNull(),
+    subjectId: text("subject_id").notNull(),
     title: text("title").notNull(),
     date: integer("date", { mode: "timestamp_ms" }).notNull(),
     value: real("value"),

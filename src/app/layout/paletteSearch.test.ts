@@ -26,6 +26,7 @@ const grade = (id: string, title: string, date: Date): GradeView => ({
   ...look,
   id,
   subject: "MATHEMATIQUES",
+  subjectId: "MATHEMATIQUES",
   label: "Mathématiques",
   periodId: "T1",
   title,
