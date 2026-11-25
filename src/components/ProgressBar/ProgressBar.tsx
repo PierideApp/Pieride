@@ -1,6 +1,6 @@
-import styles from "./ProgressBar.module.scss";
-
 import { platformName } from "@/lib/platform";
+
+import styles from "./ProgressBar.module.scss";
 
 export function ProgressBar({
     progress,

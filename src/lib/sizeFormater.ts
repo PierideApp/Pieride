@@ -7,7 +7,7 @@
  * @returns la taille formatée en chaîne de caractères
 */
 export function sizeFormater(bytes: number, decimals = 2): string {
-  if (bytes === 0) return "0 o";
+  if (bytes === 0) {return "0 o";}
 
   const units = ["o", "Ko", "Mo", "Go", "To", "Po"];
   const index = Math.floor(Math.log(bytes) / Math.log(1024));

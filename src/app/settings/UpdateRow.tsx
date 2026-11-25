@@ -5,13 +5,13 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/Button/Button";
 import { Card } from "@/components/Card/Card";
-import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { ProgressBar } from "@/components/ProgressBar/ProgressBar";
+import { SettingRow } from "@/components/SettingRow/SettingRow";
 import { openLink } from "@/lib/links";
 import { report } from "@/lib/log";
 import { platformName } from "@/lib/platform";
-import { useUpdateStore } from "@/stores/update";
 import { sizeFormater } from "@/lib/sizeFormater";
+import { useUpdateStore } from "@/stores/update";
 
 export function UpdateRow() {
   const { t, i18n } = useTranslation();
