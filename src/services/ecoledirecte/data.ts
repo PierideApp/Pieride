@@ -4,7 +4,8 @@ import {
   TimetableCourseType,
 } from "@blockshub/blocksdirecte";
 
-import { contentToHtml } from "@/lib/html";
+import { bytesToBase64 } from "@/lib/buffer";
+import { htmlToText } from "@/lib/html";
 import { addDays } from "@/lib/week";
 
 import { ServiceUnavailable } from "../shared/errors";
@@ -15,7 +16,6 @@ import type {
   CourseContent,
   Grade,
   Homework,
-  News,
   Period,
   PeriodGrades,
   SubjectAverage,
@@ -131,14 +131,6 @@ function inlineImageMime(bytes: Uint8Array): string | null {
   return null;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let index = 0; index < bytes.length; index += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
-  }
-  return btoa(binary);
-}
-
 async function imageStreamToDataUrl(
   stream: ReadableStream<Uint8Array> | null
 ): Promise<string | null> {
@@ -200,6 +192,7 @@ function toAttachment(file: CloudFile): Attachment {
     kind: "file",
     name: file.libelle || "Document",
     url: `https://api.ecoledirecte.com/v3/telechargement.awp?${query}`,
+    ref: JSON.stringify({ id: file.id, type: file.type }),
   };
 }
 
@@ -213,7 +206,7 @@ function toManualLinks(links: HomeworkItem["liensManuel"]): Attachment[] {
 
 function lessonContent(lesson: Lesson): CourseContent {
   return {
-    description: contentToHtml(lesson.contenu),
+    description: lesson.contenu,
     attachments: [
       ...(lesson.documents ?? []).map(toAttachment),
       ...toManualLinks(lesson.liensManuel ?? []),
@@ -226,22 +219,19 @@ export function downloadEcoledirecteAttachment(
   session: EcoledirecteSession,
   attachment: Attachment
 ): Promise<Uint8Array> {
-  let url: URL;
+  let ref: unknown;
   try {
-    url = new URL(attachment.url);
+    ref = JSON.parse(attachment.ref ?? "");
   } catch {
     throw new ServiceUnavailable("Pièce jointe ÉcoleDirecte invalide");
   }
-  const fileId = Number(url.searchParams.get("fichierId"));
-  const fileType = url.searchParams.get("leTypeDeFichier");
+  const fileId = isRecord(ref) ? Number(ref.id) : NaN;
+  const fileType = isRecord(ref) ? ref.type : undefined;
   if (
     attachment.kind !== "file" ||
-    url.protocol !== "https:" ||
-    url.hostname !== "api.ecoledirecte.com" ||
-    url.pathname !== "/v3/telechargement.awp" ||
     !Number.isSafeInteger(fileId) ||
     fileId < 1 ||
-    !fileType ||
+    typeof fileType !== "string" ||
     !/^[\w-]+$/.test(fileType)
   ) {
     throw new ServiceUnavailable("Pièce jointe ÉcoleDirecte invalide");
@@ -257,10 +247,19 @@ export function downloadEcoledirecteAttachment(
 }
 
 async function inlineProtectedNewsImages(
-  client: Client,
+  session: EcoledirecteSession,
   value: string
 ): Promise<string> {
-  const html = contentToHtml(value);
+  let html: string;
+  try {
+    const bytes = Uint8Array.from(
+      atob(value.replace(/\s/g, "")),
+      character => character.charCodeAt(0)
+    );
+    html = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    html = value;
+  }
   if (!/<img\b/i.test(html)) {
     return html;
   }
@@ -302,8 +301,10 @@ async function inlineProtectedNewsImages(
         if (!Number.isSafeInteger(fileId)) {
           return tag;
         }
-        const dataUrl = await imageStreamToDataUrl(
-          await client.downloader.getStream(fileId, fileType)
+        const dataUrl = await session.run(async client =>
+          imageStreamToDataUrl(
+            await client.downloader.getStream(fileId, fileType)
+          )
         );
         return dataUrl
           ? tag.replace(sourceAttribute[0], ` src="${dataUrl}"`)
@@ -483,10 +484,10 @@ export function normalizeMarksResponse(value: unknown): MarksPayload {
   if (rawMarks === undefined || rawMarks === null) {
     return { periodes: periods, notes: [] };
   }
-  if (!isArrayOf(rawMarks, isMark)) {
+  if (!Array.isArray(rawMarks)) {
     throw new ServiceUnavailable("Liste des notes ÉcoleDirecte invalide");
   }
-  return { periodes: periods, notes: rawMarks };
+  return { periodes: periods, notes: rawMarks.filter(isMark) };
 }
 
 async function getMarks(session: EcoledirecteSession): Promise<MarksPayload> {
@@ -552,6 +553,7 @@ function toCourse(
   if (!from || !to) {
     return null;
   }
+  const subject = item.matiere || item.text || "Cours";
   const status = item.isAnnule
     ? "canceled"
     : item.isModifie
@@ -559,7 +561,8 @@ function toCourse(
       : undefined;
   return {
     id: `${item.id}@${from.toISOString()}`,
-    subject: item.matiere || item.text || "Cours",
+    subject:
+      item.typeCours === TimetableCourseType.PERMANENCY ? "Étude" : subject,
     from,
     to,
     ...(item.salle && { room: item.salle }),
@@ -567,9 +570,6 @@ function toCourse(
     ...((item.groupe || item.classe) && { group: item.groupe || item.classe }),
     ...(status && { status }),
     ...(lesson && { contents: [lessonContent(lesson)] }),
-    ...(item.typeCours === TimetableCourseType.PERMANENCY && {
-      subject: item.matiere || item.text || "Étude",
-    }),
   };
 }
 
@@ -695,17 +695,6 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   const available = new Set(
     session.selectedAccount.modules.map(module => module.code)
   );
-  const cachedDays = new Map<string, Promise<HomeworkDay>>();
-  const homeworkForDate = (client: Client, day: Date) => {
-    const key = dateKey(day);
-    let result = cachedDays.get(key);
-    if (!result) {
-      result = client.homework.getHomeworksForDate(key);
-      cachedDays.set(key, result);
-    }
-    return result;
-  };
-
   const timetable: CapabilityMethods["TIMETABLE"] = {
     getWeeklyTimetable: weekStart =>
       session.run(async client => {
@@ -725,10 +714,14 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
           days.map(async day => {
             const key = dateKey(day);
             try {
-              lessons.set(key, (await homeworkForDate(client, day)).matieres);
+              lessons.set(
+                key,
+                (
+                  await client.homework.getHomeworksForDate(key)
+                ).matieres
+              );
             } catch {
               // Le planning reste utilisable si les détails du cahier de textes échouent.
-              cachedDays.delete(key);
             }
           })
         );
@@ -750,19 +743,15 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
         const days = Array.from({ length: 7 }, (_, index) =>
           addDays(weekStart, index)
         );
-        try {
-          const results = await Promise.all(
-            days.map(async day => ({
-              day,
-              result: await homeworkForDate(client, day),
-            }))
-          );
-          return results.flatMap(({ day, result }) =>
-            result.matieres.flatMap(subject => toHomework(subject, day) ?? [])
-          );
-        } finally {
-          days.forEach(day => cachedDays.delete(dateKey(day)));
-        }
+        const results = await Promise.all(
+          days.map(async day => ({
+            day,
+            result: await client.homework.getHomeworksForDate(dateKey(day)),
+          }))
+        );
+        return results.flatMap(({ day, result }) =>
+          result.matieres.flatMap(subject => toHomework(subject, day) ?? [])
+        );
       }),
     setHomeworkCompletion: (id, done) =>
       session.run(async client => {
@@ -819,63 +808,74 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   };
 
   const news: CapabilityMethods["NEWS"] = {
-    getNews: known =>
-      session.run<News[]>(async client => {
-        const timeline = await client.timeline.getPublicTimeline();
-        const events = await Promise.all(
-          timeline.evenements.map(async event => {
-            const date = parseDate(event.dateDebut);
-            const id = `event-${event.id}`;
-            return date
-              ? {
-                  id,
-                  kind: "information" as const,
-                  title: event.libelle,
-                  author: "Établissement",
-                  date,
-                  content: await inlineProtectedNewsImages(
-                    client,
-                    event.description || ""
-                  ),
-                  // Le fil public ne fournit pas d'état de lecture : celui-ci est local.
-                  read: known.get(id)?.read ?? false,
-                  needsAcknowledgement: false,
-                  acknowledged: false,
-                  attachments: [],
-                }
-              : null;
-          })
-        );
-        const posts = await Promise.all(
-          timeline.postits.map(async post => {
-            const date = parseDate(post.dateCreation || post.dateDebut);
-            const id = `post-${post.id}`;
-            return date
-              ? {
-                  id,
-                  kind: "information" as const,
-                  author:
-                    [post.auteur.prenom, post.auteur.nom]
-                      .filter(Boolean)
-                      .join(" ") || "Établissement",
-                  date,
-                  content: await inlineProtectedNewsImages(
-                    client,
-                    post.contenu || ""
-                  ),
-                  // `type` indique la couleur du post-it, pas un titre ni son état de lecture.
-                  read: known.get(id)?.read ?? false,
-                  needsAcknowledgement: false,
-                  acknowledged: false,
-                  attachments: [],
-                }
-              : null;
-          })
-        );
-        return [...events, ...posts]
-          .flatMap(item => (item ? [item] : []))
-          .sort((left, right) => right.date.getTime() - left.date.getTime());
-      }),
+    getNews: async known => {
+      const timeline = await session.run(client =>
+        client.timeline.getPublicTimeline()
+      );
+      const events = await Promise.all(
+        timeline.evenements.map(async event => {
+          const date = parseDate(event.dateDebut);
+          if (!date) {
+            return null;
+          }
+          const id = `event-${event.id}`;
+          return {
+            id,
+            kind: "information" as const,
+            title: event.libelle,
+            author: "Établissement",
+            date,
+            content:
+              known.get(id)?.content ??
+              (await inlineProtectedNewsImages(
+                session,
+                event.description || ""
+              )),
+            // Le fil public ne fournit pas d'état de lecture : celui-ci est local.
+            read: known.get(id)?.read ?? false,
+            needsAcknowledgement: false,
+            acknowledged: false,
+            attachments: [],
+          };
+        })
+      );
+      const posts = await Promise.all(
+        timeline.postits.map(async post => {
+          const date = parseDate(post.dateCreation || post.dateDebut);
+          if (!date) {
+            return null;
+          }
+          const id = `post-${post.id}`;
+          const content =
+            known.get(id)?.content ??
+            (await inlineProtectedNewsImages(session, post.contenu || ""));
+          const title =
+            htmlToText(content)
+              .split(/\r?\n/)
+              .find(line => line.trim())
+              ?.trim() || "Post-it";
+          return {
+            id,
+            kind: "information" as const,
+            title,
+            author:
+              [post.auteur?.prenom, post.auteur?.nom]
+                .filter(Boolean)
+                .join(" ") || "Établissement",
+            date,
+            content,
+            // `type` indique la couleur du post-it, pas un titre ni son état de lecture.
+            read: known.get(id)?.read ?? false,
+            needsAcknowledgement: false,
+            acknowledged: false,
+            attachments: [],
+          };
+        })
+      );
+      return [...events, ...posts]
+        .flatMap(item => (item ? [item] : []))
+        .sort((left, right) => right.date.getTime() - left.date.getTime());
+    },
     setNewsAsRead: async () => undefined,
     setNewsAsAcknowledged: async () => undefined,
   };
@@ -884,7 +884,21 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
   const attendance: CapabilityMethods["ATTENDANCE"] = {
     getAttendancePeriods: async () => {
       schoolLife = undefined;
-      return (await getMarks(session)).periodes
+      if (!available.has("NOTES")) {
+        const now = new Date();
+        const startYear =
+          now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+        const name = `${startYear}-${startYear + 1}`;
+        return [
+          {
+            id: name,
+            name,
+            start: new Date(startYear, 8, 1),
+            end: new Date(startYear + 1, 7, 31, 23, 59, 59, 999),
+          },
+        ];
+      }
+      return (await (marksForSync ??= getMarks(session))).periodes
         .filter(period => {
           const label = normalizeFrench(period.periode ?? "");
           return label && !label.startsWith("releve") && label !== "annee";
