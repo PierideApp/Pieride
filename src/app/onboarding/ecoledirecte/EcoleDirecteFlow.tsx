@@ -10,13 +10,14 @@ import type { SyncedCapability } from "@/services/account-manager";
 import {
   type EcoledirecteLogin,
   loginEcoledirecte,
+  parseEcoledirecteSecret,
   type TwoFactorChallenge,
 } from "@/services/ecoledirecte/session";
 import { useAccountStore } from "@/stores/accounts";
 import { useSyncStore } from "@/stores/sync";
 
 import { BackButton } from "../BackButton";
-import { errorKey } from "../errors";
+import { AlreadyLinked, errorKey } from "../errors";
 import styles from "../onboarding.module.scss";
 import flow from "./ecoledirecte.module.scss";
 
@@ -27,6 +28,7 @@ export interface EcoledirecteRelink {
 }
 
 type Phase = "credentials" | "challenge" | "syncing";
+const SERVICE_URL = "https://api.ecoledirecte.com";
 const SYNC_STEPS = [
   "TIMETABLE",
   "GRADES",
@@ -60,6 +62,22 @@ export function EcoleDirecteFlow({
     if (relink) {
       await accountManager.relinkService(relink.serviceId, secret);
     } else {
+      if (
+        await accountManager.findLinkedAccount(
+          "ecoledirecte",
+          SERVICE_URL,
+          value => {
+            const linked = parseEcoledirecteSecret(value);
+            return (
+              linked !== null &&
+              linked.username === login.secret.username &&
+              linked.accountId === login.secret.accountId
+            );
+          }
+        )
+      ) {
+        throw new AlreadyLinked();
+      }
       const profile = login.account;
       await accountManager.addAccount({
         id: accountId,
@@ -74,6 +92,7 @@ export function EcoleDirecteFlow({
             id: crypto.randomUUID(),
             accountId,
             kind: "ecoledirecte",
+            instanceUrl: SERVICE_URL,
           },
           secret
         );

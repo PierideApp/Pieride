@@ -1081,7 +1081,8 @@
         "AuthenticationError": "ÉcoleDirecte refused these credentials. Check them and try again.",
         "ServiceUnavailable": "ÉcoleDirecte isn't responding right now. Try again in a moment.",
         "SecurityChallenge": "The security check has expired. Start signing in again.",
-        "InvalidSecurityAnswer": "That answer doesn't match. Try again."
+        "InvalidSecurityAnswer": "That answer doesn't match. Try again.",
+        "AlreadyLinked": "This account is already in Piéride. Choose it at the top of the sidebar."
       }
     }
   },

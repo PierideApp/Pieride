@@ -1081,7 +1081,8 @@
         "AuthenticationError": "ÉcoleDirecte a refusé ces identifiants. Vérifie-les puis réessaie.",
         "ServiceUnavailable": "ÉcoleDirecte ne répond pas pour l'instant. Réessaie dans un instant.",
         "SecurityChallenge": "La vérification de sécurité a expiré. Recommence la connexion.",
-        "InvalidSecurityAnswer": "Cette réponse ne correspond pas. Réessaie."
+        "InvalidSecurityAnswer": "Cette réponse ne correspond pas. Réessaie.",
+        "AlreadyLinked": "Ce compte est déjà dans Piéride. Choisis-le en haut de la barre latérale."
       }
     }
   },
