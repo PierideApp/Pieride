@@ -504,6 +504,7 @@ function toSubjectAverage(subject: MarkSubjectPayload): SubjectAverage {
   const min = parseNumber(subject.moyenneMin);
   const max = parseNumber(subject.moyenneMax);
   return {
+    subjectId: subject.codeMatiere || subject.discipline || "Autre",
     subject: subject.discipline || subject.codeMatiere || "Matière",
     outOf: 20,
     ...(student !== undefined && { student }),
@@ -525,6 +526,7 @@ function toGrade(grade: MarkPayload, periodId: string): Grade | null {
   const status = typeof grade.valeur === "string" ? grade.valeur.trim() : "";
   return {
     id: `${periodId}-${grade.id}`,
+    subjectId: grade.codeMatiere || grade.libelleMatiere || "Autre",
     subject: grade.libelleMatiere || grade.codeMatiere || "Autre",
     periodId,
     title: grade.devoir?.trim() || grade.commentaire?.trim() || "Note",
