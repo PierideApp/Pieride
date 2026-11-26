@@ -1234,7 +1234,7 @@ export class AccountManager {
       gradeList.push(...found.grades);
       // Une matière en double dans un relevé ferait échouer tout l'enregistrement.
       const bySubject = new Map(
-        found.averages.map(average => [average.subject, average])
+        found.averages.map(average => [average.subjectId, average])
       );
       averageRows.push(
         ...[...bySubject.values()].map(average => ({

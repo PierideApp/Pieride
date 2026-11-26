@@ -106,6 +106,11 @@ export interface Homework {
 export interface Grade {
   id: string;
   subject: string;
+  /**
+   * Regroupe les notes d'une matière dans le relevé. Deux matières peuvent porter le même nom
+   * (PRONOTE : un sous-service par enseignant) ; à défaut d'identifiant, le nom.
+   */
+  subjectId: string;
   periodId: string;
   title: string;
   date: Date;
@@ -124,6 +129,8 @@ export interface Grade {
 /** Moyenne d'une matière sur une période, telle que le service la calcule. */
 export interface SubjectAverage {
   subject: string;
+  /** Celui des notes de cette matière (`Grade.subjectId`). */
+  subjectId: string;
   /** Celle de l'élève, de la classe, la plus haute et la plus basse de la classe. */
   student?: number;
   classAverage?: number;

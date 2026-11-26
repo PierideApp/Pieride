@@ -92,6 +92,7 @@ const connect = vi.fn<ConnectService>(async () => ({
           {
             id: `note-${period.id}`,
             subject: "Maths",
+            subjectId: "maths-1",
             periodId: period.id,
             title: "Contrôle",
             date: period.start,
@@ -102,10 +103,17 @@ const connect = vi.fn<ConnectService>(async () => ({
             optional: false,
           },
         ],
-        // Une matière du relevé sans note.
+        // Deux sous-services de même nom, et une matière du relevé sans note.
         averages: [
-          { subject: "Maths", student: 15, classAverage: 12, outOf: 20 },
-          { subject: "Latin", outOf: 20 },
+          {
+            subject: "Maths",
+            subjectId: "maths-1",
+            student: 15,
+            classAverage: 12,
+            outOf: 20,
+          },
+          { subject: "Maths", subjectId: "maths-2", student: 9, outOf: 20 },
+          { subject: "Latin", subjectId: "latin", outOf: 20 },
         ],
         overall: { student: 15, classAverage: 12 },
       }),
@@ -586,13 +594,16 @@ describe("AccountManager", () => {
       (await db.select().from(subjectAverages)).map(row => [
         row.periodId,
         row.subject,
+        row.subjectId,
         row.student,
       ])
     ).toEqual([
-      ["t1", "Maths", 15],
-      ["t1", "Latin", null],
-      ["t2", "Maths", 15],
-      ["t2", "Latin", null],
+      ["t1", "Maths", "maths-1", 15],
+      ["t1", "Maths", "maths-2", 9],
+      ["t1", "Latin", "latin", null],
+      ["t2", "Maths", "maths-1", 15],
+      ["t2", "Maths", "maths-2", 9],
+      ["t2", "Latin", "latin", null],
     ]);
     const [first] = await db.select().from(periods);
     expect(first).toMatchObject({ average: 15, classAverage: 12 });

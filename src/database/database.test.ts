@@ -37,7 +37,37 @@ describe("migrate", () => {
       ["0007_pieces_jointes"],
       ["0008_periodes_assiduite"],
       ["0009_periode_par_defaut"],
+      ["0010_matieres_meme_nom"],
     ]);
+  });
+
+  it("garde les notes en cache en leur donnant un subject_id (0010)", async () => {
+    const driver = nodeDriver();
+    const files = import.meta.glob<string>("./migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    await migrate(
+      driver,
+      Object.fromEntries(
+        Object.entries(files).filter(([path]) => !path.includes("/0010_"))
+      )
+    );
+    for (const sql of [
+      "INSERT INTO accounts (id, first_name, last_name) VALUES ('camille', 'C', 'T')",
+      "INSERT INTO services (id, account_id, kind) VALUES ('s1', 'camille', 'pronote')",
+      "INSERT INTO grades (service_id, id, period_id, subject, title, date, out_of, coefficient, bonus, optional) VALUES ('s1', 'g1', 't1', 'Maths', 'Contrôle', 0, 20, 1, 0, 0)",
+      "INSERT INTO subject_averages (service_id, period_id, subject, out_of) VALUES ('s1', 't1', 'Maths', 20)",
+    ]) {
+      await driver.execute(sql, []);
+    }
+    await migrate(driver, files);
+    for (const table of ["grades", "subject_averages"]) {
+      expect(
+        await driver.select(`SELECT subject, subject_id FROM ${table}`, [])
+      ).toEqual([["Maths", "Maths"]]);
+    }
   });
 
   it("n'applique rien d'une migration qui échoue", async () => {
@@ -174,6 +204,7 @@ describe("suppression d'un compte", () => {
           id: "g1",
           periodId: "t1",
           subject: "Maths",
+          subjectId: "Maths",
           title: "Contrôle",
           date: day,
           value: 15,

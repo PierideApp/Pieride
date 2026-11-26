@@ -490,9 +490,9 @@ export function AverageWidget({
   // Moyenne de chaque matière, de la meilleure à la plus basse (taille large).
   const subjects =
     level === "large"
-      ? [...subjectAverages(grades)]
-          .map(([subject, subjectAverage]) => ({
-            grade: grades.find(grade => grade.subject === subject),
+      ? [...subjectAverages(grades, grade => grade.subjectId)]
+          .map(([subjectId, subjectAverage]) => ({
+            grade: grades.find(grade => grade.subjectId === subjectId),
             average: subjectAverage,
           }))
           .sort((a, b) => b.average - a.average)
@@ -522,7 +522,7 @@ export function AverageWidget({
             {subjects.map(
               ({ grade, average: subjectAverage }) =>
                 grade && (
-                  <li key={grade.subject} style={subjectStyle(grade.color)}>
+                  <li key={grade.subjectId} style={subjectStyle(grade.color)}>
                     <SubjectEmoji emoji={grade.emoji} color={grade.color} />
                     <span>{grade.label}</span>
                     <b>{score.format(subjectAverage)}</b>

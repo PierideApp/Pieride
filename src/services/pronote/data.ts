@@ -506,6 +506,7 @@ export function toGrade(grade: PronoteGrade, periodId: string): Grade {
   return {
     id: grade.id,
     subject: grade.subject.name,
+    subjectId: grade.subject.id,
     periodId,
     title: grade.comment,
     date: grade.date,
@@ -596,6 +597,7 @@ export function capabilities(
           grades: overview.grades.map(grade => toGrade(grade, period.id)),
           averages: overview.subjectsAverages.map(average => ({
             subject: average.subject.name,
+            subjectId: average.subject.id,
             student: points(average.student),
             classAverage: points(average.class_average),
             min: points(average.min),

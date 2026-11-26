@@ -1,10 +1,11 @@
 // Les matières d'une période pour Notes : leurs notes, leur moyenne (celle du service si elle
-// existe, sinon calculée) et les moyennes de la classe. Tout est ramené sur 20.
+// existe, sinon calculée) et les moyennes de la classe. Tout est ramené sur 20. Une carte par
+// `subjectId` : deux sous-services PRONOTE de même nom restent séparés, comme dans PRONOTE.
 import type { GradeView, SubjectAverageView } from "@/hooks/useGrades";
 import { subjectAverages } from "@/lib/grades";
 
 export interface SubjectSummary {
-  subject: string;
+  subjectId: string;
   label: string;
   color: string;
   emoji: string;
@@ -21,28 +22,28 @@ export function summarize(
   grades: readonly GradeView[],
   averages: readonly SubjectAverageView[]
 ): SubjectSummary[] {
-  const computed = subjectAverages(grades);
+  const computed = subjectAverages(grades, grade => grade.subjectId);
   const bySubject = new Map<string, GradeView[]>();
   for (const grade of grades) {
-    bySubject.set(grade.subject, [
-      ...(bySubject.get(grade.subject) ?? []),
+    bySubject.set(grade.subjectId, [
+      ...(bySubject.get(grade.subjectId) ?? []),
       grade,
     ]);
   }
-  return [...bySubject].map(([subject, own]) => {
+  return [...bySubject].map(([subjectId, own]) => {
     const first = own[0];
-    const row = averages.find(average => average.subject === subject);
+    const row = averages.find(average => average.subjectId === subjectId);
     const twenty = (value: number | undefined) =>
       value === undefined || !row || row.outOf <= 0
         ? undefined
         : (value / row.outOf) * 20;
     return {
-      subject,
-      label: first?.label ?? subject,
+      subjectId,
+      label: first?.label ?? "",
       color: first?.color ?? "",
       emoji: first?.emoji ?? "",
       grades: [...own].sort((a, b) => b.date.getTime() - a.date.getTime()),
-      average: twenty(row?.student) ?? computed.get(subject),
+      average: twenty(row?.student) ?? computed.get(subjectId),
       service: row && {
         classAverage: twenty(row.classAverage),
         min: twenty(row.min),
