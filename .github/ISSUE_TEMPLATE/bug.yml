@@ -29,7 +29,8 @@ body:
   - type: dropdown
     attributes:
       label: Module
-      description: La page de la barre latérale concernée
+      description: Page(s) de la barre latérale concernée(s)
+      multiple: true
       options:
         - Accueil
         - Cours
