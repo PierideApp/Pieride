@@ -205,6 +205,8 @@
     "cancel": "Cancel",
     "confirm": "Use this part"
   },
+  "attachmentCount_one": "{{count}} attachment",
+  "attachmentCount_other": "{{count}} attachments",
   "attachmentList": {
     "file": "File",
     "link": "Link",

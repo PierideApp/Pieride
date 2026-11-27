@@ -205,6 +205,8 @@
     "cancel": "Annuler",
     "confirm": "Utiliser cette partie"
   },
+  "attachmentCount_one": "{{count}} pièce jointe",
+  "attachmentCount_other": "{{count}} pièces jointes",
   "attachmentList": {
     "file": "Fichier",
     "link": "Lien",
