@@ -100,6 +100,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
           });
         }
       });
+      set({ state: { status: "installReady", version: state.version } });
     } catch (error) {
       report("update", error);
       set({ state: { status: "error" } });
@@ -151,8 +152,6 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     await get().download();
     if (platformName !== "Windows" || forceInstall) {
       await get().install();
-    } else {
-      set({ state: { status: "installReady", version: state.version } });
     }
   },
   restart: async () => {
