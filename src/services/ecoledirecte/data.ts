@@ -820,33 +820,6 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
       const timeline = await session.run(client =>
         client.timeline.getPublicTimeline()
       );
-      const events = await Promise.all(
-        timeline.evenements.map(async event => {
-          const date = parseDate(event.dateDebut);
-          if (!date) {
-            return null;
-          }
-          const id = `event-${event.id}`;
-          return {
-            id,
-            kind: "information" as const,
-            title: event.libelle,
-            author: "Établissement",
-            date,
-            content:
-              known.get(id)?.content ??
-              (await inlineProtectedNewsImages(
-                session,
-                event.description || ""
-              )),
-            // Le fil public ne fournit pas d'état de lecture : celui-ci est local.
-            read: known.get(id)?.read ?? false,
-            needsAcknowledgement: false,
-            acknowledged: false,
-            attachments: [],
-          };
-        })
-      );
       const posts = await Promise.all(
         timeline.postits.map(async post => {
           const date = parseDate(post.dateCreation || post.dateDebut);
@@ -875,7 +848,7 @@ export function ecoledirecteCapabilities(session: EcoledirecteSession) {
           };
         })
       );
-      return [...events, ...posts]
+      return posts
         .flatMap(item => (item ? [item] : []))
         .sort((left, right) => right.date.getTime() - left.date.getTime());
     },
