@@ -205,6 +205,8 @@
     "cancel": "Cancel",
     "confirm": "Use this part"
   },
+  "attachmentCount_one": "{{count}} attachment",
+  "attachmentCount_other": "{{count}} attachments",
   "attachmentList": {
     "file": "File",
     "link": "Link",
@@ -510,7 +512,11 @@
     "byMonth": "Hours missed per month",
     "error": "Attendance unreadable",
     "empty": {
-      "title": "No absences",
+      "title": {
+        "all": "No absences or late arrivals",
+        "absence": "No absences",
+        "delay": "No late arrivals"
+      },
       "text": "Nothing to report for this period."
     }
   },

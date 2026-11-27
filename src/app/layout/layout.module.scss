@@ -646,6 +646,7 @@
 }
 
 .button {
+  position: relative;
   display: grid;
   place-items: center;
   width: 46px;
@@ -653,6 +654,14 @@
   border: none;
   background: none;
   cursor: pointer;
+
+  // Fenêtre agrandie : la souris jetée tout en haut atteint le bouton à travers la marge du
+  // panneau, sans changer son dessin. Non agrandie, le bord de redimensionnement passe avant.
+  &::before {
+    position: absolute;
+    inset: calc(-1 * var(--space-2)) 0 0;
+    content: "";
+  }
 
   svg {
     fill: none;
@@ -692,6 +701,11 @@
 .close {
   composes: button;
   border-top-right-radius: var(--radius-l);
+
+  // Et la croix jusque dans le coin, comme sous Windows.
+  &::before {
+    right: calc(-1 * var(--space-2));
+  }
 
   &:hover,
   .onBrand &:hover,

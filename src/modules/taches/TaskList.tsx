@@ -2,6 +2,7 @@
 // ligne chacun avec sa case, sa matière et son échéance. Toute la ligne ouvre le détail.
 import { useTranslation } from "react-i18next";
 
+import { AttachmentCount } from "@/components/AttachmentCount/AttachmentCount";
 import { capitalize, useDateFormats } from "@/hooks/useFormats";
 import type { HomeworkView } from "@/hooks/useHomework";
 import { subjectStyle } from "@/lib/subjects";
@@ -78,11 +79,14 @@ export function TaskList({
                       <span aria-hidden="true">{item.emoji}</span> {item.label}
                     </span>
                   </span>
-                  <span className={styles.rowDue}>
-                    {capitalize(
-                      formats.relativeDay(item.dueAt, now),
-                      formats.locale
-                    )}
+                  <span className={styles.rowEnd}>
+                    <AttachmentCount count={item.attachments.length} />
+                    <span className={styles.rowDue}>
+                      {capitalize(
+                        formats.relativeDay(item.dueAt, now),
+                        formats.locale
+                      )}
+                    </span>
                   </span>
                 </li>
               ))}

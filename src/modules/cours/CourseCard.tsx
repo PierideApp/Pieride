@@ -1,10 +1,11 @@
 // Un cours (maquettes : `course_card`) : fond dégradé de la couleur de sa matière, trait
-// vertical, nom, salle, enseignant et statut. `compact` dans la grille de la semaine, `full`
-// dans la liste du jour. Ouvre son détail au clic.
+// vertical, nom, pièces jointes du cahier de textes, salle, enseignant et statut. `compact` dans
+// la grille de la semaine, `full` dans la liste du jour. Ouvre son détail au clic.
 import { MapPin, User } from "@getpapillon/papicons";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AttachmentCount } from "@/components/AttachmentCount/AttachmentCount";
 import type { CourseView } from "@/hooks/useTimetable";
 import { subjectStyle } from "@/lib/subjects";
 
@@ -44,6 +45,15 @@ export function CourseCard({
       <span className={styles.courseBar} aria-hidden="true" />
       <span className={styles.courseHead}>
         <span className={styles.courseName}>{course.label}</span>
+        <AttachmentCount
+          count={
+            course.contents?.reduce(
+              (sum, content) => sum + content.attachments.length,
+              0
+            ) ?? 0
+          }
+          size={iconSize}
+        />
         {badge ??
           (course.status && (
             <span className={styles.status}>

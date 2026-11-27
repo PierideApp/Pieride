@@ -258,7 +258,7 @@ export function AssiduitePage({ module }: ModulePageProps) {
           <Card className={styles.empty}>
             <EmptyState
               icon={module.icon}
-              title={t("assiduite.empty.title")}
+              title={t(`assiduite.empty.title.${filter}`)}
               text={t("assiduite.empty.text")}
             />
           </Card>

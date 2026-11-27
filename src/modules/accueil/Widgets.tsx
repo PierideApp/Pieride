@@ -832,7 +832,7 @@ export function AttendanceWidget({
       {(level === "large" || waiting) && items.length === 0 && (
         <WidgetEmpty
           icon={UserCross}
-          title={t("assiduite.empty.title")}
+          title={t("assiduite.empty.title.all")}
           text={t("assiduite.empty.text")}
           small={level === "compact"}
         />

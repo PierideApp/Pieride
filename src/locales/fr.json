@@ -205,6 +205,8 @@
     "cancel": "Annuler",
     "confirm": "Utiliser cette partie"
   },
+  "attachmentCount_one": "{{count}} pièce jointe",
+  "attachmentCount_other": "{{count}} pièces jointes",
   "attachmentList": {
     "file": "Fichier",
     "link": "Lien",
@@ -510,7 +512,11 @@
     "byMonth": "Heures manquées par mois",
     "error": "Assiduité illisible",
     "empty": {
-      "title": "Aucune absence",
+      "title": {
+        "all": "Aucune absence ni retard",
+        "absence": "Aucune absence",
+        "delay": "Aucun retard"
+      },
       "text": "Rien à signaler sur cette période."
     }
   },

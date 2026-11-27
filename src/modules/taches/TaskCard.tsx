@@ -1,9 +1,10 @@
 // Carte d'un devoir dans le tableau (maquettes : `task_card`) : emoji et matière, échéance,
-// consigne, puis le bouton « Terminé ». Un devoir fait est replié sur une ligne. Toute la carte
+// consigne, puis le nombre de pièces jointes et le bouton « Terminé ». Un devoir fait est replié sur une ligne. Toute la carte
 // ouvre le détail, sauf le bouton qui coche.
 import { Check } from "@getpapillon/papicons";
 import { useTranslation } from "react-i18next";
 
+import { AttachmentCount } from "@/components/AttachmentCount/AttachmentCount";
 import type { HomeworkView } from "@/hooks/useHomework";
 import { subjectStyle } from "@/lib/subjects";
 
@@ -53,6 +54,7 @@ export function TaskCard({
       <p className={styles.taskText}>{item.content}</p>
       {!item.done && (
         <footer className={styles.taskFoot}>
+          <AttachmentCount count={item.attachments.length} />
           <button
             type="button"
             className={styles.taskDone}
