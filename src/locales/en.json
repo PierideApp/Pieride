@@ -510,7 +510,11 @@
     "byMonth": "Hours missed per month",
     "error": "Attendance unreadable",
     "empty": {
-      "title": "No absences",
+      "title": {
+        "all": "No absences or late arrivals",
+        "absence": "No absences",
+        "delay": "No late arrivals"
+      },
       "text": "Nothing to report for this period."
     }
   },

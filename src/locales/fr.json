@@ -510,7 +510,11 @@
     "byMonth": "Heures manquées par mois",
     "error": "Assiduité illisible",
     "empty": {
-      "title": "Aucune absence",
+      "title": {
+        "all": "Aucune absence ni retard",
+        "absence": "Aucune absence",
+        "delay": "Aucun retard"
+      },
       "text": "Rien à signaler sur cette période."
     }
   },
