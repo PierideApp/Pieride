@@ -832,6 +832,7 @@
       "atLogin": "Launch at computer startup",
       "atLoginText": "When you log in",
       "autostartFailed": "Launch at startup could not be set on this system.",
+      "to": "to",
       "shortcuts": "Keyboard shortcuts",
       "shortcut": {
         "palette": "Command palette",
@@ -860,8 +861,7 @@
       "restart": "Restart",
       "title": "Updates",
       "version": "Piéride {{version}}",
-      "releases": "See releases",
-      "to": "to"
+      "releases": "See releases"
     },
     "notifications": {
       "sampleFrom": "Piéride · now",

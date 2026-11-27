@@ -832,6 +832,7 @@
       "atLogin": "Lancer au démarrage de l'ordinateur",
       "atLoginText": "À l'ouverture de ta session",
       "autostartFailed": "Le lancement au démarrage n'a pas pu être réglé sur ce système.",
+      "to": "à",
       "shortcuts": "Raccourcis clavier",
       "shortcut": {
         "palette": "Palette de commandes",
@@ -860,8 +861,7 @@
       "restart": "Redémarrer",
       "title": "Mises à jour",
       "version": "Piéride {{version}}",
-      "releases": "Voir les versions",
-      "to": "à"
+      "releases": "Voir les versions"
     },
     "notifications": {
       "sampleFrom": "Piéride · maintenant",
