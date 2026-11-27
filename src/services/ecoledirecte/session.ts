@@ -8,6 +8,9 @@ import {
   Require2FA,
 } from "@blockshub/blocksdirecte";
 
+import { allowInstance } from "@/lib/http";
+import { resizeImage } from "@/lib/image";
+
 import {
   AuthenticationError,
   SecurityChallenge,
@@ -26,6 +29,7 @@ export interface EcoledirecteSecret {
 export interface EcoledirecteLogin {
   secret: EcoledirecteSecret;
   account: Account;
+  authToken: string;
 }
 
 export interface TwoFactorChallenge {
@@ -81,6 +85,57 @@ export function parseEcoledirecteSecret(
   };
 }
 
+/** Télécharge la photo du profil ÉcoleDirecte, si le compte en possède une. */
+export async function photoOf(
+  photoUrl: string,
+  token: string,
+  codeOgec: string
+): Promise<Blob | undefined> {
+  const url = new URL(photoUrl, "https://www.ecoledirecte.com");
+  if (
+    url.protocol !== "https:" ||
+    (url.hostname !== "ecoledirecte.com" &&
+      !url.hostname.endsWith(".ecoledirecte.com"))
+  ) {
+    throw new ServiceUnavailable("Adresse de photo ÉcoleDirecte invalide");
+  }
+  await allowInstance(url.origin);
+  url.searchParams.set("_", Date.now().toString());
+  const response = await fetch(url, {
+    headers: {
+      Accept:
+        "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+      "Cache-Control": "no-cache",
+      Cookie: `OGEC_ED_CAS=${codeOgec}; TOKEN_ED_CAS_0=${token}`,
+      Origin: "https://www.ecoledirecte.com",
+      Pragma: "no-cache",
+      Referer: "https://www.ecoledirecte.com/",
+      "User-Agent":
+        "BlocksDirecte/1.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 EDMOBILE v8.0.0",
+    },
+  });
+  if (!response.ok) {
+    throw new ServiceUnavailable(
+      `Photo refusée par ÉcoleDirecte : ${response.status}`
+    );
+  }
+  return await response.blob();
+}
+
+/** URL `data:` réduite pour le profil initial ; la photo reste facultative. */
+export async function loadPhoto(
+  photoUrl: string,
+  token: string,
+  codeOgec: string
+): Promise<string | undefined> {
+  try {
+    const photo = await photoOf(photoUrl, token, codeOgec);
+    return photo ? await resizeImage(photo, 256, { square: true }) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function isAccountKind(value: unknown): value is Account["typeCompte"] {
   return (
     value === "E" ||
@@ -108,11 +163,13 @@ function finishLogin(
   client: Client,
   username: string,
   deviceUUID: string,
-  accounts: Account[]
+  accounts: Account[],
+  authToken: string
 ): EcoledirecteLogin {
   const account = selectedAccount(client, accounts);
   return {
     account,
+    authToken,
     secret: {
       username,
       accessToken: account.accessToken,
@@ -141,7 +198,13 @@ export async function loginEcoledirecte(
     );
     return {
       kind: "login",
-      login: finishLogin(client, username.trim(), deviceUUID, result.accounts),
+      login: finishLogin(
+        client,
+        username.trim(),
+        deviceUUID,
+        result.accounts,
+        result.token
+      ),
     };
   } catch (error) {
     if (!(error instanceof Require2FA)) {
@@ -172,7 +235,8 @@ export async function loginEcoledirecte(
                 client,
                 username.trim(),
                 deviceUUID,
-                result.accounts
+                result.accounts,
+                result.token
               );
             } catch (failure) {
               throw toEcoledirecteError(failure);
@@ -219,6 +283,7 @@ export function toEcoledirecteError(error: unknown): Error {
 /** Client réutilisable pour une session; le jeton renouvelable tourne dans le trousseau. */
 export class EcoledirecteSession {
   private account: Account | null = null;
+  private authToken = "";
   private refreshedAt = 0;
   private pendingRefresh: Promise<void> | null = null;
 
@@ -250,6 +315,16 @@ export class EcoledirecteSession {
     }
   }
 
+  async getProfilePhoto(): Promise<Blob | undefined> {
+    return this.run(async () => {
+      const account = this.selectedAccount;
+      const photo = account.profile.photo;
+      return photo
+        ? photoOf(photo, this.authToken, account.codeOgec)
+        : undefined;
+    });
+  }
+
   private async ensureFresh(): Promise<void> {
     if (Date.now() - this.refreshedAt < 10 * 60_000) {
       return;
@@ -270,6 +345,7 @@ export class EcoledirecteSession {
         undefined,
         this.secret.deviceUUID
       );
+      this.authToken = result.token;
       const accountIndex = result.accounts.findIndex(
         account => account.id === this.secret.accountId
       );

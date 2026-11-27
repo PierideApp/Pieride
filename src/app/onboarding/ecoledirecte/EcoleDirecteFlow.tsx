@@ -10,6 +10,7 @@ import { accountManager } from "@/services";
 import type { SyncedCapability } from "@/services/account-manager";
 import {
   type EcoledirecteLogin,
+  loadPhoto,
   loginEcoledirecte,
   parseEcoledirecteSecret,
   type TwoFactorChallenge,
@@ -88,12 +89,20 @@ export function EcoleDirecteFlow({
         throw new AlreadyLinked();
       }
       const profile = login.account;
+      const avatar = profile.profile.photo
+        ? await loadPhoto(
+            profile.profile.photo,
+            login.authToken,
+            profile.codeOgec
+          )
+        : undefined;
       await accountManager.addAccount({
         id: accountId,
         firstName: profile.prenom,
         lastName: profile.nom,
         schoolName: profile.nomEtablissement || undefined,
         className: profile.profile.classe?.libelle || undefined,
+        avatar,
       });
       try {
         await accountManager.linkService(

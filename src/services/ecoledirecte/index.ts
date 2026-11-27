@@ -1,5 +1,7 @@
 import { Client } from "@blockshub/blocksdirecte";
 
+import { resizeImage } from "@/lib/image";
+
 import { AuthenticationError } from "../shared/errors";
 import type { ConnectService } from "../shared/plugin";
 import {
@@ -25,5 +27,9 @@ export const connectEcoledirecte: ConnectService = async (
     capabilities: ecoledirecteCapabilities(session),
     downloadAttachment: attachment =>
       downloadEcoledirecteAttachment(session, attachment),
+    getProfilePhoto: async () => {
+      const photo = await session.getProfilePhoto();
+      return photo ? resizeImage(photo, 2048) : undefined;
+    },
   };
 };
