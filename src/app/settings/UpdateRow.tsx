@@ -106,7 +106,7 @@ export function UpdateRow() {
             })
           ) : state.status === "downloading" ? (
             <ProgressBar
-              progress={state.progress === null ? 0 : state.progress * 100}
+              progress={state.progress === null ? null : state.progress * 100}
             />
           ) : (
             ["checking", "installing"].includes(state.status) && (
