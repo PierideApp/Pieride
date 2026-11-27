@@ -6,26 +6,37 @@ import { check, type Update } from "@tauri-apps/plugin-updater";
 import { create } from "zustand";
 
 import { report } from "@/lib/log";
+import { platformName } from "@/lib/platform";
 import { closeLogins, reopenLogins } from "@/services/shared/auth";
 
 export type UpdateState =
-  | { status: "idle" }
-  | { status: "checking" }
-  | { status: "upToDate"; checkedAt: number }
+  | { status: "idle" } // aucune vérification n'a été faite depuis le lancement
+  | { status: "checking" } // vérification en cours (automatique ou manuelle)
+  | { status: "upToDate"; checkedAt: number } // la version actuelle est à jour
   /** `manual` : installé par un paquet (.deb, .rpm), que seul le système peut remplacer. */
-  | { status: "available"; version: string; manual: boolean }
+  | { status: "available"; version: string; manual: boolean } // une mise à jour est disponible, mais pas encore téléchargée
   /** `progress` : de 0 à 1, ou null tant que la taille du fichier est inconnue. */
-  | { status: "downloading"; version: string; progress: number | null }
-  | { status: "ready"; version: string }
-  | { status: "error" };
+  | {
+      status: "downloading";
+      version: string;
+      progress: number | null;
+      done: number;
+      total: number;
+    } // téléchargement en cours
+  | { status: "installing"; version: string } // Linux : l'installation est en cours (l'app se remplace elle-même)
+  | { status: "installReady"; version: string } // Windows : l'installation est prête, l'app doit se fermer pour lancer l'installateur
+  | { status: "restartReady"; version: string } // Linux : l'installation est terminée, l'app doit redémarrer pour utiliser la nouvelle version
+  | { status: "error" }; // une erreur est survenue (hors ligne, jeton expiré, etc.) : l'état reste inchangé jusqu'à la prochaine vérification
 
 interface UpdateStore {
   state: UpdateState;
   /** `silent` : en arrière-plan, une erreur (hors ligne…) ne change rien à l'écran. */
   check: (silent?: boolean) => Promise<void>;
+  download: () => Promise<void>;
   install: () => Promise<void>;
   /** Au lancement : cherche, installe si l'app peut se remplacer elle-même, puis redémarre. */
   checkAndInstall: () => Promise<void>;
+  downloadAndInstall: (forceInstall?: boolean) => Promise<void>;
   restart: () => Promise<void>;
 }
 
@@ -36,7 +47,11 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
   state: { status: "idle" },
   check: async (silent = false) => {
     const before = get().state;
-    if (["checking", "downloading", "ready"].includes(before.status)) {
+    if (
+      ["checking", "downloading", "installReady", "restartReady"].includes(
+        before.status
+      )
+    ) {
       return;
     }
     set({ state: { status: "checking" } });
@@ -57,7 +72,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
       set({ state: silent ? before : { status: "error" } });
     }
   },
-  install: async () => {
+  download: async () => {
     const { state } = get();
     if (state.status !== "available" || !pending) {
       return;
@@ -65,7 +80,9 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     const { version } = state;
     let total = 0;
     let done = 0;
-    set({ state: { status: "downloading", version, progress: null } });
+    set({
+      state: { status: "downloading", version, progress: null, done, total },
+    });
     try {
       await pending.download(event => {
         if (event.event === "Started") {
@@ -77,10 +94,29 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
               status: "downloading",
               version,
               progress: total > 0 ? Math.min(done / total, 1) : null,
+              done,
+              total,
             },
           });
         }
       });
+      set({ state: { status: "installReady", version: state.version } });
+    } catch (error) {
+      report("update", error);
+      set({ state: { status: "error" } });
+    }
+  },
+  install: async () => {
+    const { state } = get();
+    if (
+      (state.status !== "installReady" && state.status !== "downloading") ||
+      !pending
+    ) {
+      return;
+    }
+    const { version } = state;
+    set({ state: { status: "installing", version } });
+    try {
       // Sur Windows, l'installation quitte l'app : pas en pleine connexion, le jeton se perdrait.
       await closeLogins();
       try {
@@ -89,7 +125,7 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
         // Ailleurs, l'app continue jusqu'au redémarrage et doit encore se synchroniser.
         reopenLogins();
       }
-      set({ state: { status: "ready", version } });
+      set({ state: { status: "restartReady", version } });
     } catch (error) {
       report("update", error);
       set({ state: { status: "error" } });
@@ -101,10 +137,21 @@ export const useUpdateStore = create<UpdateStore>()((set, get) => ({
     if (state.status !== "available" || state.manual) {
       return;
     }
-    // Sur Windows, l'installeur ferme l'app et la rouvre lui-même : on n'arrive pas ici.
-    await get().install();
-    if (get().state.status === "ready") {
+
+    await get().downloadAndInstall(true);
+    if (get().state.status === "restartReady") {
       await get().restart();
+    }
+  },
+  downloadAndInstall: async (forceInstall?: boolean) => {
+    const { state } = get();
+    if (state.status !== "available") {
+      return;
+    }
+
+    await get().download();
+    if (platformName !== "Windows" || forceInstall) {
+      await get().install();
     }
   },
   restart: async () => {

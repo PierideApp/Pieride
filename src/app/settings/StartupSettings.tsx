@@ -1,14 +1,7 @@
 // Démarrage et fenêtre (maquette 12-demarrage-et-fenetre) : comment Piéride vit sur
 // l'ordinateur. Le lancement à l'ouverture de session est inscrit dans le système (plugin
 // autostart, avec `--minimized`) ; le reste est dans le store. Les mises à jour : UpdateRow.
-import {
-  ArrowDown,
-  ArrowDownBox,
-  Clock,
-  Cross,
-  Login,
-  Sparkles,
-} from "@getpapillon/papicons";
+import { ArrowDownBox, Clock, Cross, Login } from "@getpapillon/papicons";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,7 +20,6 @@ import { useSettingsStore } from "@/stores/settings";
 import type { SettingsSectionProps } from "./Settings";
 import styles from "./settings.module.scss";
 import { SwitchRow } from "./SwitchRow";
-import { UpdateRow } from "./UpdateRow";
 
 // Un code d'erreur du système, jamais une donnée.
 const fail = (error: unknown) => report("settings", error);
@@ -39,7 +31,6 @@ function Keys({ keys }: { keys: readonly string[] }) {
 export function StartupSettings({ account }: SettingsSectionProps) {
   const { t } = useTranslation();
   const autostart = useLoaded(isEnabled, "autostart");
-  const autoUpdate = useSettingsStore(state => state.autoUpdate);
   const hidden = useSettingsStore(state =>
     account ? state.hiddenModules[account.id] : undefined
   );
@@ -95,18 +86,6 @@ export function StartupSettings({ account }: SettingsSectionProps) {
             {t("settings.startup.autostartFailed")}
           </p>
         )}
-      </Section>
-
-      <Section title={t("settings.startup.updates")}>
-        <Card rows>
-          <UpdateRow />
-          <SwitchRow icon={Sparkles} setting="autoUpdate" />
-          <SwitchRow
-            icon={ArrowDown}
-            setting="autoInstall"
-            disabled={!autoUpdate}
-          />
-        </Card>
       </Section>
 
       <Section title={t("settings.startup.shortcuts")}>

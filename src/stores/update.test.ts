@@ -64,11 +64,17 @@ describe("install", () => {
       install: async () => undefined,
     });
     await useUpdateStore.getState().check();
-    await useUpdateStore.getState().install();
+    await useUpdateStore.getState().downloadAndInstall();
     expect(seen).toEqual([
-      { status: "downloading", version: "1.2.0", progress: 0.4 },
+      {
+        status: "downloading",
+        version: "1.2.0",
+        progress: 0.4,
+        done: 40,
+        total: 100,
+      },
     ]);
-    expect(state()).toEqual({ status: "ready", version: "1.2.0" });
+    expect(state()).toEqual({ status: "restartReady", version: "1.2.0" });
   });
 });
 
@@ -120,7 +126,7 @@ describe("connexions en cours", () => {
       },
     });
     await useUpdateStore.getState().check();
-    await useUpdateStore.getState().install();
+    await useUpdateStore.getState().downloadAndInstall(true);
     expect(order).toEqual(["download", "close", "install", "reopen"]);
   });
 
