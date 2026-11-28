@@ -1,7 +1,7 @@
 // Comptes liés (maquette 02-comptes-lies) : les comptes scolaires, puis les services de
 // cantine et les calendriers liés à chacun. On change de compte, on en supprime un (données
 // et secrets compris), on délie un service, on ajoute un compte.
-// Un compte PRONOTE refusé se reconnecte ici. « Ajouter un calendrier » arrive avec iCal (M4).
+// Un compte scolaire refusé se reconnecte ici. « Ajouter un calendrier » arrive avec iCal (M4).
 import { AlertTriangle, Plus, User } from "@getpapillon/papicons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

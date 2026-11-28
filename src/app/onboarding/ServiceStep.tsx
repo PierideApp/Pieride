@@ -1,5 +1,4 @@
-// Service scolaire. PRONOTE et le compte hors ligne sont disponibles ; les autres services
-// arrivent en M4.
+// Services scolaires disponibles depuis le premier lancement.
 import {
   Ecoledirecte,
   GraduationHat,
@@ -16,9 +15,11 @@ import styles from "./onboarding.module.scss";
 
 export function ServiceStep({
   onPronote,
+  onEcoledirecte,
   onOffline,
 }: {
   onPronote: () => void;
+  onEcoledirecte: () => void;
   onOffline: () => void;
 }) {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ export function ServiceStep({
           icon={Ecoledirecte}
           title={SERVICE_NAMES.ecoledirecte}
           text={t("onboarding.service.ecoledirecte")}
-          disabledLabel={soon}
+          onClick={onEcoledirecte}
         />
         <ChoiceCard
           icon={Skolengo}

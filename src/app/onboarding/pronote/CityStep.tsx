@@ -14,8 +14,8 @@ import { useLookup } from "@/hooks/useLookup";
 import { matches } from "@/lib/search";
 import { findSchools, type School } from "@/services/pronote/login";
 
+import { logFailure } from "../errors";
 import styles from "../onboarding.module.scss";
-import { logFailure } from "./errors";
 import pronote from "./pronote.module.scss";
 
 /** L'écran n'affiche qu'un message général : le détail d'un échec va au journal. */

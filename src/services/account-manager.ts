@@ -236,14 +236,15 @@ export class AccountManager {
       .where(eq(accounts.id, accountId));
   }
 
-  /** Récupère la photo du premier service scolaire qui sait la fournir. */
-  async getProfilePhoto(accountId: string): Promise<string | undefined> {
+  /** Récupère la photo du service scolaire choisi, s'il en fournit une. */
+  async getProfilePhoto(
+    accountId: string,
+    kind: "pronote" | "ecoledirecte"
+  ): Promise<string | undefined> {
     const linked = await this.db
       .select()
       .from(services)
-      .where(
-        and(eq(services.accountId, accountId), eq(services.kind, "pronote"))
-      );
+      .where(and(eq(services.accountId, accountId), eq(services.kind, kind)));
     for (const service of linked) {
       const photo = await (await this.plugin(service)).getProfilePhoto?.();
       if (photo) {

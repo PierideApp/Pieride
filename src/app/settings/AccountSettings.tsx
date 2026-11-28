@@ -1,6 +1,6 @@
 // Mon compte (maquette 01-mon-compte) : le profil tel qu'il apparaît dans Piéride. Prénom,
 // nom et photo se modifient ici ; établissement et classe viennent des services.
-// La photo peut venir d'un fichier ou du profil PRONOTE du compte lié.
+// La photo peut venir d'un fichier ou du profil PRONOTE / ÉcoleDirecte lié.
 import {
   Camera,
   Folder,
@@ -130,19 +130,27 @@ export function AccountSettings({ account }: SettingsSectionProps) {
       setBusy(false);
     }
   };
-  const fetchPronotePhoto = async () => {
+  const fetchServicePhoto = async (kind: "pronote" | "ecoledirecte") => {
     setBusy(true);
     setError(null);
     try {
-      const avatar = await accountManager.getProfilePhoto(account.id);
+      const avatar = await accountManager.getProfilePhoto(account.id, kind);
       if (!avatar) {
-        setError("settings.account.photoMissing");
+        setError(
+          kind === "pronote"
+            ? "settings.account.photoMissing"
+            : "settings.account.ecoledirectePhotoMissing"
+        );
         return;
       }
       setCropping(avatar);
     } catch (failure) {
       report("settings", failure);
-      setError("settings.account.photoFailed");
+      setError(
+        kind === "pronote"
+          ? "settings.account.photoFailed"
+          : "settings.account.ecoledirectePhotoFailed"
+      );
     } finally {
       setBusy(false);
     }
@@ -283,7 +291,19 @@ export function AccountSettings({ account }: SettingsSectionProps) {
                 title={t("settings.account.fromPronote")}
                 text={t("settings.account.fromPronoteText")}
                 disabled={busy}
-                onClick={() => void fetchPronotePhoto()}
+                onClick={() => void fetchServicePhoto("pronote")}
+              />
+            )}
+            {account.services.some(
+              service => service.kind === "ecoledirecte"
+            ) && (
+              <SettingRow
+                as="button"
+                icon={GraduationHat}
+                title={t("settings.account.fromEcoledirecte")}
+                text={t("settings.account.fromEcoledirecteText")}
+                disabled={busy}
+                onClick={() => void fetchServicePhoto("ecoledirecte")}
               />
             )}
             {account.avatar && (

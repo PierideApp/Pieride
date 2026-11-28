@@ -1,8 +1,7 @@
 // Les requêtes des services dans la console de la WebView, seulement sous `pnpm tauri dev` : les
 // appels sont gardés par `import.meta.env.DEV`, que Vite remplace par `false` dans la version
 // publiée (code retiré), et `isTauri()` écarte `pnpm dev` seul dans un navigateur et les tests.
-// Filtrer la console sur `[pronote]` : chaque fonction appelée, ce qui est parti et ce qui est
-// revenu, déchiffré par pawnote (notre patch lui ajoute `onExchange`), puis ce qu'il en a tiré.
+// Filtrer la console sur `[pronote]` ou `[http]` pour isoler les appels et leur durée.
 import { isTauri } from "@tauri-apps/api/core";
 
 /**
@@ -38,7 +37,7 @@ function functionName(content: string | undefined): string {
   return typeof nom === "string" ? nom : typeof id === "string" ? id : "?";
 }
 
-/** Une requête faite par un fetcher (pawnote…), avant que sa réponse soit lue. */
+/** Métadonnées réseau de développement : jamais le corps ni les paramètres de l'URL. */
 export function devRequest(request: {
   url: URL;
   method: string;
@@ -52,8 +51,9 @@ export function devRequest(request: {
   const outcome = `${request.status ?? "échec"} · ${Math.round(request.duration)} ms`;
   if (!request.url.pathname.includes("/appelfonction/")) {
     // Sans la query string, qui peut porter un jeton.
+    const path = request.url.pathname.replace(/\/\d+(?=\/|$)/g, "/:id");
     console.log(
-      `[http] ${request.method} ${request.url.host}${request.url.pathname} · ${outcome}`
+      `[http] ${request.method} ${request.url.host}${path} · ${outcome}`
     );
     return;
   }

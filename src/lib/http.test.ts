@@ -60,6 +60,18 @@ describe("fetch global", () => {
     }
   );
 
+  it("trace les requêtes ÉcoleDirecte dans la console de développement", async () => {
+    vi.mocked(devRequest).mockClear();
+    await fetch("https://api.ecoledirecte.com/v3/login.awp");
+    expect(devRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: expect.any(URL),
+        method: "GET",
+        status: 200,
+      })
+    );
+  });
+
   it("traduit redirect manual, en option ou dans la Request", async () => {
     await fetch("https://exemple.fr/", { redirect: "manual" });
     await fetch(new Request("https://exemple.fr/", { redirect: "manual" }));

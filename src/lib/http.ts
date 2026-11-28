@@ -64,7 +64,10 @@ async function externalFetch(
     });
     return response;
   } catch (error) {
-    logRequest({ ...request, duration: performance.now() - started });
+    logRequest({
+      ...request,
+      duration: performance.now() - started,
+    });
     // Annulée par l'appelant : la même erreur que le fetch natif (AbortError, TimeoutError).
     const signal =
       init?.signal ?? (input instanceof Request ? input.signal : null);
@@ -88,9 +91,20 @@ globalThis.fetch = async (input, init) => {
     input instanceof Request ? input.url : input,
     location.href
   );
-  return isExternal(url)
-    ? await externalFetch(input, init)
-    : await nativeFetch(input, init);
+  if (!isExternal(url)) {
+    return nativeFetch(input, init);
+  }
+  const method =
+    init?.method ?? (input instanceof Request ? input.method : "GET");
+  const started = performance.now();
+  let status: number | undefined;
+  try {
+    const response = await externalFetch(input, init);
+    status = response.status;
+    return response;
+  } finally {
+    devFetch({ url, method, status }, started);
+  }
 };
 
 // Type `Fetcher` de @literate.ink/utilities (MIT), attendu par pawnote, blocksrd et ezly.

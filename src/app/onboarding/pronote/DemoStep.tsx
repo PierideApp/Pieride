@@ -12,8 +12,8 @@ import { useLookup } from "@/hooks/useLookup";
 import { findInstance } from "@/services/pronote/login";
 import { DEMO_URL } from "@/services/pronote/session";
 
+import { errorKey, logFailure } from "../errors";
 import styles from "../onboarding.module.scss";
-import { errorKey, logFailure } from "./errors";
 import pronote from "./pronote.module.scss";
 
 /** Le détail d'un échec va au journal ; l'écran explique le cas le plus courant. */
@@ -61,7 +61,7 @@ export function DemoStep({
       {lookup.status === "error" && (
         <p className={styles.error} role="alert">
           {typeof lookup.error === "string"
-            ? t(errorKey(lookup.error))
+            ? t(errorKey(lookup.error, "onboarding.pronote"))
             : t("onboarding.pronote.instanceFailed")}
         </p>
       )}
